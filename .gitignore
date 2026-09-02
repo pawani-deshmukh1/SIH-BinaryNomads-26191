@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ML Models and Data
+*.pt
+*.pth
+*.onnx
+*.joblib
+*.safetensors
+*.zip
+*.pbf
+*.csv
+# *.json
+# allow all json for now, maybe large json files exist? Wait, I saw fixtures json which are fine. Let's ignore cache json
+cache/*.json
+backend/cache/*.json
+backend/fixtures/osm_cache/*.geojson
+
+# Cache and temporary files
+cache/
+backend/cache/
+backend/fixtures/osm_cache/
+*.log
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store

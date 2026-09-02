@@ -1,0 +1,143 @@
+# Product Requirements Document
+## SIH26191 — Intelligent Identification of Hazard-Based Red Zones, Carrying Capacity Assessment, and Immediate Relocation Needs for Vulnerable Habitations
+
+**Track:** Software | **Theme:** Disaster Management | **Sponsor:** Ministry of Home Affairs
+**Prize:** ₹1,00,000 | **Deadline:** 20 September 2026
+
+---
+
+## 1. Overview
+
+We are building a GIS-enabled decision-support system that continuously monitors which habitations in a region are at elevated hazard risk, evaluates whether nearby land can safely absorb a temporarily relocated population, and automatically flags administrative bodies when a specific community's risk crosses an "imminent" threshold — so relocation happens *before* the disaster, not after.
+
+This is not a rescue or evacuation-routing tool. It does not operate during an active disaster. It is a planning and early-action system that operates in the hours-to-days window before a hazard hits.
+
+## 2. Problem Statement (official, verbatim title)
+
+> "Intelligent Identification of Hazard-Based Red Zones, Carrying Capacity Assessment, and Immediate Relocation Needs for Vulnerable Habitations"
+
+No extended background/description has been published for this PS on the official portal — the title is the full official spec. Our interpretation, and the reasoning behind it, is documented in Section 3.
+
+## 3. Interpretation & Time Model
+
+The word **"immediate"** in the title is load-bearing. It rules out permanent resettlement of anyone geographically capable of being hit (which would be socially and politically unworkable) and points instead to a **temporary, threshold-triggered relocation** model:
+
+| Layer | Nature | Question it answers | Update frequency |
+|---|---|---|---|
+| **A — Susceptibility (Red Zone candidate list)** | Static / slow-changing | Which habitations are geologically/geographically *capable* of being hit by a given hazard? | Months / yearly |
+| **B — Imminent risk trigger** | Dynamic, real-time | Is a specific Layer-A habitation crossing into danger *right now* (hours to days out)? | Continuous / hourly |
+
+Layer A narrows down which habitations are worth expensive continuous monitoring (satellite passes, sensors, admin attention). Layer B is what actually fires a relocation trigger. Nobody is told to move because of Layer A alone — only Layer B, backed by a specific, defensible signal (e.g. "river gauge crossed threshold X, rainfall forecast to continue for 48 hours"), triggers action. Once the signal subsides, the community can return — this is evacuation-and-return, not resettlement.
+
+## 4. Goals
+
+- Identify Red / Orange / Yellow zones for at least one primary hazard (landslide) with a defensible, explainable scoring methodology.
+- Detect when a specific Red/Orange Zone habitation is entering an imminent-risk window using dynamic signals (rainfall, satellite change detection).
+- Assess whether a nearby designated safe zone can structurally and logistically absorb the at-risk population.
+- Auto-generate a relocation advisory (who, how many, why, where to) for administrative bodies once risk crosses a defined threshold.
+- Present all of the above on an interactive GIS map.
+
+## 5. Non-Goals (explicitly out of scope)
+
+- Real-time search-and-rescue coordination or triage.
+- Live evacuation route navigation for individuals.
+- Permanent resettlement policy or land allocation.
+- Covering all four hazard types (landslide, flood, coastal erosion, cloudburst) with equal depth — see Section 10 for MVP scope.
+
+## 6. Stakeholders / Users
+
+- **District Disaster Management Authority (DDMA) / SDMA officials** — primary users, receive relocation advisories and act on them.
+- **NDMA / MHA** — oversight, aggregated dashboard view across regions.
+- **Field/panchayat-level administrators** — receive on-ground actionable alerts.
+- (Not a direct user: the general public — this is a B2G decision-support tool, not a citizen-facing app, though a future phase could add citizen alerts.)
+
+## 7. System Architecture
+
+Six-layer pipeline, top three layers build the risk picture, bottom three convert it into action:
+
+```
+1. Static susceptibility layer   → slope, soil, geology, land use, historical hazard frequency
+2. Dynamic monitoring layer      → rainfall feed, satellite change detection (repurposed
+                                    landslide/flood segmentation models watch Layer-A zones
+                                    for early movement/rising water, not post-event damage)
+3. Exposure layer                → population density, building/household count per habitation
+4. Red zone classification       → GIS fusion of (1)+(2)+(3) → Red / Orange / Yellow map
+5. Carrying capacity engine      → for candidate safe zones: land availability, structural
+                                    viability (repurposed building-assessment model), infra
+6. Relocation workflow trigger   → threshold logic → auto-generated advisory to admin body
+```
+
+### Data flow
+1. Static datasets (GSI, Bhuvan, land use) are pre-processed once into a per-grid-cell susceptibility score.
+2. Live rainfall/satellite feeds are cross-checked only against Layer-A flagged cells (not the whole country) — this keeps the monitoring load tractable.
+3. When a cell's dynamic risk score crosses a threshold, the system pulls exposure data for that habitation and evaluates 1–2 candidate safe zones against the carrying capacity engine.
+4. If a viable safe zone exists, the system generates a structured advisory (demographics, urgency level, recommended site, capacity check) and pushes it to the admin dashboard/API.
+
+## 8. Functional Requirements
+
+**FR1 — Susceptibility scoring**
+Input: slope angle, soil type, geology, land use, historical hazard inventory.
+Output: a 0–1 risk score per grid cell / habitation, classified into Red / Orange / Yellow.
+
+**FR2 — Dynamic risk monitoring**
+Input: rolling rainfall data (IMD), satellite imagery time series for Layer-A flagged zones only.
+Output: a trend flag (stable / escalating / critical) per flagged habitation, using the repurposed landslide/flood segmentation models to detect early slope movement or rising water extent rather than post-event damage.
+
+**FR3 — Exposure mapping**
+Input: population/building density data.
+Output: estimated number of people/households per flagged habitation.
+
+**FR4 — Carrying capacity scoring**
+Input: candidate safe-zone land area, existing infrastructure, structural viability (repurposed building-assessment model applied to candidate sites rather than damaged buildings).
+Output: maximum population a candidate site can absorb, with a confidence flag.
+
+**FR5 — Relocation trigger & advisory generation**
+Input: FR2 output crossing a defined threshold + FR3 + FR4.
+Output: a structured advisory (habitation ID, population count, urgency, recommended safe zone, rationale) sent to the admin dashboard.
+
+**FR6 — GIS dashboard**
+Interactive map (Leaflet/Mapbox) showing Red/Orange/Yellow zones, candidate safe zones with capacity, and live advisories.
+
+## 9. Data Sources
+
+| Data | Source |
+|---|---|
+| Slope, soil, geology | Geological Survey of India (GSI) susceptibility layers |
+| Satellite imagery / land use | Bhuvan (ISRO), Sentinel/Landsat open data |
+| Rainfall, weather | IMD |
+| River/flood data | CWC (Central Water Commission) |
+| Population/building density | Census of India, WorldPop, OSM building footprints |
+
+## 10. MVP Scope for the 36-hour Hackathon Build
+
+Given the time constraint, scope to **one hazard (landslide) and one region** (e.g. a district in Uttarakhand or the Kerala Western Ghats) and build the full pipeline end-to-end for that scope only:
+
+- FR1 (static susceptibility) — full implementation for chosen region.
+- FR2 (dynamic monitoring) — demo using historical rainfall + your existing landslide segmentation model repurposed for change detection.
+- FR3 (exposure) — use publicly available population data for the region.
+- FR4 (carrying capacity) — apply repurposed building-assessment model to 1–2 candidate safe sites.
+- FR5 (trigger + advisory) — rule-based threshold logic (simple, explainable — don't over-engineer this for a demo).
+- FR6 (dashboard) — Leaflet map with layer toggles.
+
+In the pitch, explicitly state the architecture is hazard-agnostic and region-agnostic by design, and name floods/coastal erosion/cloudbursts as Phase 2 extensions — don't try to half-build all four.
+
+## 11. Tech Stack (suggested)
+
+- **Frontend/GIS:** React + Leaflet (or Mapbox GL JS)
+- **Backend:** Python (FastAPI) for ML inference + rule engine, Node.js optional for workflow/notification service
+- **ML:** your existing landslide/flood segmentation models (repurposed as described), scikit-learn/XGBoost for the static susceptibility scorer
+- **Data storage:** PostGIS (spatial queries), or a simpler SQLite+GeoJSON setup for hackathon scope
+- **Notifications:** simple webhook/email to simulate the "admin alert" for demo purposes
+
+## 12. Success Metrics (for evaluators, not production KPIs)
+
+- Can the system correctly explain *why* a zone is Red vs Yellow (interpretability matters more than raw accuracy for a judge)?
+- Does the imminent-risk trigger demonstrably differ in behavior from the static susceptibility layer (i.e. can you show a Yellow-static-but-currently-critical habitation)?
+- Does the carrying capacity check actually reject an unsuitable safe zone in the demo (proves it's not just a placeholder)?
+- Is the end-to-end flow (static → dynamic → trigger → advisory) demonstrable live, not just described in slides?
+
+## 13. Risks & Assumptions
+
+- **Data availability:** Some GSI/Bhuvan datasets require registration or have limited public API access — validate access before committing to a region.
+- **Model reuse validity:** the existing segmentation models were trained for post-event detection; repurposing for early-signal change detection may need retraining or a different labeling strategy — flag this honestly in the pitch as a "Phase 2" refinement rather than claiming it works out of the box.
+- **Threshold tuning:** rule-based thresholds for FR5 are a reasonable hackathon simplification but should be framed as illustrative, not production-calibrated.

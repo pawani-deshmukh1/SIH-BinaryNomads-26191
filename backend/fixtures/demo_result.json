@@ -1,0 +1,285 @@
+{
+  "type": "FeatureCollection",
+  "summary": {
+    "red_zones_count": 4,
+    "red_zones_high_risk": 2,
+    "buildings_assessed": 23,
+    "buildings_destroyed": 7,
+    "buildings_minor_damage": 9,
+    "flood_zones_count": 2,
+    "landslide_zones_count": 1,
+    "evac_sites_available": 3,
+    "towers_at_risk": 2,
+    "pipeline_duration_ms": 1847,
+    "demo_mode": true,
+    "region": "Nagaon, Assam — Aug 2026 Flood Event",
+    "last_updated": "2026-08-27T05:30:00Z"
+  },
+  "model_confidence": {
+    "damage":    {"score": 0.88, "score_type": "model_confidence", "last_updated": "2026-08-27T05:30:00Z"},
+    "flood":     {"score": 0.93, "score_type": "model_confidence", "last_updated": "2026-08-27T05:30:00Z"},
+    "landslide": {"score": 0.77, "score_type": "model_confidence", "last_updated": "2026-08-27T05:30:00Z"}
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/101001", "damage_level": "destroyed",
+        "confidence": 0.94, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.641, 26.336], [92.642, 26.336], [92.642, 26.337], [92.641, 26.337], [92.641, 26.336]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/101002", "damage_level": "destroyed",
+        "confidence": 0.91, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.643, 26.336], [92.644, 26.336], [92.644, 26.337], [92.643, 26.337], [92.643, 26.336]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/101003", "damage_level": "destroyed",
+        "confidence": 0.89, "building_type": "school", "name": "Govt Primary School", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.645, 26.337], [92.647, 26.337], [92.647, 26.338], [92.645, 26.338], [92.645, 26.337]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/101004", "damage_level": "destroyed",
+        "confidence": 0.86, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.638, 26.339], [92.639, 26.339], [92.639, 26.340], [92.638, 26.340], [92.638, 26.339]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/101005", "damage_level": "destroyed",
+        "confidence": 0.82, "building_type": "shop", "name": "Local Market Stall", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.639, 26.340], [92.640, 26.340], [92.640, 26.341], [92.639, 26.341], [92.639, 26.340]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/101006", "damage_level": "destroyed",
+        "confidence": 0.79, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.641, 26.341], [92.642, 26.341], [92.642, 26.342], [92.641, 26.342], [92.641, 26.341]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/101007", "damage_level": "destroyed",
+        "confidence": 0.76, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.636, 26.334], [92.637, 26.334], [92.637, 26.335], [92.636, 26.335], [92.636, 26.334]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/102001", "damage_level": "minor_damage",
+        "confidence": 0.73, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.648, 26.335], [92.649, 26.335], [92.649, 26.336], [92.648, 26.336], [92.648, 26.335]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/102002", "damage_level": "minor_damage",
+        "confidence": 0.71, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.649, 26.335], [92.650, 26.335], [92.650, 26.336], [92.649, 26.336], [92.649, 26.335]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/102003", "damage_level": "minor_damage",
+        "confidence": 0.68, "building_type": "warehouse", "name": "", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.651, 26.336], [92.653, 26.336], [92.653, 26.337], [92.651, 26.337], [92.651, 26.336]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/102004", "damage_level": "minor_damage",
+        "confidence": 0.65, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.633, 26.342], [92.634, 26.342], [92.634, 26.343], [92.633, 26.343], [92.633, 26.342]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/102005", "damage_level": "minor_damage",
+        "confidence": 0.62, "building_type": "clinic", "name": "PHC Nagaon Sub-Centre", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.635, 26.343], [92.637, 26.343], [92.637, 26.344], [92.635, 26.344], [92.635, 26.343]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/102006", "damage_level": "minor_damage",
+        "confidence": 0.61, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.660, 26.332], [92.661, 26.332], [92.661, 26.333], [92.660, 26.333], [92.660, 26.332]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/102007", "damage_level": "minor_damage",
+        "confidence": 0.59, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.661, 26.332], [92.662, 26.332], [92.662, 26.333], [92.661, 26.333], [92.661, 26.332]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/102008", "damage_level": "minor_damage",
+        "confidence": 0.57, "building_type": "temple", "name": "Shiv Temple", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.655, 26.338], [92.656, 26.338], [92.656, 26.339], [92.655, 26.339], [92.655, 26.338]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage", "osm_id": "way/102009", "damage_level": "minor_damage",
+        "confidence": 0.55, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.658, 26.345], [92.659, 26.345], [92.659, 26.346], [92.658, 26.346], [92.658, 26.345]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "flood_zone", "label": "flooded",
+        "confidence": 0.93, "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.630, 26.330], [92.650, 26.330], [92.655, 26.335], [92.650, 26.345], [92.635, 26.348], [92.625, 26.340], [92.630, 26.330]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "flood_zone", "label": "flooded",
+        "confidence": 0.89, "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.660, 26.326], [92.672, 26.326], [92.675, 26.332], [92.668, 26.337], [92.658, 26.334], [92.655, 26.328], [92.660, 26.326]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "landslide_zone", "label": "landslide_hazard",
+        "confidence": 0.77, "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.664, 26.348], [92.670, 26.346], [92.673, 26.352], [92.668, 26.356], [92.661, 26.353], [92.664, 26.348]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone", "primary_hazard": "structural_damage",
+        "risk_score": 0.91, "color_tier": "red",
+        "contributing_factors": {"damage": {"weight": 0.5, "value": 0.91}, "flood": {"weight": 0.25, "value": 0.70}, "landslide": {"weight": 0.25, "value": 0.10}},
+        "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.637, 26.334], [92.648, 26.334], [92.650, 26.342], [92.642, 26.345], [92.634, 26.342], [92.637, 26.334]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone", "primary_hazard": "flood",
+        "risk_score": 0.83, "color_tier": "red",
+        "contributing_factors": {"damage": {"weight": 0.5, "value": 0.30}, "flood": {"weight": 0.25, "value": 0.93}, "landslide": {"weight": 0.25, "value": 0.0}},
+        "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.628, 26.328], [92.655, 26.328], [92.658, 26.347], [92.632, 26.350], [92.624, 26.338], [92.628, 26.328]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone", "primary_hazard": "flood",
+        "risk_score": 0.54, "color_tier": "orange",
+        "contributing_factors": {"damage": {"weight": 0.5, "value": 0.10}, "flood": {"weight": 0.25, "value": 0.89}, "landslide": {"weight": 0.25, "value": 0.0}},
+        "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.658, 26.324], [92.676, 26.324], [92.678, 26.338], [92.665, 26.340], [92.655, 26.332], [92.658, 26.324]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone", "primary_hazard": "landslide",
+        "risk_score": 0.48, "color_tier": "orange",
+        "contributing_factors": {"damage": {"weight": 0.5, "value": 0.10}, "flood": {"weight": 0.25, "value": 0.0}, "landslide": {"weight": 0.25, "value": 0.77}},
+        "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Polygon", "coordinates": [[[92.662, 26.346], [92.672, 26.344], [92.675, 26.354], [92.666, 26.358], [92.659, 26.355], [92.662, 26.346]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "evac_site", "id": "EZ-A01", "name": "Nagaon Govt School",
+        "recommendation_score": 0.91, "capacity_persons": 1200, "status": "available", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Point", "coordinates": [92.685, 26.355]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "evac_site", "id": "EZ-A02", "name": "Nagaon District Stadium",
+        "recommendation_score": 0.79, "capacity_persons": 3500, "status": "partial", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Point", "coordinates": [92.671, 26.342]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "evac_site", "id": "EZ-A03", "name": "Rupahi Relief Ground",
+        "recommendation_score": 0.65, "capacity_persons": 600, "status": "available", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Point", "coordinates": [92.655, 26.362]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "evac_route", "id": "RT-01",
+        "from_zone": "RZ-01", "to_site": "EZ-A01",
+        "route_suitability_score": 0.88, "hazard_zones_avoided": 2, "added_distance_km": 0.4,
+        "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "LineString", "coordinates": [[92.645, 26.340], [92.652, 26.344], [92.661, 26.350], [92.672, 26.353], [92.685, 26.355]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "evac_route", "id": "RT-02",
+        "from_zone": "RZ-02", "to_site": "EZ-A02",
+        "route_suitability_score": 0.75, "hazard_zones_avoided": 1, "added_distance_km": 0.2,
+        "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "LineString", "coordinates": [[92.637, 26.345], [92.644, 26.346], [92.656, 26.344], [92.664, 26.343], [92.671, 26.342]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "tower", "id": "TW-A01", "operator": "Airtel",
+        "status": "at_risk", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Point", "coordinates": [92.636, 26.338]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "tower", "id": "TW-A02", "operator": "Jio",
+        "status": "operational", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Point", "coordinates": [92.689, 26.341]}
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "tower", "id": "TW-A03", "operator": "BSNL",
+        "status": "at_risk", "last_updated": "2026-08-27T05:30:00Z"
+      },
+      "geometry": {"type": "Point", "coordinates": [92.648, 26.354]}
+    }
+  ]
+}

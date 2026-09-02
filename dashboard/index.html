@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DISHA — Pre-Disaster Early Warning System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <!-- Intro.js CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css" />
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="pulse-status" id="conn-status"></div>
+      DISHA
+      <span class="flow-title">Pre-Disaster Early Warning System</span>
+    </div>
+    <div class="header-actions">
+      <div class="time-sync">
+        <button class="btn" style="padding: 6px 12px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 12px; font-weight: 600; font-size: 13px;" onclick="startMainTutorial()">🎓 Guided Tour</button>
+        🕐 <span id="last-sync">Just now</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-area">
+    
+    <!-- LEAFLET MAP -->
+    <div id="map"></div>
+
+    <!-- MAIN SIDEBAR (Always visible) -->
+    <div class="sidebar" id="main-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Risk Overview</div>
+        <div class="status-grid">
+          <div class="status-card">
+            <div class="status-val red" id="count-red">0</div>
+            <div class="status-label">Evacuate</div>
+          </div>
+          <div class="status-card">
+            <div class="status-val orange" id="count-orange">0</div>
+            <div class="status-label">On Watch</div>
+          </div>
+          <div class="status-card">
+            <div class="status-val yellow" id="count-yellow">0</div>
+            <div class="status-label">Monitor</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="weather-trigger">
+        <div class="weather-header">
+          <span>Layer B: Live Weather Trigger</span>
+          <span style="font-size: 11px;">Open-Meteo</span>
+        </div>
+        <div class="weather-row">
+          <span>Current Rain:</span>
+          <span class="weather-val" id="weather-current">0.0 mm/hr</span>
+        </div>
+        <div class="weather-row">
+          <span>72h Forecast:</span>
+          <span class="weather-val" id="weather-forecast">0.0 mm</span>
+        </div>
+        <div class="weather-row">
+          <span>Risk Multiplier:</span>
+          <span class="weather-val" id="weather-mult">1.0x</span>
+        </div>
+      </div>
+
+      <div class="hab-list" id="hab-list">
+        <!-- Populated by map.js -->
+        <div style="text-align: center; color: var(--text-dim); margin-top: 20px;">Loading habitations...</div>
+      </div>
+    </div>
+
+    <!-- SLIDE-IN ADVISORY PANEL -->
+    <div class="advisory-panel" id="advisory-panel">
+      <div class="adv-header">
+        <div>
+          <div class="adv-title" id="adv-title">Loading...</div>
+          <div class="adv-subtitle" id="adv-subtitle">Fetching relocation plan...</div>
+        </div>
+        <button class="btn-close" onclick="closeAdvisory()">×</button>
+      </div>
+      
+      <div class="adv-content" id="adv-content">
+        <div style="text-align: center; padding: 40px 0;">
+          <div class="spinner" style="margin: 0 auto 16px;"></div>
+          Evaluating Sphere Standards & Logistics...
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="loader" class="active">
+    <div class="spinner"></div>
+    <div style="color: white; font-family: 'Space Grotesk', sans-serif;">Initializing Pipeline...</div>
+  </div>
+
+  <div class="alert-banner" id="alert-banner">
+    ⚠️ 3 habitations escalated to RED due to heavy rainfall forecast.
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
+  <script src="js/weather.js"></script>
+  <script src="js/advisory.js"></script>
+  <script src="js/radar_sweep.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/tutorial.js"></script>
+</body>
+</html>

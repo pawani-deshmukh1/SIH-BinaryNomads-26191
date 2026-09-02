@@ -1,0 +1,245 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 1,
+        "name": "Habitation 1 (Assam Demo)",
+        "population": 624,
+        "vulnerability_score": 0.75
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.6246867174039,
+          26.37882940143677
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 2,
+        "name": "Habitation 2 (Assam Demo)",
+        "population": 1540,
+        "vulnerability_score": 0.61
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.7209597081326,
+          26.307930134011787
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 3,
+        "name": "Habitation 3 (Assam Demo)",
+        "population": 1910,
+        "vulnerability_score": 0.82
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.67697502910568,
+          26.311368215586
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 4,
+        "name": "Habitation 4 (Assam Demo)",
+        "population": 695,
+        "vulnerability_score": 0.88
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.55488233422476,
+          26.361100170595382
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 5,
+        "name": "Habitation 5 (Assam Demo)",
+        "population": 922,
+        "vulnerability_score": 0.58
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.6335072444969,
+          26.30843462332027
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 6,
+        "name": "Habitation 6 (Assam Demo)",
+        "population": 1397,
+        "vulnerability_score": 0.88
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.59725469867,
+          26.331099409347004
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 7,
+        "name": "Habitation 7 (Assam Demo)",
+        "population": 1670,
+        "vulnerability_score": 0.67
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.64844119067817,
+          26.377261172719326
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 8,
+        "name": "Habitation 8 (Assam Demo)",
+        "population": 514,
+        "vulnerability_score": 0.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.63211782110203,
+          26.275848437739768
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 9,
+        "name": "Habitation 9 (Assam Demo)",
+        "population": 1482,
+        "vulnerability_score": 0.43
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.61365585972608,
+          26.25101241331376
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 10,
+        "name": "Habitation 10 (Assam Demo)",
+        "population": 1712,
+        "vulnerability_score": 0.81
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.63644271035052,
+          26.262362662170663
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 11,
+        "name": "Habitation 11 (Assam Demo)",
+        "population": 1271,
+        "vulnerability_score": 0.46
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.62853511574822,
+          26.36482012798845
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 12,
+        "name": "Habitation 12 (Assam Demo)",
+        "population": 748,
+        "vulnerability_score": 0.52
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.6215100277125,
+          26.412795997253774
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 13,
+        "name": "Habitation 13 (Assam Demo)",
+        "population": 1654,
+        "vulnerability_score": 0.86
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.60140988011035,
+          26.418639960190994
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 14,
+        "name": "Habitation 14 (Assam Demo)",
+        "population": 652,
+        "vulnerability_score": 0.52
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.57180113373154,
+          26.41469289028162
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 15,
+        "name": "Habitation 15 (Assam Demo)",
+        "population": 1071,
+        "vulnerability_score": 0.81
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.63021359907036,
+          26.264500449172406
+        ]
+      }
+    }
+  ]
+}

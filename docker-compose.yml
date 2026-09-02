@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+
+  # ── PostGIS Database ─────────────────────────────────────────────────────────
+  db:
+    image: postgis/postgis:15-3.3
+    container_name: disha_db
+    environment:
+      POSTGRES_DB: disha
+      POSTGRES_USER: disha_user
+      POSTGRES_PASSWORD: disha_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - disha_pgdata:/var/lib/postgresql/data
+      - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./data:/docker-entrypoint-initdb.d/data   # seed data mounted read-only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U disha_user -d disha"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Backend ───────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: disha_backend
+    environment:
+      DATABASE_URL: postgresql+psycopg2://disha_user:disha_pass@db:5432/disha
+      PYTHONIOENCODING: utf-8
+      ORT_LOGGING_LEVEL: "3"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:ro    # ONNX files, read-only
+      - ./backend:/app             # live-reload during dev
+    depends_on:
+      db:
+        condition: service_healthy
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ── HTML Dashboard (served by nginx) ─────────────────────────────────────────
+  dashboard:
+    image: nginx:alpine
+    container_name: disha_dashboard
+    ports:
+      - "3000:80"
+    volumes:
+      - ./dashboard:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+
+volumes:
+  disha_pgdata:

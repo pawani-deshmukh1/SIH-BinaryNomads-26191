@@ -1,0 +1,4043 @@
+
+================================================================================
+File: backend\main.py
+================================================================================
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(
+    title="DISHA Backend API",
+    description="Intelligent Identification of Hazard-Based Red Zones & Relocation Needs",
+    version="1.0.0"
+)
+
+# Allow CORS for dashboard
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+from api import settings_api, damage, flood, landslide, red_zones, relocation, routes, towers, ground_situation, evac_zones, feedback, analyze
+
+app.include_router(settings_api.router)
+app.include_router(damage.router)
+app.include_router(flood.router)
+app.include_router(landslide.router)
+app.include_router(red_zones.router)
+app.include_router(evac_zones.router)
+app.include_router(relocation.router)
+app.include_router(routes.router)
+app.include_router(towers.router)
+app.include_router(ground_situation.router)
+app.include_router(feedback.router)
+app.include_router(analyze.router)
+
+================================================================================
+File: backend\api\analyze.py
+================================================================================
+
+"""
+analyze.py — POST /analyze/ master endpoint.
+
+One endpoint to run the full DISHA pipeline:
+  1. Accepts pre + post imagery (or just post)
+  2. Runs all 3 models in parallel
+  3. Cross-references damage with OSM buildings
+  4. Fuses hazard layers into red zones
+  5. Attaches evac sites, routes, tower risk
+  6. Returns one unified GeoJSON FeatureCollection
+
+demo_mode=true skips inference and returns pre-cached fixtures instantly.
+"""
+from fastapi import APIRouter, File, UploadFile, Form, HTTPException
+from fastapi.responses import JSONResponse
+from typing import Optional
+import logging
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/analyze", tags=["COP Pipeline"])
+
+
+@router.post("/")
+async def analyze_area(
+    post_image: UploadFile = File(...),
+    pre_image: Optional[UploadFile] = File(default=None),
+    lat: float = Form(...),
+    lng: float = Form(...),
+    radius_km: float = Form(default=2.0),
+    demo_mode: bool = Form(default=False),
+    region: str = Form(default="assam"),
+    damage_weight: float = Form(default=0.5),
+    flood_weight: float = Form(default=0.25),
+    landslide_weight: float = Form(default=0.25),
+):
+    """
+    Run the full DISHA Common Operational Picture pipeline.
+
+    Returns a single GeoJSON FeatureCollection containing ALL layers:
+    - building_damage: per-building OSM-cross-referenced damage assessment
+    - flood_zone: flood extent polygons
+    - landslide_zone: landslide hazard polygons
+    - red_zone: fused risk polygons (AHP-weighted)
+    - evac_site: ranked evacuation candidate sites
+    - evac_route: hazard-aware routing geometries
+    - tower: cell tower status (operational / at_risk)
+
+    Use demo_mode=true for instant pre-cached results (no GPU needed).
+    """
+    # ── Weight validation ─────────────────────────────────────────────────────
+    weight_sum = round(damage_weight + flood_weight + landslide_weight, 4)
+    if abs(weight_sum - 1.0) > 0.05:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Weights must sum to 1.0. Got {weight_sum}."
+        )
+
+    # ── Demo Mode ─────────────────────────────────────────────────────────────
+    if demo_mode:
+        logger.info("[/analyze] Demo mode requested")
+        from core.cop_builder import build_cop_from_demo
+        result_geojson = build_cop_from_demo()
+        return JSONResponse(content=result_geojson)
+
+    # ── Live Pipeline ─────────────────────────────────────────────────────────
+    try:
+        post_bytes = await post_image.read()
+        pre_bytes  = await pre_image.read() if pre_image else None
+
+        from core.pipeline import run_full_pipeline
+        pipeline_result = await run_full_pipeline(
+            post_image_bytes=post_bytes,
+            lat=lat,
+            lng=lng,
+            radius_km=radius_km,
+            pre_image_bytes=pre_bytes,
+            demo_mode=False,
+        )
+
+        if pipeline_result.error:
+            raise HTTPException(status_code=500, detail=pipeline_result.error)
+
+        # Assemble COP
+        from core.cop_builder import build_cop
+
+        model_confidences = {
+            "damage": {
+                "score": pipeline_result.damage.confidence,
+                "score_type": "model_confidence",
+                "last_updated": __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),
+            },
+            "flood": {
+                "score": pipeline_result.flood.confidence,
+                "score_type": "model_confidence",
+                "last_updated": __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),
+            },
+            "landslide": {
+                "score": pipeline_result.landslide.confidence,
+                "score_type": "model_confidence",
+                "last_updated": __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),
+            },
+        }
+
+        cop = build_cop(
+            damage_features=pipeline_result.damage.features,
+            flood_features=pipeline_result.flood.features,
+            landslide_features=pipeline_result.landslide.features,
+            building_damage_features=pipeline_result.building_damage_features,
+            model_confidences=model_confidences,
+            region_key=region,
+            damage_weight=damage_weight,
+            flood_weight=flood_weight,
+            landslide_weight=landslide_weight,
+            duration_ms=pipeline_result.duration_ms,
+            demo_mode=False,
+        )
+
+        return JSONResponse(content=cop)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[/analyze] Pipeline error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Pipeline error: {str(e)}")
+
+
+@router.get("/demo")
+async def analyze_demo():
+    """
+    GET shortcut — returns the pre-cached demo COP instantly.
+    Use this for quick dashboard testing without uploading images.
+    """
+    from core.cop_builder import build_cop_from_demo
+    return JSONResponse(content=build_cop_from_demo())
+
+================================================================================
+File: backend\api\damage.py
+================================================================================
+
+from fastapi import APIRouter, File, UploadFile, HTTPException
+from core.inference import engine
+from core.scoring_types import ModelConfidence
+import numpy as np
+
+router = APIRouter(prefix="/damage", tags=["Inference"])
+
+@router.post("/")
+async def assess_damage(pre_image: UploadFile = File(...), post_image: UploadFile = File(...)):
+    """
+    Takes a pre-disaster and post-disaster image pair, runs the Siamese ResNet50 model,
+    and returns a 3-class damage severity GeoJSON.
+    """
+    # For now, we mock the image preprocessing since we don't have the real preprocessing pipeline yet.
+    # The actual Siamese model expects [1, 3, 512, 512] tensors for both pre and post.
+    try:
+        # Mocking the tensor creation for the inference engine
+        # In reality, you would use rasterio/PIL to read the UploadFile bytes,
+        # resize to 512x512, normalize to [0,1] or ImageNet stats, and transpose to CHW.
+        dummy_pre = np.random.randn(1, 3, 512, 512).astype(np.float32)
+        dummy_post = np.random.randn(1, 3, 512, 512).astype(np.float32)
+        
+        inputs = {
+            "pre_image": dummy_pre,
+            "post_image": dummy_post
+        }
+        
+        logits, confidence = engine.run("damage", inputs)
+        
+        if logits is None:
+            raise HTTPException(status_code=500, detail="Inference engine failed to run the model.")
+            
+        # Mocking the post-processing to GeoJSON
+        return {
+            "type": "FeatureCollection",
+            "features": [],
+            "model_confidence": confidence.model_dump()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+================================================================================
+File: backend\api\evac_zones.py
+================================================================================
+
+from fastapi import APIRouter, HTTPException
+from datetime import datetime, timezone
+
+router = APIRouter(prefix="/evac-zones", tags=["Intelligence"])
+
+@router.get("/")
+def get_evac_zones():
+    """
+    Returns ranked relocation candidate sites with capacity and suitability.
+    """
+    # Stub for Phase 4
+    try:
+        return {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": "EZ-001",
+                        "name": "Nagaon Govt School Ground",
+                        "recommendation_score": 0.88,
+                        "capacity_persons": 1200,
+                        "suitability_score": 0.9,
+                        "last_updated": datetime.now(timezone.utc).isoformat()
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [92.65, 26.35]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": "EZ-002",
+                        "name": "District Stadium",
+                        "recommendation_score": 0.74,
+                        "capacity_persons": 3500,
+                        "suitability_score": 0.7,
+                        "last_updated": datetime.now(timezone.utc).isoformat()
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [92.68, 26.34]
+                    }
+                }
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+================================================================================
+File: backend\api\feedback.py
+================================================================================
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from datetime import datetime
+
+router = APIRouter(prefix="/feedback", tags=["Intelligence"])
+
+class FeedbackRequest(BaseModel):
+    endpoint: str
+    verdict: str
+    timestamp: str
+
+@router.post("/")
+def submit_feedback(req: FeedbackRequest):
+    """
+    Accepts feedback (correct/incorrect) on model outputs or risk fusion scores.
+    """
+    # Stub for Phase 4
+    try:
+        # In a real system, this would write to an operator_feedback DB table
+        print(f"[Feedback] {req.endpoint} marked {req.verdict} at {req.timestamp}")
+        return {"status": "success", "message": "Feedback recorded."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+================================================================================
+File: backend\api\flood.py
+================================================================================
+
+from fastapi import APIRouter, File, UploadFile, HTTPException
+from core.inference import engine
+from core.scoring_types import ModelConfidence
+import numpy as np
+
+router = APIRouter(prefix="/flood-risk", tags=["Inference"])
+
+@router.post("/")
+async def assess_flood(image: UploadFile = File(...)):
+    """
+    Takes a single satellite image, runs the SegFormer flood model,
+    and returns a flood-extent polygon GeoJSON.
+    """
+    try:
+        # Mocking input tensor. The SegFormer expects [1, 3, 224, 224] in our export script.
+        dummy_img = np.random.randn(1, 3, 224, 224).astype(np.float32)
+        
+        inputs = {
+            "pixel_values": dummy_img
+        }
+        
+        logits, confidence = engine.run("flood", inputs)
+        
+        if logits is None:
+            raise HTTPException(status_code=500, detail="Inference engine failed to run the model.")
+            
+        # Mocking the post-processing to GeoJSON
+        return {
+            "type": "FeatureCollection",
+            "features": [],
+            "model_confidence": confidence.model_dump()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+================================================================================
+File: backend\api\ground_situation.py
+================================================================================
+
+from fastapi import APIRouter, HTTPException
+
+router = APIRouter(prefix="/ground-situation", tags=["Intelligence"])
+
+@router.get("/")
+def get_ground_situation():
+    """
+    F11: Synthesizes ALL layers into a single GeoJSON FeatureCollection for the operational picture.
+    """
+    # Stub for Phase 4
+    try:
+        return {
+            "type": "FeatureCollection",
+            "features": [],
+            "summary": {
+                "total_habitations": 15,
+                "immediate_relocation": 4,
+                "short_term_relocation": 6,
+                "medium_term_relocation": 5,
+                "red_zones_count": 3,
+                "towers_potentially_offline": 2,
+                "sites_available": 6,
+                "total_capacity_remaining": 8200,
+                "analysis_timestamp": "2026-08-26T16:00:00Z"
+            },
+            "score_type": "ground_situation_snapshot",
+            "last_updated": "2026-08-26T16:00:00Z"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+================================================================================
+File: backend\api\landslide.py
+================================================================================
+
+from fastapi import APIRouter, File, UploadFile, HTTPException
+from core.inference import engine
+from core.scoring_types import ModelConfidence
+import numpy as np
+
+router = APIRouter(prefix="/landslide-risk", tags=["Inference"])
+
+@router.post("/")
+async def assess_landslide(image: UploadFile = File(...)):
+    """
+    Takes a single satellite image, runs the Monolith ResNet50 U-Net model,
+    and returns a landslide-extent polygon GeoJSON.
+    """
+    try:
+        # Mocking input tensor. The landslide model expects [1, 3, 512, 512].
+        dummy_img = np.random.randn(1, 3, 512, 512).astype(np.float32)
+        
+        inputs = {
+            "image": dummy_img
+        }
+        
+        logits, confidence = engine.run("landslide", inputs)
+        
+        if logits is None:
+            raise HTTPException(status_code=500, detail="Inference engine failed to run the model.")
+            
+        # Mocking the post-processing to GeoJSON
+        return {
+            "type": "FeatureCollection",
+            "features": [],
+            "model_confidence": confidence.model_dump()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+================================================================================
+File: backend\api\red_zones.py
+================================================================================
+
+from fastapi import APIRouter, HTTPException
+from core.settings import get_settings
+from datetime import datetime, timezone
+
+router = APIRouter(prefix="/red-zones", tags=["Intelligence"])
+
+@router.get("/")
+def get_red_zones():
+    """
+    Returns the fused risk-scored Red Zone polygons based on the latest model inference
+    cache and current threshold settings.
+    """
+    # This is a stub for the Phase 4 scaffold.
+    # In Phase 5, this will call `compute_risk_score` for each location.
+    try:
+        # Mocking a FeatureCollection of red zones
+        return {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": 1,
+                        "risk_score": 0.85,
+                        "color_tier": "red",
+                        "damage_confidence": 0.9,
+                        "flood_confidence": 0.2,
+                        "landslide_confidence": 0.05,
+                        "contributing_factors": {
+                            "damage": {"weight": 0.4, "value": 0.9}
+                        },
+                        "last_updated": datetime.now(timezone.utc).isoformat()
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[[92.6, 26.3], [92.61, 26.3], [92.61, 26.31], [92.6, 26.31], [92.6, 26.3]]]
+                    }
+                }
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+================================================================================
+File: backend\api\relocation.py
+================================================================================
+
+from fastapi import APIRouter, HTTPException
+from core.settings import get_settings
+
+router = APIRouter(prefix="/relocation-plan", tags=["Intelligence"])
+
+@router.get("/")
+def get_relocation_plan():
+    """
+    Returns the capacity-constrained assignment of habitations to relocation sites.
+    """
+    # Stub for Phase 4
+    try:
+        return {
+            "assignments": [
+                {
+                    "id": 1,
+                    "habitation_id": 1,
+                    "site_id": 2,
+                    "tier": "immediate",
+                    "recommendation_score": 0.92,
+                    "last_updated": "2026-08-26T16:00:00Z"
+                }
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+================================================================================
+File: backend\api\routes.py
+================================================================================
+
+from fastapi import APIRouter, HTTPException
+from core.settings import get_settings
+
+router = APIRouter(prefix="/route", tags=["Infrastructure"])
+
+@router.post("/")
+def get_safe_route(origin_lat: float, origin_lon: float, dest_lat: float, dest_lon: float):
+    """
+    Computes a hazard-aware shortest path avoiding Red Zones where possible.
+    """
+    # Stub for Phase 4
+    try:
+        return {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "route_suitability_score": 0.88,
+                        "hazard_exposure_avoided_pct": 0.95,
+                        "added_distance_m": 1200,
+                        "last_updated": "2026-08-26T16:00:00Z"
+                    },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [[origin_lon, origin_lat], [dest_lon, dest_lat]]
+                    }
+                }
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+================================================================================
+File: backend\api\settings_api.py
+================================================================================
+
+from fastapi import APIRouter
+from core.settings import get_settings, update_settings, AppSettings, RiskFusionWeights, TerrainWeights, RelocationTierThresholds, CellTowerDeadZoneConfig, ScoringThresholds
+
+router = APIRouter(prefix="/settings", tags=["Settings"])
+
+@router.get("/")
+def read_settings():
+    """Returns current AppSettings along with default AHP values for reference."""
+    current = get_settings()
+    # Provide the default instance to help the frontend show reference markers
+    defaults = AppSettings()
+    
+    return {
+        "current": current.model_dump(),
+        "defaults": defaults.model_dump(),
+        "_description": {
+            "risk_fusion": "Weights for the 3 hazards. Must sum to 1.0. Based on AHP.",
+            "terrain": "Weights for terrain features in susceptibility scoring.",
+            "relocation_tiers": "Thresholds for categorizing relocation urgency based on risk_score.",
+            "cell_tower": "Logic for marking towers as potentially offline.",
+            "scoring": "Thresholds for coloring red zones."
+        }
+    }
+
+@router.put("/")
+def write_settings(new_settings: AppSettings):
+    """Updates the global AppSettings instance."""
+    updated = update_settings(new_settings)
+    return updated
+
+@router.post("/reset")
+def reset_settings():
+    """Resets settings back to their AHP-derived defaults."""
+    updated = update_settings(AppSettings())
+    return updated
+
+================================================================================
+File: backend\api\towers.py
+================================================================================
+
+from fastapi import APIRouter, HTTPException
+from core.settings import get_settings
+
+router = APIRouter(prefix="/towers", tags=["Infrastructure"])
+
+@router.get("/")
+def get_towers():
+    """
+    Returns cell towers with computed operational status based on overlap with Red Zones.
+    """
+    # Stub for Phase 4
+    try:
+        return {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": 1,
+                        "operator": "Airtel",
+                        "technology": "4G",
+                        "status": "potentially_offline",
+                        "overlapping_red_zone_id": 1,
+                        "last_updated": "2026-08-26T16:00:00Z"
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [92.605, 26.305]
+                    }
+                }
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+================================================================================
+File: backend\core\cop_builder.py
+================================================================================
+
+"""
+cop_builder.py — Assemble all pipeline outputs into a single unified GeoJSON.
+
+The COP (Common Operational Picture) FeatureCollection contains every layer
+in one response. Each feature has a `layer_type` property so the frontend
+can toggle layers independently:
+
+  layer_type values:
+    "building_damage"  — per-OSM-building damage assessment
+    "flood_zone"       — flood extent polygon(s)
+    "landslide_zone"   — landslide hazard polygon(s)
+    "damage_zone"      — raw damage segmentation (before OSM join)
+    "red_zone"         — fused risk polygon (AHP-weighted combination)
+    "evac_site"        — ranked evacuation candidate sites
+    "evac_route"       — hazard-aware routing geometry
+    "tower"            — cell tower with risk status
+"""
+import json
+import logging
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Optional
+
+logger = logging.getLogger(__name__)
+
+FIXTURES_DIR = Path(__file__).resolve().parent.parent / "fixtures"
+
+# ── Demo/static evac sites for known regions ─────────────────────────────────
+DEMO_EVAC_SITES = {
+    "kedarnath": [
+        {"id": "EZ-K01", "name": "Gaurikund Relief Camp", "lat": 30.734, "lng": 79.063,
+         "recommendation_score": 0.87, "capacity_persons": 800, "status": "available"},
+        {"id": "EZ-K02", "name": "Sonprayag School Ground", "lat": 30.737, "lng": 79.057,
+         "recommendation_score": 0.74, "capacity_persons": 350, "status": "available"},
+    ],
+    "assam": [
+        {"id": "EZ-A01", "name": "Nagaon Govt School", "lat": 26.355, "lng": 92.685,
+         "recommendation_score": 0.91, "capacity_persons": 1200, "status": "available"},
+        {"id": "EZ-A02", "name": "Nagaon District Stadium", "lat": 26.342, "lng": 92.671,
+         "recommendation_score": 0.79, "capacity_persons": 3500, "status": "partial"},
+        {"id": "EZ-A03", "name": "Rupahi Relief Ground", "lat": 26.362, "lng": 92.655,
+         "recommendation_score": 0.65, "capacity_persons": 600, "status": "available"},
+    ],
+}
+
+DEMO_TOWERS = {
+    "kedarnath": [
+        {"id": "TW-K01", "operator": "BSNL", "lat": 30.7346, "lng": 79.0669, "status": "at_risk"},
+        {"id": "TW-K02", "operator": "Airtel", "lat": 30.7411, "lng": 79.071, "status": "operational"},
+    ],
+    "assam": [
+        {"id": "TW-A01", "operator": "Airtel", "lat": 26.354, "lng": 92.663, "status": "at_risk"},
+        {"id": "TW-A02", "operator": "Jio", "lat": 26.341, "lng": 92.689, "status": "operational"},
+        {"id": "TW-A03", "operator": "BSNL", "lat": 26.367, "lng": 92.648, "status": "at_risk"},
+    ],
+}
+
+
+def _fuse_red_zones(
+    damage_features: list[dict],
+    flood_features: list[dict],
+    landslide_features: list[dict],
+    damage_weight: float = 0.5,
+    flood_weight: float = 0.25,
+    landslide_weight: float = 0.25,
+) -> list[dict]:
+    """
+    Simple fusion: take the union of all hazard polygons and label by dominant hazard.
+    In a full implementation, this does weighted AHP scoring per polygon.
+    For the MVP: emit the raw polygons with a computed risk_score and color_tier.
+    """
+    now = datetime.now(timezone.utc).isoformat()
+    red_zones = []
+
+    # Damage zones → high risk_score (uses weight)
+    for feat in damage_features:
+        conf = feat.get("properties", {}).get("confidence", 0.0)
+        label = feat.get("properties", {}).get("label", "")
+        if label == "destroyed":
+            raw_score = conf * damage_weight * 2.0  # amplify destroyed
+        else:
+            raw_score = conf * damage_weight
+        risk_score = min(round(raw_score + flood_weight * 0.3, 3), 1.0)
+        color_tier = "red" if risk_score >= 0.65 else "orange" if risk_score >= 0.40 else "green"
+        red_zones.append({
+            "type": "Feature",
+            "properties": {
+                **feat.get("properties", {}),
+                "layer_type": "red_zone",
+                "primary_hazard": "structural_damage",
+                "risk_score": risk_score,
+                "color_tier": color_tier,
+                "contributing_factors": {
+                    "damage": {"weight": damage_weight, "value": conf},
+                    "flood": {"weight": flood_weight, "value": 0.3},
+                    "landslide": {"weight": landslide_weight, "value": 0.0},
+                },
+                "last_updated": now,
+            },
+            "geometry": feat.get("geometry"),
+        })
+
+    # Flood zones
+    for feat in flood_features:
+        conf = feat.get("properties", {}).get("confidence", 0.0)
+        risk_score = min(round(conf * flood_weight * 3.0 + damage_weight * 0.2, 3), 1.0)
+        color_tier = "red" if risk_score >= 0.65 else "orange" if risk_score >= 0.40 else "green"
+        red_zones.append({
+            "type": "Feature",
+            "properties": {
+                **feat.get("properties", {}),
+                "layer_type": "red_zone",
+                "primary_hazard": "flood",
+                "risk_score": risk_score,
+                "color_tier": color_tier,
+                "contributing_factors": {
+                    "damage": {"weight": damage_weight, "value": 0.2},
+                    "flood": {"weight": flood_weight, "value": conf},
+                    "landslide": {"weight": landslide_weight, "value": 0.0},
+                },
+                "last_updated": now,
+            },
+            "geometry": feat.get("geometry"),
+        })
+
+    # Landslide zones
+    for feat in landslide_features:
+        conf = feat.get("properties", {}).get("confidence", 0.0)
+        risk_score = min(round(conf * landslide_weight * 3.0 + damage_weight * 0.15, 3), 1.0)
+        color_tier = "red" if risk_score >= 0.65 else "orange" if risk_score >= 0.40 else "green"
+        red_zones.append({
+            "type": "Feature",
+            "properties": {
+                **feat.get("properties", {}),
+                "layer_type": "red_zone",
+                "primary_hazard": "landslide",
+                "risk_score": risk_score,
+                "color_tier": color_tier,
+                "contributing_factors": {
+                    "damage": {"weight": damage_weight, "value": 0.15},
+                    "flood": {"weight": flood_weight, "value": 0.0},
+                    "landslide": {"weight": landslide_weight, "value": conf},
+                },
+                "last_updated": now,
+            },
+            "geometry": feat.get("geometry"),
+        })
+
+    return red_zones
+
+
+def _make_evac_features(region_key: str = "assam") -> list[dict]:
+    now = datetime.now(timezone.utc).isoformat()
+    sites = DEMO_EVAC_SITES.get(region_key, DEMO_EVAC_SITES["assam"])
+    features = []
+    for site in sites:
+        features.append({
+            "type": "Feature",
+            "properties": {
+                "layer_type": "evac_site",
+                "id": site["id"],
+                "name": site["name"],
+                "recommendation_score": site["recommendation_score"],
+                "capacity_persons": site["capacity_persons"],
+                "status": site["status"],
+                "last_updated": now,
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [site["lng"], site["lat"]],
+            },
+        })
+    return features
+
+
+def _make_tower_features(region_key: str = "assam", red_zone_features: list = None) -> list[dict]:
+    """Flag towers as at_risk if they fall inside any red zone polygon."""
+    now = datetime.now(timezone.utc).isoformat()
+    towers = DEMO_TOWERS.get(region_key, DEMO_TOWERS["assam"])
+    features = []
+
+    for tower in towers:
+        # Try spatial check if shapely available
+        status = tower["status"]
+        if red_zone_features:
+            try:
+                from shapely.geometry import Point, shape
+                pt = Point(tower["lng"], tower["lat"])
+                for rz in red_zone_features:
+                    rz_geom = shape(rz["geometry"])
+                    if rz_geom.contains(pt) or rz_geom.distance(pt) < 0.002:
+                        status = "at_risk"
+                        break
+            except Exception:
+                pass
+
+        features.append({
+            "type": "Feature",
+            "properties": {
+                "layer_type": "tower",
+                "id": tower["id"],
+                "operator": tower["operator"],
+                "status": status,
+                "last_updated": now,
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [tower["lng"], tower["lat"]],
+            },
+        })
+    return features
+
+
+def build_cop(
+    damage_features: list[dict],
+    flood_features: list[dict],
+    landslide_features: list[dict],
+    building_damage_features: list[dict],
+    model_confidences: dict,
+    region_key: str = "assam",
+    damage_weight: float = 0.5,
+    flood_weight: float = 0.25,
+    landslide_weight: float = 0.25,
+    duration_ms: float = 0.0,
+    demo_mode: bool = False,
+) -> dict:
+    """
+    Assemble all pipeline outputs into one unified GeoJSON FeatureCollection.
+    """
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Fuse red zones
+    red_zones = _fuse_red_zones(
+        damage_features, flood_features, landslide_features,
+        damage_weight, flood_weight, landslide_weight,
+    )
+
+    # Evac sites + towers
+    evac_features = _make_evac_features(region_key)
+    tower_features = _make_tower_features(region_key, red_zones)
+
+    # Collect ALL features
+    all_features = (
+        building_damage_features
+        + damage_features     # raw damage segmentation polygons
+        + flood_features
+        + landslide_features
+        + red_zones
+        + evac_features
+        + tower_features
+    )
+
+    # Summary stats
+    destroyed_count = sum(
+        1 for f in building_damage_features
+        if f.get("properties", {}).get("damage_level") == "destroyed"
+    )
+    minor_count = sum(
+        1 for f in building_damage_features
+        if f.get("properties", {}).get("damage_level") == "minor_damage"
+    )
+    red_zone_high = sum(
+        1 for f in red_zones
+        if f.get("properties", {}).get("color_tier") == "red"
+    )
+    towers_at_risk = sum(
+        1 for f in tower_features
+        if f.get("properties", {}).get("status") == "at_risk"
+    )
+
+    summary = {
+        "red_zones_count": len(red_zones),
+        "red_zones_high_risk": red_zone_high,
+        "buildings_assessed": len(building_damage_features),
+        "buildings_destroyed": destroyed_count,
+        "buildings_minor_damage": minor_count,
+        "flood_zones_count": len(flood_features),
+        "landslide_zones_count": len(landslide_features),
+        "evac_sites_available": len([e for e in evac_features if e["properties"]["status"] != "full"]),
+        "towers_at_risk": towers_at_risk,
+        "pipeline_duration_ms": duration_ms,
+        "demo_mode": demo_mode,
+        "last_updated": now,
+    }
+
+    return {
+        "type": "FeatureCollection",
+        "summary": summary,
+        "model_confidence": model_confidences,
+        "features": all_features,
+    }
+
+
+def build_cop_from_demo() -> dict:
+    """Load and return the pre-computed demo COP fixture."""
+    demo_path = FIXTURES_DIR / "demo_result.json"
+    if demo_path.exists():
+        with open(demo_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    # Fallback: generate from static data
+    logger.warning("[COP] demo_result.json missing — generating from static demo data")
+    return build_cop(
+        damage_features=[],
+        flood_features=[],
+        landslide_features=[],
+        building_damage_features=[],
+        model_confidences={
+            "damage": {"score": 0.88, "score_type": "model_confidence", "last_updated": datetime.now(timezone.utc).isoformat()},
+            "flood":  {"score": 0.93, "score_type": "model_confidence", "last_updated": datetime.now(timezone.utc).isoformat()},
+            "landslide": {"score": 0.77, "score_type": "model_confidence", "last_updated": datetime.now(timezone.utc).isoformat()},
+        },
+        region_key="assam",
+        duration_ms=0.0,
+        demo_mode=True,
+    )
+
+================================================================================
+File: backend\core\inference.py
+================================================================================
+
+import asyncio
+import onnxruntime as ort
+import numpy as np
+from pathlib import Path
+from .scoring_types import ModelConfidence
+from datetime import datetime, timezone
+
+class InferenceEngine:
+    def __init__(self):
+        # We assume models are mounted via docker-compose to /app/models or locally to ./models
+        model_dir = Path(__file__).resolve().parent.parent.parent / "models"
+        
+        self.model_paths = {
+            "damage": str(model_dir / "damage_model.onnx"),
+            "flood": str(model_dir / "flood_model.onnx"),
+            "landslide": str(model_dir / "landslide_model.onnx"),
+        }
+        
+        # We attempt CUDA first, fallback to CPU
+        self.providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+
+    def run(self, model_name: str, inputs: dict[str, np.ndarray]) -> tuple[np.ndarray | None, ModelConfidence | None]:
+        """
+        Loads the ONNX model, runs inference, and unloads it to save VRAM.
+        Inputs: dictionary mapping ONNX input names to numpy arrays.
+        """
+        if model_name not in self.model_paths:
+            print(f"[InferenceEngine] Unknown model {model_name}")
+            return None, None
+            
+        path = self.model_paths[model_name]
+        if not Path(path).exists():
+            print(f"[InferenceEngine] Model file missing: {path}")
+            return None, None
+
+        try:
+            # Load into VRAM
+            session = ort.InferenceSession(path, providers=self.providers)
+            
+            # Run inference
+            output = session.run(None, inputs)
+            
+            # Unload from VRAM immediately (important for 4GB RTX 2050)
+            del session
+            
+            # Extract output tensor
+            logits = output[0]
+            
+            # Calculate a mock confidence for now based on max logit magnitude
+            # In production, this would be softmax/sigmoid probability
+            score = float(np.clip(np.max(logits) / 10.0, 0.0, 1.0))
+            
+            confidence = ModelConfidence(
+                score=score,
+                last_updated=datetime.now(timezone.utc)
+            )
+            
+            return logits, confidence
+            
+        except Exception as e:
+            print(f"[InferenceEngine] Error running {model_name}: {e}")
+            return None, None
+
+    async def run_async(self, model_name: str, inputs: dict[str, np.ndarray]) -> tuple[np.ndarray | None, 'ModelConfidence | None']:
+        """
+        Async wrapper around run() using asyncio.to_thread.
+        Allows multiple models to be gathered in parallel:
+            damage, flood, landslide = await asyncio.gather(
+                engine.run_async('damage', d_inputs),
+                engine.run_async('flood', f_inputs),
+                engine.run_async('landslide', l_inputs),
+            )
+        """
+        return await asyncio.to_thread(self.run, model_name, inputs)
+
+# Singleton instance
+engine = InferenceEngine()
+
+================================================================================
+File: backend\core\mask_to_geojson.py
+================================================================================
+
+"""
+mask_to_geojson.py — Convert ONNX model output masks to GeoJSON polygon features.
+
+The models output numpy arrays of shape [H, W] (after argmax/squeeze).
+This module converts connected pixel regions into vector polygon GeoJSON,
+properly projected from pixel space to WGS84 lat/lng using the image's
+known bounding box.
+"""
+import numpy as np
+from typing import Literal
+from datetime import datetime, timezone
+import json
+
+
+def _bbox_to_transform(bbox: tuple[float, float, float, float], width: int, height: int):
+    """
+    Build a simple affine transform mapping pixel (col, row) → (lng, lat).
+    bbox: (min_lng, min_lat, max_lng, max_lat)
+    """
+    min_lng, min_lat, max_lng, max_lat = bbox
+    lng_per_pixel = (max_lng - min_lng) / width
+    lat_per_pixel = (max_lat - min_lat) / height  # lat increases upward
+
+    def pixel_to_lnglat(col: float, row: float) -> tuple[float, float]:
+        lng = min_lng + col * lng_per_pixel
+        # row=0 is top of image (max_lat), row=height is bottom (min_lat)
+        lat = max_lat - row * lat_per_pixel
+        return (lng, lat)
+
+    return pixel_to_lnglat
+
+
+def mask_to_geojson_features(
+    mask: np.ndarray,
+    bbox: tuple[float, float, float, float],
+    layer_type: str,
+    class_labels: dict[int, str],
+    confidence: float,
+    min_area_pixels: int = 20,
+    simplify_tolerance: float = 0.0001,
+) -> list[dict]:
+    """
+    Convert a 2D integer mask to a list of GeoJSON Feature dicts.
+
+    Args:
+        mask: np.ndarray shape [H, W], integer class values
+        bbox: (min_lng, min_lat, max_lng, max_lat) of the image tile
+        layer_type: e.g. "building_damage", "flood_zone", "landslide_zone"
+        class_labels: map from integer class value to string label,
+                      e.g. {1: "minor", 2: "destroyed"} — class 0 = background, skipped
+        confidence: model confidence score (0.0-1.0)
+        min_area_pixels: skip regions smaller than this (noise filter)
+        simplify_tolerance: polygon simplification in degrees (reduces vertex count)
+
+    Returns:
+        List of GeoJSON Feature dicts
+    """
+    try:
+        import rasterio.features
+        from shapely.geometry import shape, mapping
+        from shapely.ops import unary_union
+        import shapely
+    except ImportError:
+        # Fallback: return bounding box polygon if rasterio/shapely not available
+        return _fallback_bbox_feature(bbox, layer_type, list(class_labels.values())[0] if class_labels else "unknown", confidence)
+
+    height, width = mask.shape
+    pixel_to_lnglat = _bbox_to_transform(bbox, width, height)
+
+    # Build a rasterio-compatible affine transform
+    try:
+        from rasterio.transform import from_bounds
+        transform = from_bounds(*bbox, width=width, height=height)
+    except ImportError:
+        return _fallback_bbox_feature(bbox, layer_type, list(class_labels.values())[0] if class_labels else "unknown", confidence)
+
+    features = []
+    now = datetime.now(timezone.utc).isoformat()
+
+    for class_val, label in class_labels.items():
+        if class_val == 0:
+            continue  # skip background
+
+        binary_mask = (mask == class_val).astype(np.uint8)
+
+        if binary_mask.sum() < min_area_pixels:
+            continue
+
+        # Extract shapes (connected components → polygons)
+        try:
+            shapes = list(rasterio.features.shapes(binary_mask, transform=transform))
+        except Exception:
+            continue
+
+        polygons = []
+        for geom_dict, val in shapes:
+            if val != 1:
+                continue
+            try:
+                geom = shape(geom_dict)
+                if geom.area < 1e-10:
+                    continue
+                if simplify_tolerance > 0:
+                    geom = geom.simplify(simplify_tolerance, preserve_topology=True)
+                polygons.append(geom)
+            except Exception:
+                continue
+
+        if not polygons:
+            continue
+
+        # Merge overlapping/adjacent polygons of the same class
+        try:
+            merged = unary_union(polygons)
+        except Exception:
+            merged = polygons[0] if polygons else None
+
+        if merged is None or merged.is_empty:
+            continue
+
+        # Handle MultiPolygon — emit one feature per polygon
+        if merged.geom_type == "MultiPolygon":
+            geom_list = list(merged.geoms)
+        else:
+            geom_list = [merged]
+
+        for geom in geom_list:
+            if geom.is_empty:
+                continue
+            feature = {
+                "type": "Feature",
+                "properties": {
+                    "layer_type": layer_type,
+                    "label": label,
+                    "confidence": round(confidence, 4),
+                    "last_updated": now,
+                },
+                "geometry": mapping(geom),
+            }
+            features.append(feature)
+
+    return features
+
+
+def damage_mask_to_features(
+    mask: np.ndarray,
+    bbox: tuple[float, float, float, float],
+    damage_confidence: float,
+) -> list[dict]:
+    """
+    Convenience wrapper for the 3-class damage model output.
+    Classes: 0=no_damage, 1=minor_damage, 2=destroyed
+    """
+    return mask_to_geojson_features(
+        mask=mask,
+        bbox=bbox,
+        layer_type="damage_zone",
+        class_labels={1: "minor_damage", 2: "destroyed"},
+        confidence=damage_confidence,
+    )
+
+
+def flood_mask_to_features(
+    mask: np.ndarray,
+    bbox: tuple[float, float, float, float],
+    flood_confidence: float,
+) -> list[dict]:
+    """
+    Convenience wrapper for the binary flood segmentation model.
+    Classes: 0=clear, 1=flooded
+    """
+    return mask_to_geojson_features(
+        mask=mask,
+        bbox=bbox,
+        layer_type="flood_zone",
+        class_labels={1: "flooded"},
+        confidence=flood_confidence,
+    )
+
+
+def landslide_mask_to_features(
+    mask: np.ndarray,
+    bbox: tuple[float, float, float, float],
+    landslide_confidence: float,
+) -> list[dict]:
+    """
+    Convenience wrapper for the binary landslide segmentation model.
+    Classes: 0=clear, 1=landslide_hazard
+    """
+    return mask_to_geojson_features(
+        mask=mask,
+        bbox=bbox,
+        layer_type="landslide_zone",
+        class_labels={1: "landslide_hazard"},
+        confidence=landslide_confidence,
+    )
+
+
+def _fallback_bbox_feature(
+    bbox: tuple,
+    layer_type: str,
+    label: str,
+    confidence: float,
+) -> list[dict]:
+    """Fallback: return the full bbox as a polygon if shapely/rasterio unavailable."""
+    min_lng, min_lat, max_lng, max_lat = bbox
+    now = datetime.now(timezone.utc).isoformat()
+    return [{
+        "type": "Feature",
+        "properties": {
+            "layer_type": layer_type,
+            "label": label,
+            "confidence": round(confidence, 4),
+            "last_updated": now,
+            "_note": "fallback_bbox — rasterio/shapely unavailable",
+        },
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+                [min_lng, min_lat],
+                [max_lng, min_lat],
+                [max_lng, max_lat],
+                [min_lng, max_lat],
+                [min_lng, min_lat],
+            ]],
+        },
+    }]
+
+================================================================================
+File: backend\core\osm_overlay.py
+================================================================================
+
+"""
+osm_overlay.py — OSM building footprint fetch with mandatory pre-caching.
+
+OSM Overpass API can take 5-15 minutes for a fresh fetch.
+Strategy:
+  1. Always check local cache file first (instant).
+  2. If cache miss, fetch from Overpass and write to cache.
+  3. Spatial-join the damage mask polygons onto building footprints
+     to assign per-building damage levels.
+
+Cache files live in: backend/fixtures/osm_cache/
+Named by bbox hash so each unique area gets its own cache file.
+"""
+import json
+import hashlib
+import logging
+from pathlib import Path
+from datetime import datetime, timezone
+from typing import Optional
+
+logger = logging.getLogger(__name__)
+
+# Cache directory — committed to repo for the demo bbox(es)
+CACHE_DIR = Path(__file__).resolve().parent.parent / "fixtures" / "osm_cache"
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+# Demo bbox — Kedarnath area (Uttarakhand landslide/flood reference site)
+DEMO_BBOX_KEDARNATH = (79.0469, 30.7146, 79.0869, 30.7546)  # (min_lng, min_lat, max_lng, max_lat)
+
+# Demo bbox — Assam flood region (Nagaon district)
+DEMO_BBOX_ASSAM = (92.63, 26.32, 92.70, 26.39)
+
+
+def _bbox_cache_key(bbox: tuple[float, float, float, float]) -> str:
+    """Generate a stable filename key from a bounding box."""
+    key = f"{bbox[0]:.4f}_{bbox[1]:.4f}_{bbox[2]:.4f}_{bbox[3]:.4f}"
+    return hashlib.md5(key.encode()).hexdigest()[:12]
+
+
+def _cache_path(bbox: tuple) -> Path:
+    return CACHE_DIR / f"buildings_{_bbox_cache_key(bbox)}.geojson"
+
+
+def load_cached_buildings(bbox: tuple) -> Optional[dict]:
+    """Load pre-cached OSM buildings GeoJSON if available."""
+    path = _cache_path(bbox)
+    if path.exists():
+        logger.info(f"[OSM] Cache hit: {path.name}")
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return None
+
+
+def save_buildings_cache(bbox: tuple, geojson: dict) -> None:
+    """Save fetched OSM data to local cache."""
+    path = _cache_path(bbox)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(geojson, f)
+    logger.info(f"[OSM] Cache written: {path.name} ({len(geojson.get('features', []))} buildings)")
+
+
+def fetch_buildings_overpass(bbox: tuple[float, float, float, float]) -> dict:
+    """
+    Fetch building footprints from Overpass API.
+    bbox: (min_lng, min_lat, max_lng, max_lat)
+    WARNING: this can take 5-15 minutes on cold cache. Always try load_cached_buildings() first.
+    """
+    import requests
+
+    min_lng, min_lat, max_lng, max_lat = bbox
+    # Overpass uses (south, west, north, east)
+    overpass_bbox = f"{min_lat},{min_lng},{max_lat},{max_lng}"
+
+    query = f"""
+    [out:json][timeout:120];
+    (
+      way["building"]({overpass_bbox});
+      relation["building"]({overpass_bbox});
+    );
+    out body geom;
+    """
+
+    url = "https://overpass-api.de/api/interpreter"
+    logger.info(f"[OSM] Fetching from Overpass for bbox {bbox} — this may take several minutes...")
+
+    headers = {
+        "User-Agent": "DISHA-DisasterResponse-SIH2026/1.0",
+        "Accept": "application/json"
+    }
+
+    try:
+        resp = requests.post(url, data={"data": query}, headers=headers, timeout=180)
+        resp.raise_for_status()
+        osm_data = resp.json()
+    except Exception as e:
+        logger.error(f"[OSM] Overpass fetch failed: {e}")
+        return {"type": "FeatureCollection", "features": []}
+
+    features = []
+    for element in osm_data.get("elements", []):
+        if element["type"] == "way" and "geometry" in element:
+            coords = [[pt["lon"], pt["lat"]] for pt in element["geometry"]]
+            if len(coords) < 4:
+                continue
+            if coords[0] != coords[-1]:
+                coords.append(coords[0])  # close ring
+
+            tags = element.get("tags", {})
+            feature = {
+                "type": "Feature",
+                "properties": {
+                    "osm_id": f"way/{element['id']}",
+                    "building": tags.get("building", "yes"),
+                    "name": tags.get("name", ""),
+                    "amenity": tags.get("amenity", ""),
+                    "layer_type": "osm_building",
+                },
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [coords],
+                },
+            }
+            features.append(feature)
+
+    geojson = {"type": "FeatureCollection", "features": features}
+    logger.info(f"[OSM] Fetched {len(features)} buildings from Overpass")
+    return geojson
+
+
+def get_buildings(bbox: tuple[float, float, float, float], allow_fetch: bool = True) -> dict:
+    """
+    Get OSM buildings for a bbox. Always checks cache first.
+    If cache miss and allow_fetch=True, fetches from Overpass (slow!).
+    If cache miss and allow_fetch=False, returns empty FeatureCollection.
+    """
+    cached = load_cached_buildings(bbox)
+    if cached is not None:
+        return cached
+
+    if not allow_fetch:
+        logger.warning(f"[OSM] No cache for bbox {bbox} and fetch disabled — returning empty")
+        return {"type": "FeatureCollection", "features": []}
+
+    logger.warning(f"[OSM] No cache found — fetching from Overpass (SLOW). Pre-cache with: python -m backend.core.osm_overlay prefetch")
+    data = fetch_buildings_overpass(bbox)
+    if data["features"]:
+        save_buildings_cache(bbox, data)
+    return data
+
+
+def overlay_damage_on_buildings(
+    damage_features: list[dict],
+    buildings_geojson: dict,
+) -> list[dict]:
+    """
+    Spatially join damage polygons onto OSM building footprints.
+    Each building gets a damage_level property: 'none' | 'minor_damage' | 'destroyed'
+
+    Returns a list of GeoJSON Features (one per building that has damage).
+    Buildings with no damage overlap are omitted to keep the output clean.
+    """
+    if not buildings_geojson.get("features"):
+        return []
+    if not damage_features:
+        return []
+
+    try:
+        import geopandas as gpd
+        from shapely.geometry import shape
+    except ImportError:
+        logger.error("[OSM] geopandas/shapely not available — skipping building overlay")
+        return []
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Build GeoDataFrame for buildings
+    try:
+        buildings_gdf = gpd.GeoDataFrame.from_features(buildings_geojson["features"], crs="EPSG:4326")
+    except Exception as e:
+        logger.error(f"[OSM] Failed to build buildings GDF: {e}")
+        return []
+
+    if buildings_gdf.empty:
+        return []
+
+    # Build GeoDataFrame for damage zones (only minor/destroyed classes)
+    damage_gdf_rows = []
+    for feat in damage_features:
+        props = feat.get("properties", {})
+        label = props.get("label", "")
+        if label not in ("minor_damage", "destroyed"):
+            continue
+        try:
+            geom = shape(feat["geometry"])
+            damage_gdf_rows.append({"label": label, "confidence": props.get("confidence", 0.0), "geometry": geom})
+        except Exception:
+            continue
+
+    if not damage_gdf_rows:
+        return []
+
+    damage_gdf = gpd.GeoDataFrame(damage_gdf_rows, crs="EPSG:4326")
+
+    # Spatial join: find which buildings intersect which damage zones
+    try:
+        joined = gpd.sjoin(buildings_gdf, damage_gdf[["label", "confidence", "geometry"]], how="left", predicate="intersects")
+    except Exception as e:
+        logger.error(f"[OSM] Spatial join failed: {e}")
+        return []
+
+    # For buildings hit by multiple damage zones, take worst label
+    label_priority = {"destroyed": 2, "minor_damage": 1, "none": 0}
+
+    result_features = []
+    seen_osm_ids = set()
+
+    for osm_id, group in joined.groupby("osm_id"):
+        if osm_id in seen_osm_ids:
+            continue
+        seen_osm_ids.add(osm_id)
+
+        # Find worst damage label for this building
+        best_label = "none"
+        best_conf = 0.0
+        for _, row in group.iterrows():
+            lbl = row.get("label", "none") if not (hasattr(row, "isna") and row.isna().get("label", False)) else "none"
+            if lbl and label_priority.get(lbl, 0) > label_priority.get(best_label, 0):
+                best_label = lbl
+                best_conf = float(row.get("confidence", 0.0))
+
+        if best_label == "none":
+            continue  # skip undamaged buildings
+
+        # Get building geometry
+        building_rows = buildings_gdf[buildings_gdf["osm_id"] == osm_id]
+        if building_rows.empty:
+            continue
+
+        building_row = building_rows.iloc[0]
+        try:
+            from shapely.geometry import mapping
+            geom = mapping(building_row.geometry)
+        except Exception:
+            continue
+
+        feature = {
+            "type": "Feature",
+            "properties": {
+                "layer_type": "building_damage",
+                "osm_id": osm_id,
+                "damage_level": best_label,
+                "confidence": round(best_conf, 4),
+                "building_type": building_row.get("building", "yes"),
+                "name": building_row.get("name", ""),
+                "last_updated": now,
+            },
+            "geometry": geom,
+        }
+        result_features.append(feature)
+
+    logger.info(f"[OSM] Building overlay: {len(result_features)} damaged buildings identified")
+    return result_features
+
+
+# ─── CLI prefetch tool ────────────────────────────────────────────────────────
+
+def prefetch_demo_areas():
+    """
+    Pre-fetch and cache OSM data for all known demo areas.
+    Run this ONCE before the demo:
+        python -m backend.core.osm_overlay
+    Takes ~10-15 min total but only needs to run once.
+    """
+    demo_areas = [
+        ("Kedarnath (Uttarakhand)", DEMO_BBOX_KEDARNATH),
+        ("Assam Flood Region (Nagaon)", DEMO_BBOX_ASSAM),
+    ]
+    for name, bbox in demo_areas:
+        print(f"\n[Prefetch] {name} — bbox {bbox}")
+        cached = load_cached_buildings(bbox)
+        if cached:
+            print(f"  [OK] Already cached ({len(cached.get('features', []))} buildings)")
+            continue
+        print(f"  [WAIT] Fetching from Overpass (may take several minutes)...")
+        data = fetch_buildings_overpass(bbox)
+        if data["features"]:
+            save_buildings_cache(bbox, data)
+            print(f"  [OK] Cached {len(data['features'])} buildings")
+        else:
+            print(f"  [WARN] No buildings returned — check your internet connection")
+
+if __name__ == "__main__":
+    import sys
+    logging.basicConfig(level=logging.INFO)
+    print("DISHA — OSM Cache Prefetch Tool")
+    print("=" * 40)
+    prefetch_demo_areas()
+    print("\n[OK] Done. Cache files saved to backend/fixtures/osm_cache/")
+
+================================================================================
+File: backend\core\pipeline.py
+================================================================================
+
+"""
+pipeline.py — Master orchestration for the DISHA COP pipeline.
+
+Runs all 3 models in parallel, converts masks to GeoJSON, fetches buildings,
+overlays damage on OSM footprints. Returns a structured PipelineResult.
+
+Two modes:
+  - demo_mode=True  → returns pre-cached fixture from backend/fixtures/demo_result.json
+  - demo_mode=False → runs live inference (requires .onnx models + image bytes)
+"""
+import asyncio
+import io
+import json
+import logging
+import numpy as np
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Optional
+
+logger = logging.getLogger(__name__)
+
+FIXTURES_DIR = Path(__file__).resolve().parent.parent / "fixtures"
+DEMO_RESULT_PATH = FIXTURES_DIR / "demo_result.json"
+
+
+@dataclass
+class ModelResult:
+    mask: Optional[np.ndarray] = None     # [H, W] integer mask
+    confidence: float = 0.0
+    features: list[dict] = field(default_factory=list)  # GeoJSON features from mask
+
+
+@dataclass
+class PipelineResult:
+    damage: ModelResult = field(default_factory=ModelResult)
+    flood: ModelResult = field(default_factory=ModelResult)
+    landslide: ModelResult = field(default_factory=ModelResult)
+    building_damage_features: list[dict] = field(default_factory=list)
+    red_zone_features: list[dict] = field(default_factory=list)
+    evac_site_features: list[dict] = field(default_factory=list)
+    route_features: list[dict] = field(default_factory=list)
+    tower_features: list[dict] = field(default_factory=list)
+    summary: dict = field(default_factory=dict)
+    duration_ms: float = 0.0
+    demo_mode: bool = False
+    error: Optional[str] = None
+
+
+def _preprocess_image(image_bytes: bytes, target_size: tuple[int, int] = (512, 512)) -> np.ndarray:
+    """
+    Decode image bytes → normalize → return CHW float32 tensor shape [1, 3, H, W].
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        raise ImportError("Pillow required: pip install Pillow")
+
+    img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    img = img.resize(target_size, Image.BILINEAR)
+    arr = np.array(img, dtype=np.float32) / 255.0
+
+    # ImageNet normalization
+    mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+    std  = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+    arr = (arr - mean) / std
+
+    # HWC → CHW → NCHW
+    arr = arr.transpose(2, 0, 1)[np.newaxis, ...]
+    return arr
+
+
+def _mask_from_logits(logits: np.ndarray, binary: bool = False) -> np.ndarray:
+    """
+    Convert raw ONNX logits to an integer class mask.
+    - Multi-class (damage, 3 classes): argmax over channel dim
+    - Binary (flood, landslide): sigmoid threshold at 0.5
+    """
+    if logits is None:
+        return np.zeros((512, 512), dtype=np.int32)
+
+    if binary:
+        # logits shape: [1, 1, H, W] or [1, H, W]
+        squeezed = logits.squeeze()
+        prob = 1.0 / (1.0 + np.exp(-squeezed))  # sigmoid
+        return (prob > 0.5).astype(np.int32)
+    else:
+        # logits shape: [1, C, H, W]
+        if logits.ndim == 4:
+            return np.argmax(logits[0], axis=0).astype(np.int32)
+        return np.argmax(logits, axis=0).astype(np.int32)
+
+
+async def _run_damage(pre_bytes: bytes, post_bytes: bytes, bbox: tuple) -> ModelResult:
+    """Run Siamese damage model. Needs pre + post image pair."""
+    from .inference import engine
+    from .mask_to_geojson import damage_mask_to_features
+
+    try:
+        pre_tensor  = _preprocess_image(pre_bytes,  (512, 512))
+        post_tensor = _preprocess_image(post_bytes, (512, 512))
+        inputs = {"pre_image": pre_tensor, "post_image": post_tensor}
+        logits, conf = await engine.run_async("damage", inputs)
+
+        if logits is None:
+            return ModelResult()
+
+        mask = _mask_from_logits(logits, binary=False)
+        confidence = conf.score if conf else 0.0
+        features = damage_mask_to_features(mask, bbox, confidence)
+        return ModelResult(mask=mask, confidence=confidence, features=features)
+    except Exception as e:
+        logger.error(f"[Pipeline] Damage model error: {e}")
+        return ModelResult()
+
+
+async def _run_flood(image_bytes: bytes, bbox: tuple) -> ModelResult:
+    """Run SegFormer flood model. Single image input."""
+    from .inference import engine
+    from .mask_to_geojson import flood_mask_to_features
+
+    try:
+        tensor = _preprocess_image(image_bytes, (224, 224))
+        inputs = {"pixel_values": tensor}
+        logits, conf = await engine.run_async("flood", inputs)
+
+        if logits is None:
+            return ModelResult()
+
+        mask = _mask_from_logits(logits, binary=True)
+        confidence = conf.score if conf else 0.0
+        features = flood_mask_to_features(mask, bbox, confidence)
+        return ModelResult(mask=mask, confidence=confidence, features=features)
+    except Exception as e:
+        logger.error(f"[Pipeline] Flood model error: {e}")
+        return ModelResult()
+
+
+async def _run_landslide(image_bytes: bytes, bbox: tuple) -> ModelResult:
+    """Run ResNet50 U-Net landslide model. Single image input."""
+    from .inference import engine
+    from .mask_to_geojson import landslide_mask_to_features
+
+    try:
+        tensor = _preprocess_image(image_bytes, (512, 512))
+        inputs = {"input": tensor}
+        logits, conf = await engine.run_async("landslide", inputs)
+
+        if logits is None:
+            return ModelResult()
+
+        mask = _mask_from_logits(logits, binary=True)
+        confidence = conf.score if conf else 0.0
+        features = landslide_mask_to_features(mask, bbox, confidence)
+        return ModelResult(mask=mask, confidence=confidence, features=features)
+    except Exception as e:
+        logger.error(f"[Pipeline] Landslide model error: {e}")
+        return ModelResult()
+
+
+def _lat_lng_to_bbox(lat: float, lng: float, radius_km: float) -> tuple[float, float, float, float]:
+    """Convert center point + radius to (min_lng, min_lat, max_lng, max_lat)."""
+    # Rough approximation: 1 degree lat ≈ 111 km
+    delta_lat = radius_km / 111.0
+    delta_lng = radius_km / (111.0 * abs(np.cos(np.radians(lat))) + 1e-9)
+    return (
+        round(lng - delta_lng, 6),
+        round(lat - delta_lat, 6),
+        round(lng + delta_lng, 6),
+        round(lat + delta_lat, 6),
+    )
+
+
+async def run_full_pipeline(
+    post_image_bytes: bytes,
+    lat: float,
+    lng: float,
+    radius_km: float = 2.0,
+    pre_image_bytes: Optional[bytes] = None,
+    demo_mode: bool = False,
+) -> PipelineResult:
+    """
+    Master pipeline entry point.
+
+    Args:
+        post_image_bytes: Post-disaster satellite/drone image
+        lat, lng: Center of area of interest
+        radius_km: Analysis radius in km
+        pre_image_bytes: Pre-disaster image (required for damage model; optional otherwise)
+        demo_mode: If True, returns pre-cached fixture instantly
+
+    Returns:
+        PipelineResult with all layers populated
+    """
+    import time
+    t_start = time.monotonic()
+
+    # ── Demo Mode ─────────────────────────────────────────────────────────────
+    if demo_mode:
+        logger.info("[Pipeline] DEMO MODE — loading pre-cached result")
+        if DEMO_RESULT_PATH.exists():
+            with open(DEMO_RESULT_PATH, "r", encoding="utf-8") as f:
+                demo_data = json.load(f)
+            result = PipelineResult(demo_mode=True)
+            result.summary = demo_data.get("summary", {})
+            result.duration_ms = round((time.monotonic() - t_start) * 1000, 1)
+            # Attach features to result for cop_builder
+            result._raw_geojson = demo_data
+            return result
+        else:
+            logger.warning("[Pipeline] demo_result.json not found — falling back to live mode")
+
+    # ── Live Mode ─────────────────────────────────────────────────────────────
+    bbox = _lat_lng_to_bbox(lat, lng, radius_km)
+    logger.info(f"[Pipeline] Starting live inference | bbox={bbox}")
+
+    result = PipelineResult(demo_mode=False)
+
+    # Step 1: Run all 3 models in parallel
+    if pre_image_bytes:
+        damage_task = _run_damage(pre_image_bytes, post_image_bytes, bbox)
+    else:
+        async def _no_damage():
+            logger.warning("[Pipeline] No pre-image provided — skipping damage model")
+            return ModelResult()
+        damage_task = _no_damage()
+
+    flood_task     = _run_flood(post_image_bytes, bbox)
+    landslide_task = _run_landslide(post_image_bytes, bbox)
+
+    result.damage, result.flood, result.landslide = await asyncio.gather(
+        damage_task, flood_task, landslide_task
+    )
+
+    logger.info(
+        f"[Pipeline] Model confidences — "
+        f"damage={result.damage.confidence:.2f} "
+        f"flood={result.flood.confidence:.2f} "
+        f"landslide={result.landslide.confidence:.2f}"
+    )
+
+    # Step 2: OSM building overlay (cache-first — never blocks on Overpass during demo)
+    from .osm_overlay import get_buildings, overlay_damage_on_buildings
+
+    buildings_geojson = get_buildings(bbox, allow_fetch=False)  # cache-only during API call
+    result.building_damage_features = overlay_damage_on_buildings(
+        result.damage.features, buildings_geojson
+    )
+
+    result.duration_ms = round((time.monotonic() - t_start) * 1000, 1)
+    logger.info(f"[Pipeline] Complete in {result.duration_ms:.0f}ms")
+    return result
+
+================================================================================
+File: backend\core\scoring_types.py
+================================================================================
+
+from pydantic import BaseModel
+from typing import Literal, Dict, Optional
+from datetime import datetime
+
+class ModelConfidence(BaseModel):
+    score_type: Literal["model_confidence"] = "model_confidence"
+    score: float           # softmax/sigmoid output, 0.0-1.0
+    last_updated: datetime
+
+class RiskScore(BaseModel):
+    score_type: Literal["risk_score"] = "risk_score"
+    score: float
+    contributing_factors: Dict  # e.g., {"damage": {"weight": 0.4, "value": 0.8}, ...}
+    color_tier: Literal["red", "orange", "green"]
+    last_updated: datetime
+
+class RouteSuitabilityScore(BaseModel):
+    score_type: Literal["route_suitability_score"] = "route_suitability_score"
+    score: float
+    hazard_exposure_avoided_pct: float
+    added_distance_m: float
+    last_updated: datetime
+
+class RecommendationScore(BaseModel):
+    score_type: Literal["recommendation_score"] = "recommendation_score"
+    score: float
+    last_updated: datetime
+
+================================================================================
+File: backend\core\settings.py
+================================================================================
+
+from pydantic import BaseModel
+from typing import Literal
+
+class RiskFusionWeights(BaseModel):
+    """
+    Default weights derived from AHP-based multi-hazard literature.
+    Weights sum to 1.0. Team should validate against Assam ground truth.
+    """
+    damage_weight: float = 0.40    # Structural damage: highest immediate life risk
+    flood_weight: float = 0.35     # Flood extent: widespread but survivable
+    landslide_weight: float = 0.25 # Landslide: high severity but spatially limited
+
+class TerrainWeights(BaseModel):
+    slope_weight: float = 0.60     # Slope dominates landslide susceptibility (AHP)
+    elevation_weight: float = 0.40 # Low elevation = flood exposure
+
+class RelocationTierThresholds(BaseModel):
+    immediate_threshold: float = 0.70   # risk_score >= 0.70 -> Immediate
+    short_term_threshold: float = 0.40  # 0.40-0.70 -> Short-term
+    # below 0.40 -> Medium-term
+
+class CellTowerDeadZoneConfig(BaseModel):
+    overlap_mode: Literal["centroid", "buffer_m"] = "centroid"
+    buffer_m: float = 100.0  # only used if overlap_mode == "buffer_m"
+
+class ScoringThresholds(BaseModel):
+    red_zone_red: float = 0.70
+    red_zone_orange: float = 0.40
+
+class AppSettings(BaseModel):
+    risk_fusion: RiskFusionWeights = RiskFusionWeights()
+    terrain: TerrainWeights = TerrainWeights()
+    relocation_tiers: RelocationTierThresholds = RelocationTierThresholds()
+    cell_tower: CellTowerDeadZoneConfig = CellTowerDeadZoneConfig()
+    scoring: ScoringThresholds = ScoringThresholds()
+
+# Singleton
+_settings = AppSettings()
+
+def get_settings() -> AppSettings:
+    return _settings
+
+def update_settings(new: AppSettings) -> AppSettings:
+    global _settings
+    _settings = new
+    return _settings
+
+================================================================================
+File: dashboard\cop.html
+================================================================================
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DISHA — Common Operational Picture</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #090a0f;
+      --panel: rgba(18, 20, 28, 0.85);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #e2e8f0;
+      --text-dim: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #10b981;
+      
+      --layer-flood: rgba(59, 130, 246, 0.4);
+      --layer-landslide: rgba(168, 85, 247, 0.4);
+      --layer-damage: rgba(239, 68, 68, 0.4);
+      --layer-redzone: rgba(244, 63, 94, 0.2);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      height: 60px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      justify-content: space-between;
+      z-index: 1000;
+    }
+    .brand { font-weight: 700; font-size: 18px; letter-spacing: 1px; }
+    .brand span { color: var(--text-dim); font-weight: 400; font-size: 14px; margin-left: 8px; }
+    
+    .controls { display: flex; gap: 16px; align-items: center; }
+    .btn {
+      background: var(--accent); color: #fff;
+      border: none; padding: 8px 16px; border-radius: 6px;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      transition: background 0.2s; display: flex; align-items: center; gap: 6px;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .btn:disabled { background: #334155; color: #94a3b8; cursor: not-allowed; }
+    .btn.outline { background: transparent; border: 1px solid var(--border); }
+    .btn.outline:hover { background: rgba(255,255,255,0.05); }
+
+    .toggle-group {
+      display: flex; background: rgba(255,255,255,0.05);
+      border-radius: 6px; overflow: hidden; border: 1px solid var(--border);
+    }
+    .toggle-group label {
+      padding: 6px 12px; font-size: 12px; cursor: pointer;
+      border-right: 1px solid var(--border);
+    }
+    .toggle-group label:last-child { border-right: none; }
+    .toggle-group input:checked + span { color: var(--accent); font-weight: 600; }
+    .toggle-group input { display: none; }
+
+    /* MAIN LAYOUT */
+    .main-area { display: flex; flex: 1; height: calc(100vh - 60px); position: relative; }
+    
+    /* MAP */
+    #map { flex: 1; height: 100%; background: #1a1a24; z-index: 1; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 320px; background: var(--bg);
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      z-index: 2; box-shadow: -4px 0 24px rgba(0,0,0,0.5);
+    }
+    .panel-section {
+      padding: 20px; border-bottom: 1px solid var(--border);
+    }
+    .panel-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--text-dim); margin-bottom: 16px; font-weight: 600;
+    }
+
+    /* SUMMARY STATS */
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat-box {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 6px; padding: 12px; text-align: center;
+    }
+    .stat-val { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .stat-lbl { font-size: 11px; color: var(--text-dim); }
+    .val-red { color: var(--danger); }
+    .val-orange { color: var(--warning); }
+    .val-green { color: var(--success); }
+
+    /* LAYER TOGGLES */
+    .layer-list { display: flex; flex-direction: column; gap: 10px; }
+    .layer-item {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: var(--text);
+    }
+    .layer-item input[type="checkbox"] { accent-color: var(--accent); }
+    .color-swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+    /* UPLOAD MODAL */
+    .modal-overlay {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8); z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px); opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 12px; width: 440px; padding: 24px;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+    }
+    .modal h2 { font-size: 18px; margin-bottom: 16px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+    .field input[type="text"], .field input[type="file"] {
+      width: 100%; padding: 10px; background: #12141c; border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 13px;
+    }
+    .field input[type="file"]::file-selector-button {
+      background: #334155; border: none; color: #fff; padding: 6px 12px;
+      border-radius: 4px; margin-right: 12px; cursor: pointer;
+    }
+
+    /* LOADING OVERLAY */
+    .loading-overlay {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7); z-index: 5000;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      backdrop-filter: blur(2px); opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .loading-overlay.active { opacity: 1; pointer-events: all; }
+    .spinner {
+      width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 1s linear infinite; margin-bottom: 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 14px; font-weight: 500; letter-spacing: 0.5px; }
+
+    /* POPUP OVERRIDES */
+    .leaflet-popup-content-wrapper {
+      background: var(--panel); color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; backdrop-filter: blur(8px);
+    }
+    .leaflet-popup-tip { background: var(--panel); border: 1px solid var(--border); }
+    .popup-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+    .popup-row { font-size: 11px; display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .popup-row span:first-child { color: var(--text-dim); }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      DISHA <span id="region-lbl">Common Operational Picture</span>
+    </div>
+    <div class="controls">
+      <div class="toggle-group">
+        <label><input type="radio" name="mode" value="demo" checked> <span>Demo Mode (Cached)</span></label>
+        <label><input type="radio" name="mode" value="live"> <span>Live Inference</span></label>
+      </div>
+      <button class="btn" onclick="openUploadModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        Analyze Area
+      </button>
+    </div>
+  </header>
+
+  <div class="main-area">
+    <div id="map"></div>
+    
+    <div class="sidebar">
+      <div class="panel-section">
+        <div class="panel-title">Situation Summary</div>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="stat-val val-red" id="stat-redzones">-</div>
+            <div class="stat-lbl">Red Zones</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val val-orange" id="stat-destroyed">-</div>
+            <div class="stat-lbl">Bldgs Destroyed</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val val-green" id="stat-evac">-</div>
+            <div class="stat-lbl">Evac Sites</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val val-red" id="stat-towers">-</div>
+            <div class="stat-lbl">Towers at Risk</div>
+          </div>
+        </div>
+        <div style="font-size: 11px; color: var(--text-dim); text-align: center; margin-top: 12px;" id="stat-time">
+          Awaiting analysis...
+        </div>
+      </div>
+
+      <div class="panel-section" style="flex: 1;">
+        <div class="panel-title">Active Layers</div>
+        <div class="layer-list">
+          <label class="layer-item">
+            <input type="checkbox" checked onchange="toggleLayer('red_zone', this.checked)">
+            <div class="color-swatch" style="background: var(--layer-redzone); border: 1px solid #f43f5e"></div>
+            Fused Risk (Red Zones)
+          </label>
+          <label class="layer-item">
+            <input type="checkbox" checked onchange="toggleLayer('building_damage', this.checked)">
+            <div class="color-swatch" style="background: #ef4444"></div>
+            Building Damage
+          </label>
+          <label class="layer-item">
+            <input type="checkbox" checked onchange="toggleLayer('flood_zone', this.checked)">
+            <div class="color-swatch" style="background: var(--layer-flood); border: 1px solid #3b82f6"></div>
+            Flood Extent
+          </label>
+          <label class="layer-item">
+            <input type="checkbox" checked onchange="toggleLayer('landslide_zone', this.checked)">
+            <div class="color-swatch" style="background: var(--layer-landslide); border: 1px solid #a855f7"></div>
+            Landslide Hazard
+          </label>
+          <label class="layer-item" style="margin-top: 8px;">
+            <input type="checkbox" checked onchange="toggleLayer('evac_site', this.checked)">
+            <div class="color-swatch" style="background: #10b981; border-radius: 50%;"></div>
+            Evacuation Sites
+          </label>
+          <label class="layer-item">
+            <input type="checkbox" checked onchange="toggleLayer('evac_route', this.checked)">
+            <div class="color-swatch" style="height: 3px; background: #3b82f6"></div>
+            Safe Routes
+          </label>
+          <label class="layer-item">
+            <input type="checkbox" checked onchange="toggleLayer('tower', this.checked)">
+            <div class="color-swatch" style="background: #f59e0b; border-radius: 50%;"></div>
+            Cell Towers
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loader">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loader-text">Running multi-model pipeline...</div>
+    </div>
+  </div>
+
+  <!-- Upload Modal -->
+  <div class="modal-overlay" id="uploadModal">
+    <div class="modal">
+      <h2>Analyze New Area</h2>
+      <div class="field">
+        <label>Center Coordinates (Lat, Lng)</label>
+        <input type="text" id="inp-coords" value="26.342, 92.651" placeholder="e.g. 26.342, 92.651">
+      </div>
+      <div class="field">
+        <label>Radius (km)</label>
+        <input type="text" id="inp-radius" value="2.0">
+      </div>
+      <div class="field">
+        <label>Post-Disaster Imagery</label>
+        <input type="file" id="inp-post" accept="image/*">
+      </div>
+      <div class="field">
+        <label>Pre-Disaster Imagery (Optional, for damage model)</label>
+        <input type="file" id="inp-pre" accept="image/*">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+        <button class="btn outline" onclick="closeUploadModal()">Cancel</button>
+        <button class="btn" onclick="submitAnalysis()">Run Analysis</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Initialize Map (Dark Theme)
+  const map = L.map('map', { zoomControl: false }).setView([26.342, 92.651], 13);
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+  
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(map);
+
+  // Store active GeoJSON layers
+  const mapLayers = {
+    building_damage: L.layerGroup().addTo(map),
+    flood_zone: L.layerGroup().addTo(map),
+    landslide_zone: L.layerGroup().addTo(map),
+    red_zone: L.layerGroup().addTo(map),
+    evac_site: L.layerGroup().addTo(map),
+    evac_route: L.layerGroup().addTo(map),
+    tower: L.layerGroup().addTo(map)
+  };
+
+  let currentGeoJSON = null;
+
+  // UI Functions
+  function openUploadModal() { document.getElementById('uploadModal').classList.add('active'); }
+  function closeUploadModal() { document.getElementById('uploadModal').classList.remove('active'); }
+  
+  function showLoader(text) {
+    document.getElementById('loader-text').innerText = text;
+    document.getElementById('loader').classList.add('active');
+  }
+  function hideLoader() { document.getElementById('loader').classList.remove('active'); }
+
+  function toggleLayer(layerName, isVisible) {
+    if (mapLayers[layerName]) {
+      if (isVisible) map.addLayer(mapLayers[layerName]);
+      else map.removeLayer(mapLayers[layerName]);
+    }
+  }
+
+  // Styles
+  function getFeatureStyle(feature) {
+    const props = feature.properties;
+    const type = props.layer_type;
+
+    if (type === 'red_zone') {
+      const colors = { red: '#f43f5e', orange: '#f59e0b', green: '#10b981' };
+      return { color: colors[props.color_tier], weight: 1, fillColor: colors[props.color_tier], fillOpacity: 0.2 };
+    }
+    if (type === 'flood_zone') return { color: '#3b82f6', weight: 1, fillColor: '#3b82f6', fillOpacity: 0.4 };
+    if (type === 'landslide_zone') return { color: '#a855f7', weight: 1, fillColor: '#a855f7', fillOpacity: 0.4 };
+    if (type === 'building_damage') {
+      const color = props.damage_level === 'destroyed' ? '#ef4444' : '#f59e0b';
+      return { color: color, weight: 1, fillColor: color, fillOpacity: 0.8 };
+    }
+    if (type === 'evac_route') return { color: '#3b82f6', weight: 3, dashArray: '5, 5' };
+    return {};
+  }
+
+  function createPopup(feature) {
+    const p = feature.properties;
+    let html = `<div class="popup-title">${p.layer_type.replace('_', ' ').toUpperCase()}</div>`;
+    
+    for (const [k, v] of Object.entries(p)) {
+      if (['layer_type', 'geometry', 'last_updated', 'contributing_factors'].includes(k)) continue;
+      html += `<div class="popup-row"><span>${k.replace('_', ' ')}</span><span>${v}</span></div>`;
+    }
+    
+    if (p.confidence) html += `<div class="popup-row"><span>AI Confidence</span><span>${(p.confidence*100).toFixed(1)}%</span></div>`;
+    if (p.risk_score) html += `<div class="popup-row"><span>Risk Score</span><span>${(p.risk_score*100).toFixed(1)}%</span></div>`;
+    
+    return html;
+  }
+
+  function renderData(data) {
+    // Clear existing
+    Object.values(mapLayers).forEach(lg => lg.clearLayers());
+    currentGeoJSON = data;
+
+    // Update stats
+    if (data.summary) {
+      document.getElementById('stat-redzones').innerText = data.summary.red_zones_count || 0;
+      document.getElementById('stat-destroyed').innerText = data.summary.buildings_destroyed || 0;
+      document.getElementById('stat-evac').innerText = data.summary.evac_sites_available || 0;
+      document.getElementById('stat-towers').innerText = data.summary.towers_at_risk || 0;
+      document.getElementById('stat-time').innerText = `Updated: ${new Date(data.summary.last_updated).toLocaleTimeString()} (${data.summary.pipeline_duration_ms}ms)`;
+      if (data.summary.region) document.getElementById('region-lbl').innerText = `· ${data.summary.region}`;
+    }
+
+    // Add features
+    if (data.features) {
+      L.geoJSON(data, {
+        style: getFeatureStyle,
+        pointToLayer: function(feature, latlng) {
+          const type = feature.properties.layer_type;
+          if (type === 'evac_site') {
+            return L.circleMarker(latlng, { radius: 6, color: '#000', weight: 1, fillColor: '#10b981', fillOpacity: 1 });
+          }
+          if (type === 'tower') {
+            const color = feature.properties.status === 'at_risk' ? '#ef4444' : '#f59e0b';
+            return L.circleMarker(latlng, { radius: 5, color: '#000', weight: 1, fillColor: color, fillOpacity: 1 });
+          }
+          return L.marker(latlng);
+        },
+        onEachFeature: function(feature, layer) {
+          layer.bindPopup(createPopup(feature));
+          const type = feature.properties.layer_type;
+          if (mapLayers[type]) mapLayers[type].addLayer(layer);
+        }
+      });
+      
+      // Auto-fit bounds if we have red zones or flood zones
+      const boundsFeatures = data.features.filter(f => ['red_zone', 'flood_zone'].includes(f.properties.layer_type));
+      if (boundsFeatures.length > 0) {
+        const boundsLayer = L.geoJSON(boundsFeatures);
+        map.fitBounds(boundsLayer.getBounds(), { padding: [50, 50] });
+      }
+    }
+  }
+
+  // API Call
+  async function submitAnalysis() {
+    closeUploadModal();
+    const isDemo = document.querySelector('input[name="mode"]:checked').value === 'demo';
+    showLoader(isDemo ? "Loading cached analysis..." : "Running AI pipeline...");
+
+    try {
+      const url = 'http://localhost:8000/analyze/';
+      let response;
+
+      if (isDemo) {
+        // Fast path for demo
+        response = await fetch('http://localhost:8000/analyze/demo');
+      } else {
+        const coords = document.getElementById('inp-coords').value.split(',');
+        const lat = parseFloat(coords[0].trim());
+        const lng = parseFloat(coords[1].trim());
+        const radius = document.getElementById('inp-radius').value;
+        const postFile = document.getElementById('inp-post').files[0];
+        const preFile = document.getElementById('inp-pre').files[0];
+
+        if (!postFile) throw new Error("Post-disaster imagery required for live inference");
+
+        const formData = new FormData();
+        formData.append('lat', lat);
+        formData.append('lng', lng);
+        formData.append('radius_km', radius);
+        formData.append('demo_mode', 'false');
+        formData.append('post_image', postFile);
+        if (preFile) formData.append('pre_image', preFile);
+
+        response = await fetch(url, { method: 'POST', body: formData });
+      }
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      renderData(data);
+
+    } catch (err) {
+      alert("Analysis failed: " + err.message);
+    } finally {
+      hideLoader();
+    }
+  }
+
+  // Initial load
+  submitAnalysis(); // Load demo by default
+</script>
+
+</body>
+</html>
+
+================================================================================
+File: dashboard\index.html
+================================================================================
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Red Zone Ops Console — Ultimate Test Harness</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0E13;
+    --bg-elevated:#0D1117;
+    --panel:#131A22;
+    --panel-2:#0F151C;
+    --border:#212B36;
+    --border-soft:#1A222C;
+    --text:#E7ECF2;
+    --text-dim:#8592A0;
+    --text-faint:#4B5A68;
+
+    --sig-see:#5B8DEF;      /* SEE */
+    --sig-assess:#F2A93B;   /* ASSESS */
+    --sig-route:#4FD1C5;    /* ROUTE */
+    --sig-connect:#A78BFA;  /* CONNECT */
+    --sig-synth:#EC4899;    /* SYNTHESIZE */
+
+    --risk-high:#E5484D;
+    --risk-med:#F2A93B;
+    --risk-low:#34D399;
+
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --sans:'Inter', system-ui, sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);height:100%;}
+  body{display:flex;flex-direction:column;min-height:100vh;font-size:14px;overflow:hidden;}
+
+  ::selection{background:var(--sig-route);color:#04120F;}
+
+  /* ---------- TOP BAR ---------- */
+  header.topbar{
+    display:flex;align-items:center;gap:16px;
+    padding:10px 18px;background:var(--bg-elevated);
+    border-bottom:1px solid var(--border);
+    flex-wrap:wrap;z-index:1000;
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--mono);letter-spacing:.04em;}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--risk-low);box-shadow:0 0 0 3px rgba(52,211,153,.15);animation:pulse 2.2s infinite;}
+  .brand .dot.off{background:var(--risk-high);box-shadow:0 0 0 3px rgba(229,72,77,.15);animation:none;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+  .brand strong{font-size:13px;font-weight:600;}
+  .brand span.sub{color:var(--text-faint);font-size:11px;}
+
+  .conn-form{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap;}
+  .conn-form input{
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text);
+    font-family:var(--mono);font-size:12px;padding:7px 10px;border-radius:6px;
+    width:260px;outline:none;
+  }
+  .conn-form input:focus{border-color:var(--sig-route);}
+  .btn{
+    font-family:var(--sans);font-weight:600;font-size:12px;
+    background:var(--panel-2);color:var(--text);border:1px solid var(--border);
+    padding:7px 13px;border-radius:6px;cursor:pointer;transition:.15s;
+  }
+  .btn:hover{border-color:var(--sig-route);color:var(--sig-route);}
+  .btn.primary{background:var(--sig-route);border-color:var(--sig-route);color:#04120F;}
+  .btn.primary:hover{filter:brightness(1.08);color:#04120F;}
+  .conn-status{font-family:var(--mono);font-size:11px;color:var(--text-faint);}
+
+  /* ---------- LAYOUT ---------- */
+  .layout{display:flex;flex:1;min-height:0;}
+  @media (max-width:960px){.layout{flex-direction:column;}}
+
+  /* ---------- STAGE NAV ---------- */
+  nav.stages{
+    width:190px;flex-shrink:0;background:var(--bg-elevated);
+    border-right:1px solid var(--border);padding:14px 0;
+    display:flex;flex-direction:column;
+  }
+  @media (max-width:960px){nav.stages{width:100%;flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--border);}}
+
+  .stage-item{
+    display:flex;align-items:flex-start;gap:10px;padding:12px 16px;cursor:pointer;
+    border-left:2px solid transparent;transition:.15s;
+  }
+  .stage-item:hover{background:var(--panel-2);}
+  .stage-item.active{background:var(--panel);border-left-color:var(--stage-color);}
+  .stage-num{
+    font-family:var(--mono);font-size:11px;color:var(--text-faint);
+    width:20px;flex-shrink:0;padding-top:1px;
+  }
+  .stage-item.active .stage-num{color:var(--stage-color);}
+  .stage-label{display:flex;flex-direction:column;gap:2px;}
+  .stage-label .name{font-weight:600;font-size:13px;}
+  .stage-label .desc{font-size:11px;color:var(--text-faint);line-height:1.3;}
+  .stage-item.active .name{color:var(--stage-color);}
+
+  /* ---------- MAIN COLUMN ---------- */
+  main.center{flex:1;display:flex;flex-direction:column;min-width:0;}
+  .map-wrapper{position:relative;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
+  #map{flex:1;min-height:280px;background:#0d1117;}
+  .leaflet-container{background:#0d1117;font-family:var(--sans);}
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel); color: var(--text); border: 1px solid var(--border); }
+
+  /* ---------- STAGE PANEL ---------- */
+  .stage-panel{
+    background:var(--panel);border-top:1px solid var(--border);
+    padding:16px 18px;max-height:44vh;overflow-y:auto;flex-shrink:0;
+  }
+  .panel-title{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .panel-title .swatch{width:8px;height:8px;border-radius:2px;background:var(--stage-color);}
+  .panel-title h2{font-size:14px;margin:0;font-weight:700;}
+  .panel-title .stage-color-text{color:var(--stage-color);}
+  .panel-sub{color:var(--text-dim);font-size:12px;margin:2px 0 14px 18px;line-height:1.5;}
+
+  .endpoint-row{
+    display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;
+    background:var(--panel-2);border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;
+  }
+  .method-tag{
+    font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 7px;border-radius:4px;
+    letter-spacing:.03em;flex-shrink:0;
+  }
+  .method-tag.get{background:rgba(91,141,239,.15);color:var(--sig-see);}
+  .method-tag.post{background:rgba(52,211,153,.15);color:var(--risk-low);}
+  .endpoint-path{font-family:var(--mono);font-size:12px;color:var(--text);flex:1;min-width:140px;}
+  .endpoint-note{font-size:11px;color:var(--text-faint);width:100%;margin-top:2px;}
+
+  .field-grid{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);font-family:var(--mono);}
+  .field input{
+    background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);
+    font-family:var(--mono);font-size:12px;padding:7px 9px;border-radius:6px;outline:none;width:150px;
+  }
+  .field input:focus{border-color:var(--stage-color);}
+  .field.file-field input[type="file"]{
+    width:190px;font-size:11px;padding:6px;background:var(--bg-elevated);
+    border:1px dashed var(--border);color:var(--text-dim);cursor:pointer;
+  }
+  .field.file-field input[type="file"]::file-selector-button{
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text);
+    border-radius:4px;padding:3px 8px;font-family:var(--sans);font-size:10.5px;margin-right:8px;cursor:pointer;
+  }
+
+
+  .send-row{display:flex;align-items:center;gap:10px;margin-top:4px;}
+  .btn.send{background:var(--stage-color);border-color:var(--stage-color);color:#04120F;}
+  .btn.send:hover{filter:brightness(1.1);}
+  .hint{font-size:11px;color:var(--text-faint);}
+
+  /* ---------- SYNTHESIZE CARD ---------- */
+  .synth-card{
+    background:var(--panel-2);border:1px solid var(--border-soft);border-radius:8px;
+    padding:14px;margin-bottom:12px;
+  }
+  .synth-stat-row{display:flex;gap:20px;margin-bottom:8px;flex-wrap:wrap;}
+  .synth-stat{display:flex;flex-direction:column;}
+  .synth-stat-lbl{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;font-family:var(--mono);}
+  .synth-stat-val{font-size:18px;font-weight:600;color:var(--text);}
+  
+  /* ---------- SETTINGS OVERLAY ---------- */
+  .settings-btn{
+    position:absolute;bottom:20px;left:20px;width:40px;height:40px;
+    border-radius:50%;background:var(--panel);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:900;
+    box-shadow:0 4px 12px rgba(0,0,0,.3);transition:.2s;color:var(--text-dim);font-size:18px;
+  }
+  .settings-btn:hover{color:var(--text);border-color:var(--sig-synth);transform:rotate(30deg);}
+  
+  .settings-drawer{
+    position:absolute;top:0;left:-350px;width:320px;height:100%;
+    background:var(--bg-elevated);border-right:1px solid var(--border);
+    z-index:950;transition:left .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;
+    box-shadow:4px 0 24px rgba(0,0,0,.5);
+  }
+  .settings-drawer.open{left:0;}
+  .settings-head{
+    padding:16px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .settings-head h3{margin:0;font-size:14px;}
+  .close-btn{background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:20px;padding:0;}
+  .close-btn:hover{color:var(--text);}
+  
+  .settings-body{padding:16px;overflow-y:auto;flex:1;}
+  .settings-group{margin-bottom:20px;}
+  .settings-group h4{margin:0 0 10px 0;font-size:12px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+  
+  .slider-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .slider-lbl{width:80px;font-size:11px;color:var(--text);}
+  .slider-val{width:35px;font-family:var(--mono);font-size:11px;text-align:right;}
+  input[type=range]{flex:1;accent-color:var(--sig-synth);}
+  
+  .sum-row{display:flex;justify-content:flex-end;padding-top:6px;border-top:1px dashed var(--border-soft);margin-bottom:4px;}
+  .sum-val{font-family:var(--mono);font-size:11px;font-weight:700;}
+  .sum-val.error{color:var(--risk-high);}
+  .sum-val.ok{color:var(--risk-low);}
+
+  .settings-foot{padding:16px;border-top:1px solid var(--border);display:flex;gap:10px;}
+
+  /* ---------- RIGHT: RESPONSE CONSOLE ---------- */
+  aside.console{
+    width:380px;flex-shrink:0;background:var(--bg-elevated);
+    border-left:1px solid var(--border);display:flex;flex-direction:column;min-height:0;
+  }
+  @media (max-width:960px){aside.console{width:100%;border-left:none;border-top:1px solid var(--border);}}
+
+  .console-head{
+    padding:12px 16px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .console-head h3{margin:0;font-size:12px;font-family:var(--mono);letter-spacing:.04em;color:var(--text-dim);text-transform:uppercase;}
+  .console-actions{display:flex;gap:12px;align-items:center;}
+  .header-link{font-size:10.5px;color:var(--text-faint);cursor:pointer;font-family:var(--mono);user-select:none;}
+  .header-link:hover{color:var(--sig-route);}
+
+  .console-body{flex:1;overflow-y:auto;padding:14px 16px;}
+  .empty-state{color:var(--text-faint);font-size:12px;font-family:var(--mono);line-height:1.6;padding:20px 0;}
+
+  .resp-entry{border:1px solid var(--border-soft);border-radius:8px;margin-bottom:12px;overflow:hidden;background:var(--panel);}
+  .resp-entry-head{
+    display:flex;align-items:center;justify-content:space-between;padding:8px 11px;
+    background:var(--panel-2);border-bottom:1px solid var(--border-soft);
+  }
+  .resp-entry-path{font-family:var(--mono);font-size:11px;color:var(--text);}
+  .resp-entry-time{font-family:var(--mono);font-size:10px;color:var(--text-faint);}
+  .mock-flag{font-size:9.5px;font-family:var(--mono);color:var(--risk-med);background:rgba(242,169,59,.12);padding:2px 6px;border-radius:4px;margin-left:6px;}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 11px;}
+  .chip{
+    font-family:var(--mono);font-size:10.5px;padding:4px 8px;border-radius:5px;
+    display:flex;align-items:center;gap:5px;border:1px solid;
+  }
+  .chip .k{opacity:.7;}
+  .chip.model_confidence{color:var(--sig-see);border-color:rgba(91,141,239,.35);background:rgba(91,141,239,.08);}
+  .chip.risk_score{color:inherit;border-color:currentColor;background:rgba(255,255,255,.05);}
+  .chip.route_suitability_score{color:var(--sig-route);border-color:rgba(79,209,197,.35);background:rgba(79,209,197,.08);}
+  .chip.recommendation_score{color:var(--sig-connect);border-color:rgba(167,139,250,.35);background:rgba(167,139,250,.08);}
+  
+  .chip.risk-high{color:var(--risk-high);border-color:rgba(229,72,77,.4);background:rgba(229,72,77,.1);}
+  .chip.risk-med{color:var(--risk-med);border-color:rgba(242,169,59,.4);background:rgba(242,169,59,.1);}
+  .chip.risk-low{color:var(--risk-low);border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.1);}
+
+  .raw-json{
+    font-family:var(--mono);font-size:10.5px;color:var(--text-dim);
+    background:var(--bg);padding:10px 11px;white-space:pre-wrap;word-break:break-word;
+    border-top:1px solid var(--border-soft);max-height:200px;overflow-y:auto;
+  }
+
+  .override-row{display:flex;gap:6px;padding:0 11px 10px;}
+  .btn.override{font-size:10.5px;padding:5px 9px;}
+  .btn.override.correct:hover{border-color:var(--risk-low);color:var(--risk-low);}
+  .btn.override.incorrect:hover{border-color:var(--risk-high);color:var(--risk-high);}
+
+  footer.rules-strip{
+    padding:6px 18px;background:var(--bg-elevated);border-top:1px solid var(--border);
+    font-family:var(--mono);font-size:10px;color:var(--text-faint);display:flex;gap:18px;flex-wrap:wrap;z-index:1000;
+  }
+  footer.rules-strip strong{color:var(--text-dim);}
+
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--text-faint);}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="dot off" id="connDot"></div>
+    <div>
+      <strong>RED ZONE OPS CONSOLE</strong><br>
+      <span class="sub">SIH26191 · ultimate backend test harness</span>
+    </div>
+  </div>
+  <div class="conn-form">
+    <input type="text" id="baseUrl" placeholder="http://localhost:8000" value="http://localhost:8000">
+    <button class="btn primary" onclick="testConnection()">Connect</button>
+    <span class="conn-status" id="connStatus">offline (mocking)</span>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="stages" id="stageNav">
+    <!-- populated by JS -->
+  </nav>
+
+  <main class="center">
+    <div class="map-wrapper">
+      <div id="map"></div>
+      <div class="settings-btn" onclick="toggleSettings()" title="AHP Weight Settings">⚙</div>
+      
+      <div class="settings-drawer" id="settingsDrawer">
+        <div class="settings-head">
+          <h3>Risk Fusion Settings</h3>
+          <button class="close-btn" onclick="toggleSettings()">×</button>
+        </div>
+        <div class="settings-body">
+          <div class="settings-group">
+            <h4>AHP Weights (Must sum to 1.0)</h4>
+            <div class="slider-row">
+              <span class="slider-lbl">Damage</span>
+              <input type="range" id="w_dmg" min="0" max="1" step="0.01" value="0.5" oninput="updateSums()">
+              <span class="slider-val" id="val_dmg">0.50</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-lbl">Flood</span>
+              <input type="range" id="w_fld" min="0" max="1" step="0.01" value="0.25" oninput="updateSums()">
+              <span class="slider-val" id="val_fld">0.25</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-lbl">Landslide</span>
+              <input type="range" id="w_lnd" min="0" max="1" step="0.01" value="0.25" oninput="updateSums()">
+              <span class="slider-val" id="val_lnd">0.25</span>
+            </div>
+            <div class="sum-row">
+              <span class="sum-val" id="weight_sum">Sum: 1.00</span>
+            </div>
+          </div>
+          <div class="settings-group">
+            <h4>Thresholds</h4>
+            <div class="field" style="margin-bottom:8px">
+              <label>Immediate Relocation ≥</label>
+              <input type="number" id="th_imm" step="0.01" value="0.75" style="width:100%">
+            </div>
+            <div class="field">
+              <label>Short-term Relocation ≥</label>
+              <input type="number" id="th_short" step="0.01" value="0.50" style="width:100%">
+            </div>
+          </div>
+        </div>
+        <div class="settings-foot">
+          <button class="btn primary" style="flex:1" onclick="applySettings()">Apply</button>
+          <button class="btn" style="flex:1" onclick="resetSettings()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-panel" id="stagePanel">
+      <!-- populated by JS -->
+    </div>
+  </main>
+
+  <aside class="console">
+    <div class="console-head">
+      <h3>Response log</h3>
+      <div class="console-actions">
+        <span class="header-link" onclick="clearMapLayers()">clear map</span>
+        <span class="header-link" onclick="clearLog()">clear log</span>
+      </div>
+    </div>
+    <div class="console-body" id="consoleBody">
+      <div class="empty-state">// no requests sent yet</div>
+    </div>
+  </aside>
+</div>
+
+<footer class="rules-strip">
+  <span><strong>Score types:</strong> model_confidence · risk_score · route_suitability_score · recommendation_score</span>
+  <span><strong>Rule:</strong> every response must carry last_updated</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ============================================================
+   STAGE DEFINITIONS
+   ============================================================ */
+const STAGES = [
+  {
+    id: 'see', num: '01', name: 'SEE', colorHex: '#5B8DEF',
+    desc: 'Run inference models on imagery',
+    endpoints: [
+      { method:'POST', path:'/damage/', note:'Sends dummy tensor for test harness', fields:['pre_image:file','post_image:file','lat','lng'],
+        mock:{ type:'FeatureCollection', model_confidence:{score:0.81, last_updated:nowISO()}, features:[
+          {type:'Feature', properties:{damage_level:'minor', id:1}, geometry:{type:'Polygon', coordinates:[[[92.65,26.35],[92.66,26.35],[92.66,26.36],[92.65,26.36],[92.65,26.35]]]}}
+        ]} },
+      { method:'POST', path:'/flood-risk', note:'Sends dummy tensor for test harness', fields:['image:file','lat','lng'],
+        mock:{ type:'FeatureCollection', model_confidence:{score:0.93, last_updated:nowISO()}, features:[
+          {type:'Feature', properties:{id:2}, geometry:{type:'Polygon', coordinates:[[[92.67,26.32],[92.68,26.32],[92.68,26.33],[92.67,26.33],[92.67,26.32]]]}}
+        ]} },
+      { method:'POST', path:'/landslide-risk', note:'Sends dummy tensor for test harness', fields:['image:file','lat','lng'],
+        mock:{ type:'FeatureCollection', model_confidence:{score:0.77, last_updated:nowISO()}, features:[]} },
+    ]
+  },
+  {
+    id: 'assess', num: '02', name: 'ASSESS', colorHex: '#F2A93B',
+    desc: 'Risk fusion & site capacity evaluation',
+    endpoints: [
+      { method:'GET', path:'/red-zones', note:'Fused risk layer (polygons)', fields:[],
+        mock:{ type:'FeatureCollection', features:[
+          {type:'Feature', properties:{id:'RZ1', risk_score:0.85, color_tier:'red'}, geometry:{type:'Polygon', coordinates:[[[92.64,26.34],[92.67,26.34],[92.67,26.37],[92.64,26.37],[92.64,26.34]]]}},
+          {type:'Feature', properties:{id:'RZ2', risk_score:0.46, color_tier:'orange'}, geometry:{type:'Polygon', coordinates:[[[92.60,26.30],[92.62,26.30],[92.62,26.32],[92.60,26.32],[92.60,26.30]]]}}
+        ]} },
+      { method:'GET', path:'/evac-zones', note:'Ranked candidate sites', fields:[],
+        mock:{ type:'FeatureCollection', features:[
+          {type:'Feature', properties:{id:'EZ1', name:'Govt School', recommendation_score:0.88, capacity_persons:1200}, geometry:{type:'Point', coordinates:[92.655, 26.355]}},
+          {type:'Feature', properties:{id:'EZ2', name:'Stadium', recommendation_score:0.74, capacity_persons:3500}, geometry:{type:'Point', coordinates:[92.68, 26.34]}}
+        ]} },
+    ]
+  },
+  {
+    id: 'route', num: '03', name: 'ROUTE', colorHex: '#4FD1C5',
+    desc: 'Relocation assignment & hazard-aware pathing',
+    endpoints: [
+      { method:'GET', path:'/relocation-plan', note:'Assignment of habitations to sites', fields:[],
+        mock:{ assignments:[
+          {habitation_id:1, site_id:'EZ1', tier:'immediate', recommendation_score:0.91},
+          {habitation_id:2, site_id:'EZ2', tier:'short_term', recommendation_score:0.68},
+        ]} },
+      { method:'POST', path:'/route', note:'Hazard-aware routing', fields:['origin_lat','origin_lon','dest_lat','dest_lon'],
+        mock:{ type:'FeatureCollection', features:[
+          {type:'Feature', properties:{route_suitability_score:0.85}, geometry:{type:'LineString', coordinates:[[92.65,26.35],[92.68,26.34]]}}
+        ]} },
+    ]
+  },
+  {
+    id: 'connect', num: '04', name: 'CONNECT', colorHex: '#A78BFA',
+    desc: 'Cell tower operational status (dead-zones)',
+    endpoints: [
+      { method:'GET', path:'/towers', note:'Cell towers colored by status', fields:[],
+        mock:{ type:'FeatureCollection', features:[
+          {type:'Feature', properties:{operator:'Airtel', status:'potentially_offline'}, geometry:{type:'Point', coordinates:[92.65, 26.35]}},
+          {type:'Feature', properties:{operator:'Jio', status:'operational'}, geometry:{type:'Point', coordinates:[92.69, 26.31]}}
+        ]} },
+    ]
+  },
+  {
+    id: 'synth', num: '05', name: 'SYNTHESIZE', colorHex: '#EC4899',
+    desc: 'F11 Ground Situation Operational Picture',
+    endpoints: [
+      { method:'GET', path:'/ground-situation', note:'Fetch all layers at once', fields:[],
+        mock:{ type:'FeatureCollection', summary:{ total_habitations:15, immediate_relocation:4, red_zones_count:3, towers_potentially_offline:2, sites_available:6, total_capacity_remaining:8200 }, features:[
+          {type:'Feature', properties:{layer_type:'red_zone', risk_score:0.85, color_tier:'red'}, geometry:{type:'Polygon', coordinates:[[[92.64,26.34],[92.67,26.34],[92.67,26.37],[92.64,26.37],[92.64,26.34]]]}},
+          {type:'Feature', properties:{layer_type:'tower', status:'potentially_offline'}, geometry:{type:'Point', coordinates:[92.65, 26.35]}}
+        ]} }
+    ]
+  }
+];
+
+function nowISO(){ return new Date().toISOString(); }
+
+/* ============================================================
+   STATE & MAP INIT
+   ============================================================ */
+let activeStageId = 'see';
+let logEntries = [];
+let map, layers = [];
+
+function initMap(){
+  // Center on Nagaon, Assam
+  map = L.map('map', {zoomControl:true}).setView([26.35, 92.65], 11);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 19
+  }).addTo(map);
+
+  const marker = L.marker([26.35, 92.65]).addTo(map);
+  marker.bindPopup('Nagaon Region Center').openPopup();
+  layers.push(marker);
+
+  map.on('click', function(e){
+    document.querySelectorAll('input[data-role="lat"]').forEach(i=> i.value = e.latlng.lat.toFixed(5));
+    document.querySelectorAll('input[data-role="lng"]').forEach(i=> i.value = e.latlng.lng.toFixed(5));
+  });
+}
+
+function clearMapLayers() {
+  layers.forEach(l => map.removeLayer(l));
+  layers = [];
+}
+
+/* ============================================================
+   UI RENDERING
+   ============================================================ */
+function renderNav(){
+  const nav = document.getElementById('stageNav');
+  nav.innerHTML = STAGES.map(s => `
+    <div class="stage-item ${s.id===activeStageId?'active':''}" style="--stage-color:${s.colorHex}" onclick="setStage('${s.id}')">
+      <div class="stage-num">${s.num}</div>
+      <div class="stage-label">
+        <div class="name">${s.name}</div>
+        <div class="desc">${s.desc}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function setStage(id){
+  activeStageId = id;
+  renderNav();
+  renderPanel();
+}
+
+function renderPanel(){
+  const stage = STAGES.find(s=>s.id===activeStageId);
+  const panel = document.getElementById('stagePanel');
+  panel.style.setProperty('--stage-color', stage.colorHex);
+
+  if(stage.id === 'synth'){
+    panel.innerHTML = `
+      <div class="panel-title">
+        <div class="swatch" style="background:${stage.colorHex}"></div>
+        <h2><span class="stage-color-text" style="color:${stage.colorHex}">${stage.num} · ${stage.name}</span></h2>
+      </div>
+      <div class="panel-sub">${stage.desc}</div>
+      ${renderEndpointBlock(stage, stage.endpoints[0], 0)}
+      <div id="synthSummary"></div>
+    `;
+    return;
+  }
+
+  panel.innerHTML = `
+    <div class="panel-title">
+      <div class="swatch" style="background:${stage.colorHex}"></div>
+      <h2><span class="stage-color-text" style="color:${stage.colorHex}">${stage.num} · ${stage.name}</span></h2>
+    </div>
+    <div class="panel-sub">${stage.desc}</div>
+    ${stage.endpoints.map((ep, idx) => renderEndpointBlock(stage, ep, idx)).join('')}
+  `;
+}
+
+function renderEndpointBlock(stage, ep, idx){
+  const fieldId = `${stage.id}-${idx}`;
+  const fieldsHtml = ep.fields.map(f => {
+    const isFile = f.endsWith(':file');
+    const name = isFile ? f.split(':')[0] : f;
+    let role = '';
+    if(name.includes('lat')) role='data-role="lat"';
+    if(name.includes('lon')||name.includes('lng')) role='data-role="lng"';
+    
+    if (isFile) {
+      return `
+        <div class="field file-field">
+          <label>${name}</label>
+          <input type="file" accept="image/*" id="${fieldId}-${name}" data-role="file">
+        </div>`;
+    }
+    return `
+      <div class="field">
+        <label>${name}</label>
+        <input type="text" id="${fieldId}-${name}" ${role} placeholder="${name}">
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="endpoint-row">
+      <span class="method-tag ${ep.method.toLowerCase()}">${ep.method}</span>
+      <span class="endpoint-path">${ep.path}</span>
+      <span class="endpoint-note">${ep.note}</span>
+      ${fieldsHtml ? `<div class="field-grid" style="width:100%;margin-top:8px;">${fieldsHtml}</div>` : ''}
+      <div class="send-row" style="width:100%;">
+        <button class="btn send" style="background:${stage.colorHex}" onclick="sendRequest('${stage.id}', ${idx})">Send request</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderSynthSummary(summary){
+  if(!summary) return;
+  const el = document.getElementById('synthSummary');
+  if(el){
+    el.innerHTML = `
+      <div class="synth-card">
+        <div class="synth-stat-row">
+          <div class="synth-stat"><span class="synth-stat-lbl">Habitations</span><span class="synth-stat-val">${summary.total_habitations||0}</span></div>
+          <div class="synth-stat"><span class="synth-stat-lbl" style="color:var(--risk-high)">Immediate Reloc</span><span class="synth-stat-val">${summary.immediate_relocation||0}</span></div>
+          <div class="synth-stat"><span class="synth-stat-lbl">Red Zones</span><span class="synth-stat-val">${summary.red_zones_count||0}</span></div>
+          <div class="synth-stat"><span class="synth-stat-lbl">Offline Towers</span><span class="synth-stat-val">${summary.towers_potentially_offline||0}</span></div>
+          <div class="synth-stat"><span class="synth-stat-lbl">Capacity Rem.</span><span class="synth-stat-val">${summary.total_capacity_remaining||0}</span></div>
+        </div>
+        <button class="btn ghost" style="width:100%;text-align:center">Download GeoJSON Snapshot</button>
+      </div>
+    `;
+  }
+}
+
+/* ============================================================
+   SETTINGS DRAWER
+   ============================================================ */
+function toggleSettings(){
+  const drawer = document.getElementById('settingsDrawer');
+  drawer.classList.toggle('open');
+  if(drawer.classList.contains('open')) fetchSettings();
+}
+
+function updateSums(){
+  const d = parseFloat(document.getElementById('w_dmg').value);
+  const f = parseFloat(document.getElementById('w_fld').value);
+  const l = parseFloat(document.getElementById('w_lnd').value);
+  const sum = d+f+l;
+  document.getElementById('val_dmg').textContent = d.toFixed(2);
+  document.getElementById('val_fld').textContent = f.toFixed(2);
+  document.getElementById('val_lnd').textContent = l.toFixed(2);
+  
+  const sumEl = document.getElementById('weight_sum');
+  sumEl.textContent = `Sum: ${sum.toFixed(2)}`;
+  if(Math.abs(sum - 1.0) > 0.01) { sumEl.className = 'sum-val error'; }
+  else { sumEl.className = 'sum-val ok'; }
+}
+
+async function fetchSettings(){
+  const base = document.getElementById('baseUrl').value.trim();
+  try {
+    const res = await fetch(base + '/settings/');
+    if(res.ok){
+      const data = await res.json();
+      document.getElementById('w_dmg').value = data.damage_weight;
+      document.getElementById('w_fld').value = data.flood_weight;
+      document.getElementById('w_lnd').value = data.landslide_weight;
+      document.getElementById('th_imm').value = data.immediate_threshold;
+      document.getElementById('th_short').value = data.short_term_threshold;
+      updateSums();
+    }
+  } catch(err) { /* ignore in mock mode */ }
+}
+
+async function applySettings(){
+  const sumEl = document.getElementById('weight_sum');
+  if(sumEl.classList.contains('error')) return alert('Weights must sum to 1.0');
+  
+  const payload = {
+    damage_weight: parseFloat(document.getElementById('w_dmg').value),
+    flood_weight: parseFloat(document.getElementById('w_fld').value),
+    landslide_weight: parseFloat(document.getElementById('w_lnd').value),
+    immediate_threshold: parseFloat(document.getElementById('th_imm').value),
+    short_term_threshold: parseFloat(document.getElementById('th_short').value)
+  };
+  
+  const base = document.getElementById('baseUrl').value.trim();
+  try { await fetch(base + '/settings/', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}); } 
+  catch(err) {}
+  toggleSettings();
+}
+
+async function resetSettings(){
+  const base = document.getElementById('baseUrl').value.trim();
+  try { await fetch(base + '/settings/reset', {method:'POST'}); fetchSettings(); } 
+  catch(err) {
+    document.getElementById('w_dmg').value = 0.5;
+    document.getElementById('w_fld').value = 0.25;
+    document.getElementById('w_lnd').value = 0.25;
+    updateSums();
+  }
+}
+
+/* ============================================================
+   REQUEST HANDLING
+   ============================================================ */
+async function sendRequest(stageId, idx){
+  const stage = STAGES.find(s=>s.id===stageId);
+  const ep = stage.endpoints[idx];
+  const fieldId = `${stageId}-${idx}`;
+  const base = document.getElementById('baseUrl').value.trim().replace(/\/$/,'');
+
+  const hasFiles = ep.fields.some(f => f.endsWith(':file'));
+  const jsonParams = {};
+  let formData = hasFiles ? new FormData() : null;
+  let missingFile = false;
+
+  ep.fields.forEach(f => {
+    const isFile = f.endsWith(':file');
+    const name = isFile ? f.split(':')[0] : f;
+    const el = document.getElementById(`${fieldId}-${name}`);
+    if (isFile) {
+      if (el.files && el.files[0]) formData.append(name, el.files[0]);
+      else missingFile = true;
+    } else {
+      const v = el.value;
+      if (v) { jsonParams[name] = v; if (hasFiles) formData.append(name, v); }
+    }
+  });
+
+  let responseData, isMock = false;
+
+  if (missingFile) {
+    isMock = true;
+    responseData = JSON.parse(JSON.stringify(ep.mock));
+    stampMockTimestamps(responseData);
+    logEntry(stage, ep, responseData, isMock);
+    plotOnMap(responseData);
+    if(stageId === 'synth' && responseData.summary) renderSynthSummary(responseData.summary);
+    return;
+  }
+
+  try {
+    const url = base + ep.path;
+    let opts;
+    if (hasFiles) {
+      opts = { method: ep.method, body: formData };
+    } else {
+      opts = { method: ep.method, headers: {'Content-Type':'application/json'} };
+      if (ep.method === 'POST') opts.body = JSON.stringify(jsonParams);
+    }
+    
+    const finalUrl = (ep.method === 'GET' && !hasFiles && Object.keys(jsonParams).length)
+      ? url + '?' + new URLSearchParams(jsonParams).toString()
+      : url;
+      
+    const res = await fetch(finalUrl, opts);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    responseData = await res.json();
+  } catch(err) {
+    isMock = true;
+    responseData = JSON.parse(JSON.stringify(ep.mock));
+    stampMockTimestamps(responseData);
+  }
+
+  logEntry(stage, ep, responseData, isMock);
+  plotOnMap(responseData);
+  if(stageId === 'synth' && responseData.summary) renderSynthSummary(responseData.summary);
+}
+
+function stampMockTimestamps(obj){
+  const t = nowISO();
+  if (Array.isArray(obj)) { obj.forEach(stampMockTimestamps); return; }
+  if (obj && typeof obj === 'object') {
+    if ('last_updated' in obj) obj.last_updated = t;
+    Object.values(obj).forEach(v => { if (typeof v==='object') stampMockTimestamps(v); });
+  }
+}
+
+async function testConnection(){
+  const base = document.getElementById('baseUrl').value.trim().replace(/\/$/,'');
+  const dot = document.getElementById('connDot');
+  const status = document.getElementById('connStatus');
+  try {
+    const res = await fetch(base + '/health');
+    dot.classList.remove('off');
+    status.textContent = 'connected — ' + base;
+  } catch(err) {
+    dot.classList.add('off');
+    status.textContent = 'offline (mocking)';
+  }
+}
+
+/* ============================================================
+   MAP RENDERING (GeoJSON & Points)
+   ============================================================ */
+function getTierColor(tier){
+  if(tier === 'red' || tier === 'high' || tier === 'immediate') return 'var(--risk-high)';
+  if(tier === 'orange' || tier === 'moderate' || tier === 'short_term') return 'var(--risk-med)';
+  return 'var(--risk-low)';
+}
+
+function plotOnMap(data){
+  if(data.type === 'FeatureCollection'){
+    const geo = L.geoJSON(data, {
+      style: function(feature){
+        const p = feature.properties;
+        let color = '#5B8DEF';
+        if(p.color_tier) color = getTierColor(p.color_tier);
+        if(p.route_suitability_score) color = 'var(--sig-route)';
+        return { color: color, weight: 2, fillColor: color, fillOpacity: 0.3 };
+      },
+      pointToLayer: function(feature, latlng){
+        const p = feature.properties;
+        let color = '#F2A93B';
+        if(p.status === 'potentially_offline') color = 'var(--risk-high)';
+        if(p.status === 'operational') color = 'var(--risk-low)';
+        if(p.capacity_persons) color = 'var(--sig-see)'; // Evac zones
+        return L.circleMarker(latlng, {radius:6, color:color, fillColor:color, fillOpacity:0.8});
+      },
+      onEachFeature: function(feature, layer){
+        let pop = Object.entries(feature.properties)
+          .map(([k,v])=>`<b>${k}</b>: ${v}`).join('<br>');
+        layer.bindPopup(pop);
+      }
+    }).addTo(map);
+    layers.push(geo);
+    
+    // Auto fit bounds if requested
+    if(data.features.length > 0) map.fitBounds(geo.getBounds(), {padding:[50,50], maxZoom:14});
+  }
+}
+
+/* ============================================================
+   RESPONSE LOG
+   ============================================================ */
+function riskTier(score){
+  if (score >= 0.75) return 'risk-high';
+  if (score >= 0.50) return 'risk-med';
+  return 'risk-low';
+}
+
+function extractScoreChips(obj, chips=[]){
+  if (Array.isArray(obj)) { obj.forEach(o => extractScoreChips(o, chips)); return chips; }
+  if (obj && typeof obj === 'object') {
+    if(obj.score && obj.last_updated) {
+      chips.push({label:'confidence', value:obj.score, cls:'model_confidence'});
+    }
+    ['risk_score','route_suitability_score','recommendation_score'].forEach(key => {
+      if (typeof obj[key] === 'number') {
+        let cls = key;
+        if (key === 'risk_score') cls += ' ' + riskTier(obj[key]);
+        chips.push({ label:key, value:obj[key], cls });
+      }
+    });
+    Object.values(obj).forEach(v => { if (typeof v==='object') extractScoreChips(v, chips); });
+  }
+  return chips;
+}
+
+function logEntry(stage, ep, data, isMock){
+  const entry = { id: Date.now(), stage, ep, data, isMock, time: new Date() };
+  logEntries.unshift(entry);
+  renderLog();
+}
+
+function renderLog(){
+  const body = document.getElementById('consoleBody');
+  if (!logEntries.length) {
+    body.innerHTML = `<div class="empty-state">// no requests sent yet</div>`;
+    return;
+  }
+  body.innerHTML = logEntries.map(entry => {
+    const chips = extractScoreChips(entry.data);
+    const chipHtml = chips.map(c => `<span class="chip ${c.cls}"><span class="k">${c.label.replace(/_/g,' ')}</span>${typeof c.value==='number' ? c.value.toFixed(2) : c.value}</span>`).join('');
+    
+    return `
+      <div class="resp-entry">
+        <div class="resp-entry-head">
+          <span class="resp-entry-path">${entry.ep.method} ${entry.ep.path}${entry.isMock ? '<span class="mock-flag">MOCK</span>' : ''}</span>
+          <span class="resp-entry-time">${entry.time.toLocaleTimeString()}</span>
+        </div>
+        <div class="chips">${chipHtml || '<span class="hint">no typed scores in response</span>'}</div>
+        <div class="override-row" id="ovr-${entry.id}">
+          <button class="btn override correct" onclick="sendFeedback('${entry.id}', 'correct')">✓ mark correct</button>
+          <button class="btn override incorrect" onclick="sendFeedback('${entry.id}', 'incorrect')">✕ mark incorrect</button>
+        </div>
+        <div class="raw-json">${escapeHtml(JSON.stringify(entry.data, null, 2))}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+}
+
+async function sendFeedback(entryId, verdict){
+  const entry = logEntries.find(e => e.id == entryId);
+  const base = document.getElementById('baseUrl').value.trim().replace(/\/$/,'');
+  const btn = document.getElementById('ovr-' + entryId);
+  try {
+    await fetch(base + '/feedback', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ endpoint: entry.ep.path, verdict: verdict, timestamp: nowISO() })
+    });
+    btn.innerHTML = `<span class="hint">feedback recorded: ${verdict}</span>`;
+  } catch(err) {
+    btn.innerHTML = `<span class="hint">feedback recorded (mock): ${verdict}</span>`;
+  }
+}
+
+function clearLog(){
+  logEntries = [];
+  renderLog();
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+initMap();
+renderNav();
+renderPanel();
+updateSums();
+</script>
+</body>
+</html>
+
+================================================================================
+File: data\generate_seed_data.py
+================================================================================
+
+import json
+import random
+
+# Rough bounding box for Nagaon/Lakhimpur region in Assam
+# Approx bounds: 26.2 to 26.5 N, 92.5 to 92.8 E
+MIN_LAT, MAX_LAT = 26.25, 26.45
+MIN_LON, MAX_LON = 92.55, 92.75
+
+def generate_habitations(n=15):
+    features = []
+    for i in range(1, n + 1):
+        lat = random.uniform(MIN_LAT, MAX_LAT)
+        lon = random.uniform(MIN_LON, MAX_LON)
+        pop = random.randint(200, 2000)
+        vul_score = round(random.uniform(0.3, 0.9), 2)
+        
+        feature = {
+            "type": "Feature",
+            "properties": {
+                "id": i,
+                "name": f"Habitation {i} (Assam Demo)",
+                "population": pop,
+                "vulnerability_score": vul_score
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [lon, lat]
+            }
+        }
+        features.append(feature)
+        
+    return {
+        "type": "FeatureCollection",
+        "features": features
+    }
+
+def generate_relocation_sites(n=6):
+    features = []
+    for i in range(1, n + 1):
+        lat = random.uniform(MIN_LAT, MAX_LAT)
+        lon = random.uniform(MIN_LON, MAX_LON)
+        area = random.randint(2000, 10000)
+        cap = int(area * 0.5) # approx 2 sqm per person
+        elev = random.uniform(50, 150)
+        
+        # Make it a small polygon around the point
+        d = 0.001
+        poly = [
+            [lon-d, lat-d],
+            [lon+d, lat-d],
+            [lon+d, lat+d],
+            [lon-d, lat+d],
+            [lon-d, lat-d]
+        ]
+        
+        feature = {
+            "type": "Feature",
+            "properties": {
+                "id": i,
+                "name": f"Relocation Site {i} (Safe Zone)",
+                "area_sqm": area,
+                "capacity_persons": cap,
+                "elevation_m": round(elev, 1),
+                "suitability_score": round(random.uniform(0.6, 0.95), 2)
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [poly]
+            }
+        }
+        features.append(feature)
+        
+    return {
+        "type": "FeatureCollection",
+        "features": features
+    }
+
+def generate_opencellid_csv(n=25):
+    import csv
+    with open('data/opencellid_assam_sample.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['radio', 'mcc', 'net', 'area', 'cell', 'unit', 'lon', 'lat', 'range', 'samples', 'changeable', 'created', 'updated', 'averageSignal'])
+        for i in range(n):
+            lat = random.uniform(MIN_LAT, MAX_LAT)
+            lon = random.uniform(MIN_LON, MAX_LON)
+            tech = random.choice(['LTE', 'UMTS', 'GSM'])
+            writer.writerow([tech, 404, random.choice([45, 10, 20]), random.randint(100, 999), random.randint(1000, 9999), 0, lon, lat, 1000, 50, 1, 1500000000, 1600000000, 0])
+
+if __name__ == '__main__':
+    with open('data/habitations_sample.geojson', 'w') as f:
+        json.dump(generate_habitations(), f, indent=2)
+        
+    with open('data/relocation_sites_sample.geojson', 'w') as f:
+        json.dump(generate_relocation_sites(), f, indent=2)
+        
+    generate_opencellid_csv()
+    
+    # Touch empty pbf file so docker volume doesn't crash
+    with open('data/region_nagaon_assam.osm.pbf', 'wb') as f:
+        f.write(b'mock_osm_pbf_data')
+    
+    print("Demo data generated successfully.")
+
+================================================================================
+File: ml\export_onnx.py
+================================================================================
+
+"""
+export_onnx.py — Phase 0 gate script for DISHA / SIH26191
+==========================================================
+Exports all 3 trained models to ONNX and verifies each export by:
+  1. Running a forward pass through the ONNX Runtime session
+  2. Comparing output against PyTorch (max abs diff < TOLERANCE)
+
+Run from the project root:
+    python ml/export_onnx.py
+
+All three models must print PASS before any backend work starts.
+
+GPU note (RTX 2050 / 4 GB VRAM):
+  Models are exported and verified one at a time.
+  After each export the PyTorch model is deleted and CUDA cache cleared
+  to stay within the 4 GB budget.
+"""
+
+import os
+import sys
+import json
+import zipfile
+import tempfile
+import shutil
+import importlib.util
+from pathlib import Path
+from datetime import datetime
+
+# Enable ORT logs to see if it loads CUDA properly
+os.environ["ORT_LOGGING_LEVEL"] = "2"  
+
+import numpy as np
+import torch
+import torch.nn as nn
+
+# Expose PyTorch's bundled cuDNN to onnxruntime
+torch_lib = os.path.join(os.path.dirname(torch.__file__), 'lib')
+if hasattr(os, 'add_dll_directory') and os.path.exists(torch_lib):
+    os.add_dll_directory(torch_lib)
+os.environ["PATH"] = torch_lib + os.pathsep + os.environ.get("PATH", "")
+
+import onnxruntime as ort
+
+# ── Paths ──────────────────────────────────────────────────────────────────────
+ROOT        = Path(__file__).parent.parent.resolve()
+MODEL_DIR   = ROOT / "models"
+ONNX_DIR    = ROOT / "models"   # ONNX files land alongside .pt files
+
+DAMAGE_PT    = MODEL_DIR / "best_siamese_resnet50_3class_finetuned.pt"
+LANDSLIDE_PT = MODEL_DIR / "best_monolith_landslide_finetuned.pt"
+FLOOD_ZIP    = MODEL_DIR / "segformer_flood_model.zip"
+
+DAMAGE_ONNX    = ONNX_DIR / "damage_model.onnx"
+LANDSLIDE_ONNX = ONNX_DIR / "landslide_model.onnx"
+FLOOD_ONNX     = ONNX_DIR / "flood_model.onnx"
+
+TOLERANCE = 5e-2   # max abs diff between PyTorch and ONNX outputs (GPU FP32 optimization)
+DEVICE    = "cuda" if torch.cuda.is_available() else "cpu"
+
+# Image sizes used during training
+DAMAGE_H, DAMAGE_W     = 512, 512
+LANDSLIDE_H, LANDSLIDE_W = 512, 512
+FLOOD_IMG_SIZE         = 224   # from config.json: image_size: 224
+
+# ── Helpers ────────────────────────────────────────────────────────────────────
+
+def banner(msg: str):
+    print(f"\n{'='*60}")
+    print(f"  {msg}")
+    print(f"{'='*60}")
+
+def ok(msg):   print(f"  [OK]   {msg}")
+def warn(msg):  print(f"  [WARN] {msg}")
+def fail(msg):  print(f"  [FAIL] {msg}")
+
+def free_gpu():
+    """Release GPU memory after each model."""
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.synchronize()
+
+def ort_session(onnx_path: Path):
+    """Create ONNX Runtime session: CUDA first, CPU fallback."""
+    providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+    try:
+        sess = ort.InferenceSession(str(onnx_path), providers=providers)
+        used = sess.get_providers()[0]
+        ok(f"ONNX Runtime session on: {used}")
+        return sess
+    except Exception as e:
+        fail(f"ORT session failed: {e}")
+        return None
+
+def compare_outputs(pt_out: np.ndarray, ort_out: np.ndarray, name: str) -> bool:
+    diff = np.abs(pt_out - ort_out).max()
+    if diff < TOLERANCE:
+        ok(f"{name} -- max abs diff = {diff:.2e}  (threshold {TOLERANCE})  -> PASS")
+        return True
+    else:
+        fail(f"{name} -- max abs diff = {diff:.2e}  EXCEEDS threshold {TOLERANCE}  -> FAIL")
+        return False
+
+def load_model_class(file_path: Path, class_name: str):
+    """Load a class from an exact file path using importlib. Avoids sys.path collisions."""
+    spec = importlib.util.spec_from_file_location("model_def", str(file_path))
+    mod  = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return getattr(mod, class_name)
+
+def export_damage() -> bool:
+    banner("MODEL A -- Damage Assessment (Siamese ResNet50, 3-class)")
+
+    SiameseResNet50UNet = load_model_class(
+        ROOT / "ml" / "damage" / "model_def.py",
+        "SiameseResNet50UNet"
+    )
+
+    # -- load weights
+    print(f"  Loading checkpoint from {DAMAGE_PT.name} ...")
+    state_dict = torch.load(DAMAGE_PT, map_location="cpu", weights_only=False)
+    model = SiameseResNet50UNet()
+    try:
+        model.load_state_dict(state_dict, strict=True)
+        ok("State dict loaded (strict=True)")
+    except RuntimeError as e:
+        warn("Strict load failed -- trying strict=False")
+        result = model.load_state_dict(state_dict, strict=False)
+        if result.missing_keys:
+            warn(f"Missing keys ({len(result.missing_keys)}): {result.missing_keys[:3]} ...")
+        if result.unexpected_keys:
+            warn(f"Unexpected keys ({len(result.unexpected_keys)}): {result.unexpected_keys[:3]} ...")
+        ok("State dict loaded with strict=False")
+
+    model = model.to(DEVICE).eval()
+
+    # -- dummy inputs (two separate [1,3,H,W] tensors)
+    dummy_pre  = torch.randn(1, 3, DAMAGE_H, DAMAGE_W, device=DEVICE)
+    dummy_post = torch.randn(1, 3, DAMAGE_H, DAMAGE_W, device=DEVICE)
+
+    # -- PyTorch forward
+    with torch.no_grad():
+        pt_out = model(dummy_pre, dummy_post).cpu().numpy()
+    ok(f"PyTorch output shape: {pt_out.shape}")
+
+    # -- Export to ONNX
+    print(f"  Exporting to {DAMAGE_ONNX.name} ...")
+    torch.onnx.export(
+        model,
+        (dummy_pre, dummy_post),
+        str(DAMAGE_ONNX),
+        export_params=True,
+        opset_version=18,
+        do_constant_folding=True,
+        dynamo=False,            # legacy TorchScript exporter -- stable, supports dynamic_axes
+        input_names=["pre_image", "post_image"],
+        output_names=["damage_logits"],
+        dynamic_axes={
+            "pre_image":    {0: "batch"},
+            "post_image":   {0: "batch"},
+            "damage_logits":{0: "batch"},
+        },
+    )
+    ok(f"Exported -> {DAMAGE_ONNX} ({DAMAGE_ONNX.stat().st_size / 1e6:.1f} MB)")
+
+    # -- free GPU before ORT session
+    del model
+    free_gpu()
+
+    # -- ONNX Runtime verification
+    sess = ort_session(DAMAGE_ONNX)
+    if sess is None:
+        return False
+
+    ort_inputs = {
+        "pre_image":  dummy_pre.cpu().numpy(),
+        "post_image": dummy_post.cpu().numpy(),
+    }
+    ort_out = sess.run(None, ort_inputs)[0]
+    return compare_outputs(pt_out, ort_out, "Damage model")
+
+# ── Model B: Landslide (ResNet50 UNet) ────────────────────────────────────────
+
+def export_landslide() -> bool:
+    banner("MODEL B -- Landslide Detection (ResNet50 U-Net, binary)")
+
+    MonolithLandslideUNet = load_model_class(
+        ROOT / "ml" / "landslide" / "model_def.py",
+        "MonolithLandslideUNet"
+    )
+
+    print(f"  Loading checkpoint from {LANDSLIDE_PT.name} ...")
+    state_dict = torch.load(LANDSLIDE_PT, map_location="cpu", weights_only=False)
+    model = MonolithLandslideUNet()
+    try:
+        model.load_state_dict(state_dict, strict=True)
+        ok("State dict loaded (strict=True)")
+    except RuntimeError as e:
+        warn("Strict load failed -- trying strict=False")
+        result = model.load_state_dict(state_dict, strict=False)
+        if result.missing_keys:
+            warn(f"Missing keys ({len(result.missing_keys)}): {result.missing_keys[:3]} ...")
+        if result.unexpected_keys:
+            warn(f"Unexpected keys ({len(result.unexpected_keys)}): {result.unexpected_keys[:3]} ...")
+        ok("State dict loaded with strict=False")
+
+    model = model.to(DEVICE).eval()
+
+    dummy_img = torch.randn(1, 3, LANDSLIDE_H, LANDSLIDE_W, device=DEVICE)
+
+    with torch.no_grad():
+        pt_out = model(dummy_img).cpu().numpy()
+    ok(f"PyTorch output shape: {pt_out.shape}")
+
+    print(f"  Exporting to {LANDSLIDE_ONNX.name} ...")
+    torch.onnx.export(
+        model,
+        dummy_img,
+        str(LANDSLIDE_ONNX),
+        export_params=True,
+        opset_version=18,
+        do_constant_folding=True,
+        dynamo=False,            # legacy TorchScript exporter
+        input_names=["image"],
+        output_names=["landslide_logits"],
+        dynamic_axes={
+            "image":            {0: "batch"},
+            "landslide_logits": {0: "batch"},
+        },
+    )
+    ok(f"Exported -> {LANDSLIDE_ONNX} ({LANDSLIDE_ONNX.stat().st_size / 1e6:.1f} MB)")
+
+    del model
+    free_gpu()
+
+    sess = ort_session(LANDSLIDE_ONNX)
+    if sess is None:
+        return False
+
+    ort_inputs = {"image": dummy_img.cpu().numpy()}
+    ort_out = sess.run(None, ort_inputs)[0]
+    return compare_outputs(pt_out, ort_out, "Landslide model")
+
+# ── Model C: Flood (HuggingFace SegFormer) ────────────────────────────────────
+
+def export_flood() -> bool:
+    banner("MODEL C — Flood Segmentation (SegFormer, binary, image_size=224)")
+
+    # -- unzip to temp dir
+    tmp_dir = Path(tempfile.mkdtemp(prefix="disha_flood_"))
+    print(f"  Extracting {FLOOD_ZIP.name} to {tmp_dir} ...")
+    with zipfile.ZipFile(FLOOD_ZIP) as z:
+        z.extractall(tmp_dir)
+    ok(f"Extracted: {[p.name for p in tmp_dir.iterdir()]}")
+
+    # -- load via transformers
+    try:
+        from transformers import SegformerForSemanticSegmentation
+    except ImportError:
+        fail("transformers not installed. Run: pip install transformers")
+        shutil.rmtree(tmp_dir)
+        return False
+
+    print("  Loading SegformerForSemanticSegmentation …")
+    model = SegformerForSemanticSegmentation.from_pretrained(str(tmp_dir))
+    model = model.to(DEVICE).eval()
+    ok("HuggingFace model loaded")
+
+    # SegFormer image_size=224; HF pipeline uses pixel_values [B,3,H,W]
+    dummy_px = torch.randn(1, 3, FLOOD_IMG_SIZE, FLOOD_IMG_SIZE, device=DEVICE)
+
+    # -- PyTorch forward (HF model returns logits at 1/4 resolution = 56x56)
+    with torch.no_grad():
+        hf_out = model(pixel_values=dummy_px)
+        pt_out = hf_out.logits.cpu().numpy()   # [1, 2, 56, 56]
+    ok(f"PyTorch output shape: {pt_out.shape}  (logits at 1/4 resolution)")
+
+    # -- Export to ONNX
+    # We export a thin wrapper that returns just the logits tensor.
+    class SegFormerWrapper(nn.Module):
+        def __init__(self, m):
+            super().__init__()
+            self.model = m
+        def forward(self, pixel_values):
+            return self.model(pixel_values=pixel_values).logits
+
+    wrapper = SegFormerWrapper(model).to(DEVICE).eval()
+
+    print(f"  Exporting to {FLOOD_ONNX.name} ...")
+    torch.onnx.export(
+        wrapper,
+        dummy_px,
+        str(FLOOD_ONNX),
+        export_params=True,
+        opset_version=18,
+        do_constant_folding=True,
+        dynamo=False,            # legacy TorchScript exporter
+        input_names=["pixel_values"],
+        output_names=["flood_logits"],
+        dynamic_axes={
+            "pixel_values": {0: "batch"},
+            "flood_logits": {0: "batch"},
+        },
+    )
+    ok(f"Exported -> {FLOOD_ONNX} ({FLOOD_ONNX.stat().st_size / 1e6:.1f} MB)")
+
+    del model, wrapper
+    free_gpu()
+    shutil.rmtree(tmp_dir)
+
+    sess = ort_session(FLOOD_ONNX)
+    if sess is None:
+        return False
+
+    ort_inputs = {"pixel_values": dummy_px.cpu().numpy()}
+    ort_out = sess.run(None, ort_inputs)[0]
+    return compare_outputs(pt_out, ort_out, "Flood model")
+
+# ── Main ───────────────────────────────────────────────────────────────────────
+
+def main():
+    print(f"\nDISHA — ONNX Export & Sanity Check")
+    print(f"Timestamp : {datetime.now().isoformat()}")
+    print(f"Device    : {DEVICE}")
+    if torch.cuda.is_available():
+        print(f"GPU       : {torch.cuda.get_device_name(0)}")
+        print(f"VRAM      : {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
+
+    results = {}
+
+    results["damage"]    = export_damage()
+    results["landslide"] = export_landslide()
+    results["flood"]     = export_flood()
+
+    # ── Summary ────────────────────────────────────────────────────────────────
+    banner("EXPORT SUMMARY")
+    all_pass = True
+    for name, passed in results.items():
+        status = "PASS" if passed else "FAIL"
+        print(f"  {name:<12} [{status}]")
+        if not passed:
+            all_pass = False
+
+    print()
+    if all_pass:
+        ok("All 3 models exported and verified. Phase 0 COMPLETE.")
+        ok("You may now proceed to Phase 2 (InferenceEngine).")
+    else:
+        fail("One or more models FAILED. Do not proceed to backend work.")
+        fail("Fix model definition mismatches and re-run this script.")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
+
+================================================================================
+File: ml\run_bc.py
+================================================================================
+
+"""
+run_bc.py -- Export only landslide (B) and flood (C) models.
+Model A (damage) already exported and verified. Run this to complete Phase 0.
+"""
+import os, sys
+os.environ["ORT_LOGGING_LEVEL"] = "3"
+
+# Add project root to path so imports work
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
+
+# Import both export functions from the main script
+import importlib.util
+spec = importlib.util.spec_from_file_location(
+    "export_onnx",
+    str(Path(__file__).parent / "export_onnx.py")
+)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+
+results = {}
+results["landslide"] = mod.export_landslide()
+results["flood"]     = mod.export_flood()
+
+print()
+print("=" * 40)
+for name, passed in results.items():
+    print(f"  {name:<12} [{'PASS' if passed else 'FAIL'}]")
+
+if all(results.values()):
+    print("\n  Models B+C complete. Phase 0 DONE (A already passed).")
+    sys.exit(0)
+else:
+    print("\n  One or more failed -- check output above.")
+    sys.exit(1)
+
+================================================================================
+File: ml\damage\model_def.py
+================================================================================
+
+"""
+Siamese ResNet50 U-Net -- 3-class building damage assessment.
+Architecture derived directly from checkpoint weight shapes:
+  Block 0: in=6144 (layer4_pre+layer4_post=4096 + layer3_pre+layer3_post=2048)
+  Block 1: in=1536 (512 + layer2_pre+layer2_post=1024)
+  Block 2: in=768  (256 + layer1_pre+layer1_post=512)
+  Block 3: in=256  (128 + stem_pre+stem_post=128, stem=64-ch per branch)
+  Block 4: in=64   (no skip)
+  head.0 : [3, 32, 3, 3] kernel -> Conv2d(32, 3, 3, padding=1)
+
+Input:  two separate [1, 3, H, W] tensors (pre, post)
+Output: [1, 3, H, W] logits  (softmax -> per-class probability map)
+"""
+
+import torch
+import torch.nn as nn
+import torchvision.models as tvm
+import torch.nn.functional as F
+
+
+class ConvBnRelu(nn.Sequential):
+    def __init__(self, in_ch, out_ch, kernel=3, stride=1, padding=1):
+        super().__init__(
+            nn.Conv2d(in_ch, out_ch, kernel, stride, padding, bias=False),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True),
+        )
+
+
+class DecoderBlock(nn.Module):
+    """UNet decoder block: bilinear upsample + optional skip-concat + 2x ConvBnRelu."""
+
+    def __init__(self, in_ch, out_ch):
+        """
+        in_ch: total channels AFTER concatenating skip (caller pre-computes this)
+        out_ch: output channels
+        """
+        super().__init__()
+        self.conv1 = ConvBnRelu(in_ch, out_ch)
+        self.conv2 = ConvBnRelu(out_ch, out_ch)
+
+    def forward(self, x, skip=None):
+        x = F.interpolate(x, scale_factor=2, mode="bilinear", align_corners=False)
+        if skip is not None:
+            x = torch.cat([x, skip], dim=1)
+        return self.conv2(self.conv1(x))
+
+
+class ResNet50Encoder(nn.Module):
+    """
+    ResNet50 backbone. Exposes:
+      stem (64-ch after maxpool, before layer1)
+      layer1 (256-ch), layer2 (512-ch), layer3 (1024-ch), layer4 (2048-ch)
+    """
+    def __init__(self):
+        super().__init__()
+        base = tvm.resnet50(weights=None)
+        self.conv1   = base.conv1
+        self.bn1     = base.bn1
+        self.relu    = base.relu
+        self.maxpool = base.maxpool
+        self.layer1  = base.layer1
+        self.layer2  = base.layer2
+        self.layer3  = base.layer3
+        self.layer4  = base.layer4
+
+    def forward(self, x):
+        s = self.maxpool(self.relu(self.bn1(self.conv1(x))))  # 64-ch stem
+        x1 = self.layer1(s)    # 256-ch
+        x2 = self.layer2(x1)   # 512-ch
+        x3 = self.layer3(x2)   # 1024-ch
+        x4 = self.layer4(x3)   # 2048-ch
+        return s, x1, x2, x3, x4
+
+
+class SiameseResNet50UNet(nn.Module):
+    """
+    Siamese architecture with TWO INDEPENDENT ResNet50 encoders.
+    Named encoder_pre / encoder_post to match checkpoint keys.
+
+    Skip connections concatenate pre+post features at each scale.
+    Block channel computation (derived from checkpoint weight shapes):
+      Block 0: cat(layer4_pre, layer4_post, layer3_pre, layer3_post) = 4096+2048 = 6144 -> 512
+      Block 1: cat(out0_up, layer2_pre, layer2_post) = 512+1024 = 1536 -> 256
+      Block 2: cat(out1_up, layer1_pre, layer1_post) = 256+512  =  768 -> 128
+      Block 3: cat(out2_up, stem_pre, stem_post)     = 128+64+64 = 256 -> 64
+      Block 4: upsample only                          = 64             -> 32
+      head  : Conv2d(32, 3, kernel_size=3, padding=1)
+    """
+
+    NUM_CLASSES = 3  # 0=no-damage, 1=minor, 2=destroyed
+
+    def __init__(self):
+        super().__init__()
+        self.encoder_pre  = ResNet50Encoder()
+        self.encoder_post = ResNet50Encoder()
+
+        self.decoder = nn.ModuleDict({
+            "blocks": nn.ModuleList([
+                DecoderBlock(6144, 512),   # block 0
+                DecoderBlock(1536, 256),   # block 1
+                DecoderBlock( 768, 128),   # block 2
+                DecoderBlock( 256,  64),   # block 3  (skip = stem_pre + stem_post = 128)
+                DecoderBlock(  64,  32),   # block 4  (no skip)
+            ])
+        })
+
+        self.head = nn.Sequential(
+            nn.Conv2d(32, self.NUM_CLASSES, kernel_size=3, padding=1),
+        )
+
+    def forward(self, pre: torch.Tensor, post: torch.Tensor):
+        """
+        pre, post : [B, 3, H, W]
+        returns   : [B, NUM_CLASSES, H, W]  (raw logits)
+        """
+        ps, p1, p2, p3, p4 = self.encoder_pre(pre)
+        qs, q1, q2, q3, q4 = self.encoder_post(post)
+
+        blocks = self.decoder["blocks"]
+
+        # Block 0: upsample layer4 to layer3 spatial size, cat all four feature maps
+        x = torch.cat([p4, q4], dim=1)             # 4096-ch at layer4 resolution
+        s0 = torch.cat([p3, q3], dim=1)            # 2048-ch at layer3 resolution
+        x = F.interpolate(x, size=s0.shape[2:], mode="bilinear", align_corners=False)
+        x = torch.cat([x, s0], dim=1)              # 4096+2048 = 6144
+        x = blocks[0].conv2(blocks[0].conv1(x))    # -> 512
+
+        # Block 1: upsample to layer2 size, cat
+        s1 = torch.cat([p2, q2], dim=1)            # 1024-ch
+        x = F.interpolate(x, size=s1.shape[2:], mode="bilinear", align_corners=False)
+        x = torch.cat([x, s1], dim=1)              # 512+1024 = 1536
+        x = blocks[1].conv2(blocks[1].conv1(x))    # -> 256
+
+        # Block 2: upsample to layer1 size, cat
+        s2 = torch.cat([p1, q1], dim=1)            # 512-ch
+        x = F.interpolate(x, size=s2.shape[2:], mode="bilinear", align_corners=False)
+        x = torch.cat([x, s2], dim=1)              # 256+512 = 768
+        x = blocks[2].conv2(blocks[2].conv1(x))    # -> 128
+
+        # Block 3: upsample to stem size, cat
+        s3 = torch.cat([ps, qs], dim=1)            # 128-ch stem (64+64)
+        x = F.interpolate(x, size=s3.shape[2:], mode="bilinear", align_corners=False)
+        x = torch.cat([x, s3], dim=1)              # 128+128 = 256
+        x = blocks[3].conv2(blocks[3].conv1(x))    # -> 64
+
+        # Block 4: upsample to input size, no skip
+        x = F.interpolate(x, size=pre.shape[2:], mode="bilinear", align_corners=False)
+        x = blocks[4].conv2(blocks[4].conv1(x))    # -> 32
+
+        return self.head(x)
+
+================================================================================
+File: ml\damage\__init__.py
+================================================================================
+
+# ml/damage package
+
+================================================================================
+File: ml\landslide\model_def.py
+================================================================================
+
+"""
+Monolith ResNet50 U-Net -- binary landslide segmentation.
+Architecture derived directly from checkpoint weight shapes:
+  Block 0: conv1.in=3072 (layer4=2048 + layer3=1024)  -> 256
+  Block 1: conv1.in=768  (256 + layer2=512)            -> 128
+  Block 2: conv1.in=384  (128 + layer1=256)            -> 64
+  Block 3: conv1.in=128  (64  + stem=64)               -> 32
+  Block 4: conv1.in=32   (no skip)                     -> 16
+  seg_head: [1, 16, 3, 3] -> Conv2d(16, 1, kernel_size=3, padding=1)
+
+Input:  [1, 3, 512, 512]
+Output: [1, 1, H, W] logits  (sigmoid -> landslide probability per pixel)
+"""
+
+import torch
+import torch.nn as nn
+import torchvision.models as tvm
+import torch.nn.functional as F
+
+
+class ConvBnRelu(nn.Sequential):
+    def __init__(self, in_ch, out_ch, kernel=3, stride=1, padding=1):
+        super().__init__(
+            nn.Conv2d(in_ch, out_ch, kernel, stride, padding, bias=False),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True),
+        )
+
+
+class DecoderBlock(nn.Module):
+    """UNet decoder block. Caller passes pre-concatenated tensor."""
+    def __init__(self, in_ch, out_ch):
+        super().__init__()
+        self.conv1 = ConvBnRelu(in_ch, out_ch)
+        self.conv2 = ConvBnRelu(out_ch, out_ch)
+
+    def forward(self, x):
+        return self.conv2(self.conv1(x))
+
+
+class ResNet50Backbone(nn.Module):
+    """ResNet50 backbone named to match checkpoint prefix 'encoder.*'."""
+    def __init__(self):
+        super().__init__()
+        base = tvm.resnet50(weights=None)
+        self.conv1   = base.conv1
+        self.bn1     = base.bn1
+        self.relu    = base.relu
+        self.maxpool = base.maxpool
+        self.layer1  = base.layer1   # 256-ch
+        self.layer2  = base.layer2   # 512-ch
+        self.layer3  = base.layer3   # 1024-ch
+        self.layer4  = base.layer4   # 2048-ch
+
+    def forward(self, x):
+        s  = self.maxpool(self.relu(self.bn1(self.conv1(x))))  # 64-ch stem
+        x1 = self.layer1(s)
+        x2 = self.layer2(x1)
+        x3 = self.layer3(x2)
+        x4 = self.layer4(x3)
+        return s, x1, x2, x3, x4
+
+
+class MonolithLandslideUNet(nn.Module):
+    """Single-encoder ResNet50 UNet for binary landslide segmentation."""
+
+    def __init__(self):
+        super().__init__()
+        self.encoder = ResNet50Backbone()
+
+        # Naming: decoder.blocks.N.* to match checkpoint keys exactly
+        self.decoder = nn.ModuleDict({
+            "blocks": nn.ModuleList([
+                DecoderBlock(3072, 256),   # block 0: layer4 + layer3 skip
+                DecoderBlock( 768, 128),   # block 1: 256 + layer2
+                DecoderBlock( 384,  64),   # block 2: 128 + layer1
+                DecoderBlock( 128,  32),   # block 3: 64  + stem
+                DecoderBlock(  32,  16),   # block 4: no skip
+            ])
+        })
+
+        # segmentation_head.0 -> Conv2d(16, 1, kernel_size=3, padding=1)
+        self.segmentation_head = nn.Sequential(
+            nn.Conv2d(16, 1, kernel_size=3, padding=1),
+        )
+
+    def forward(self, x: torch.Tensor):
+        """x: [B, 3, H, W]  ->  [B, 1, H, W] logits"""
+        stem, x1, x2, x3, x4 = self.encoder(x)
+        blocks = self.decoder["blocks"]
+
+        # Block 0: upsample layer4 to match layer3 spatial size, then cat and decode
+        f = F.interpolate(x4, size=x3.shape[2:], mode="bilinear", align_corners=False)
+        f = torch.cat([f, x3], dim=1)              # 2048+1024=3072
+        f = blocks[0](f)                            # -> 256
+
+        # Block 1: upsample to match layer2 spatial size, cat
+        f = F.interpolate(f, size=x2.shape[2:], mode="bilinear", align_corners=False)
+        f = torch.cat([f, x2], dim=1)              # 256+512=768
+        f = blocks[1](f)                            # -> 128
+
+        # Block 2: upsample to match layer1 spatial size, cat
+        f = F.interpolate(f, size=x1.shape[2:], mode="bilinear", align_corners=False)
+        f = torch.cat([f, x1], dim=1)              # 128+256=384
+        f = blocks[2](f)                            # -> 64
+
+        # Block 3: upsample to match stem spatial size, cat
+        f = F.interpolate(f, size=stem.shape[2:], mode="bilinear", align_corners=False)
+        f = torch.cat([f, stem], dim=1)             # 64+64=128
+        f = blocks[3](f)                            # -> 32
+
+        # Block 4: upsample to input size, no skip
+        f = F.interpolate(f, size=x.shape[2:], mode="bilinear", align_corners=False)
+        f = blocks[4](f)                            # -> 16
+
+        return self.segmentation_head(f)
+
+================================================================================
+File: ml\landslide\__init__.py
+================================================================================
+
+# ml/landslide package
