@@ -39,7 +39,7 @@ async function openAdvisory(habId) {
   
   // 3. Fetch data from backend
   try {
-    const res = await fetch(`http://127.0.0.1:8000/advisory/${habId}`);
+    const res = await fetch(`/advisory/${habId}`);
     const data = await res.json();
     if (!res.ok && res.status !== 404) throw new Error('Failed to fetch');
     
@@ -116,7 +116,7 @@ function renderAdvisoryContent(adv) {
     if (typeof currentHabitations !== 'undefined') {
       const habData = currentHabitations.find(h => h.id === hab.id);
       if (habData && site.lat && site.lng) {
-        fetch(`http://127.0.0.1:8000/route/?origin_lat=${habData.lat}&origin_lon=${habData.lng}&dest_lat=${site.lat}&dest_lon=${site.lng}`, {
+        fetch(`/route/?origin_lat=${habData.lat}&origin_lon=${habData.lng}&dest_lat=${site.lat}&dest_lon=${site.lng}`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({}) // no flood geojson for 2D map

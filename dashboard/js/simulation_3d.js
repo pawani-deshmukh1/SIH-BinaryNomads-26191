@@ -1,4 +1,4 @@
-Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6InFZa05DNzhtTElkZVpBTVUiLCJqdGkiOiI0NWM2NTc2Ny1lYTJkLTRkMmEtYjY3Yy0wMmY5Njc0YWQ3MjUiLCJpZCI6NDc5OTcyLCJzdWIiOiJBc2h1dG9zaE0iLCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoiQXNodXRvc2hNX2RlZmF1bHQiLCJpYXQiOjE3ODg0NTEwODF9.N8rv3vb1F0QVa3iJEpU1cf4EoXMoIPem8LeHAbVITnI';
+// Cesium token will be fetched from the backend config
 
 let viewer;
 let simulationData;
@@ -15,9 +15,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
+    document.getElementById('sim-loader-text').innerText = "Fetching Secure Config...";
+    const configRes = await fetch('/api/config');
+    const config = await configRes.json();
+    Cesium.Ion.defaultAccessToken = config.CESIUM_ION_TOKEN;
+
     document.getElementById('sim-loader-text').innerText = "Running Bathtub Simulation Engine...";
 
-    const res = await fetch(`http://127.0.0.1:8000/simulation/${habId}`);
+    const res = await fetch(`/simulation/${habId}`);
     if (!res.ok) throw new Error("Simulation endpoint failed.");
     simulationData = await res.json();
 
@@ -286,7 +291,7 @@ function checkInundation(lat, lng, ds, entity, habId) {
     li.style.color = "var(--danger)";
     ul.appendChild(li);
 
-    fetch('http://127.0.0.1:8000/advisory/' + habId).then(r => r.json()).then(res => {
+    fetch('/advisory/' + habId).then(r => r.json()).then(res => {
       const site = res?.advisory?.relocation_plan?.recommended_site;
       
       let approved = true;

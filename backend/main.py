@@ -2,6 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
+from dotenv import load_dotenv
+
+load_dotenv() # Load variables from .env if present
 
 app = FastAPI(
     title="DISHA Backend API",
@@ -21,6 +24,13 @@ app.add_middleware(
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+@app.get("/api/config")
+def get_config():
+    # Load from env; provide a dummy token as fallback so it doesn't crash if unset
+    return {
+        "CESIUM_ION_TOKEN": os.environ.get("CESIUM_TOKEN", "YOUR_CESIUM_TOKEN_HERE")
+    }
 
 from api import settings_api, damage, flood, landslide, red_zones, relocation, routes, towers, ground_situation, evac_zones, feedback, analyze, inundation, live_risk, susceptibility, advisory, simulation
 
