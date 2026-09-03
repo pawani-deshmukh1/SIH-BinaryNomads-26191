@@ -112,12 +112,8 @@ def get_safe_route(
     flood_geojson: Optional[dict] = None,
 ):
     """
-    Computes shortest path via OSMnx then overlays the flood inundation polygon.
-    Blocked road segments are tagged with status=BLOCKED and returned separately
-    so the dashboard can render them in red.
-
-    flood_geojson: optional GeoJSON FeatureCollection from /simulation endpoint.
-                   If provided, the route is checked for flood intersection.
+    Computes shortest path via OSMnx explicitly routing AROUND flood zones.
+    Generates a 'safe kacha way' (unpaved path) if the origin is cut off from safe roads.
     """
     try:
         buffer = 0.02
@@ -128,62 +124,131 @@ def get_safe_route(
 
         bbox = (min_lon, min_lat, max_lon, max_lat)
         logger.info(f"Fetching OSMnx graph for routing: {bbox}")
+        # Fetch the base graph
         G = ox.graph_from_bbox(bbox=bbox, network_type='all', simplify=True)
+        
+        # 1. Create Shapely union of flood zones
+        flood_union = None
+        if flood_geojson and flood_geojson.get("features"):
+            from shapely.geometry import shape, LineString, Point
+            from shapely.ops import unary_union
+            flood_shapes = []
+            for feat in flood_geojson.get("features", []):
+                try:
+                    flood_shapes.append(shape(feat["geometry"]))
+                except Exception:
+                    pass
+            if flood_shapes:
+                flood_union = unary_union(flood_shapes)
 
-        orig_node = ox.distance.nearest_nodes(G, origin_lon, origin_lat)
-        dest_node = ox.distance.nearest_nodes(G, dest_lon, dest_lat)
-        path_nodes = nx.shortest_path(G, orig_node, dest_node, weight='length')
+        # 2. Explicitly prune flooded edges from the graph
+        if flood_union:
+            edges_to_remove = []
+            for u, v, key, data in G.edges(keys=True, data=True):
+                # Check geometry if it exists, otherwise use straight line between nodes
+                if 'geometry' in data:
+                    edge_geom = data['geometry']
+                else:
+                    edge_geom = LineString([(G.nodes[u]['x'], G.nodes[u]['y']), 
+                                            (G.nodes[v]['x'], G.nodes[v]['y'])])
+                
+                if edge_geom.intersects(flood_union):
+                    edges_to_remove.append((u, v, key))
+            
+            G.remove_edges_from(edges_to_remove)
+            logger.info(f"Pruned {len(edges_to_remove)} flooded edges from routing graph.")
 
-        coordinates = [[G.nodes[n]['x'], G.nodes[n]['y']] for n in path_nodes]
+        # 3. Find nearest nodes on the PRUNED (safe) graph
+        try:
+            orig_node = ox.distance.nearest_nodes(G, origin_lon, origin_lat)
+            dest_node = ox.distance.nearest_nodes(G, dest_lon, dest_lat)
+            path_nodes = nx.shortest_path(G, orig_node, dest_node, weight='length')
+        except nx.NetworkXNoPath:
+            # Fallback if no safe path exists at all
+            logger.warning("No safe path found on pruned graph. Habitation might be completely isolated.")
+            return {
+                "type": "FeatureCollection",
+                "features": [{
+                    "type": "Feature",
+                    "properties": {
+                        "route_status": "ISOLATED",
+                        "error": "No safe path exists to the destination.",
+                        "route_suitability_score": 0.0,
+                    },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [[origin_lon, origin_lat], [dest_lon, dest_lat]],
+                    },
+                }],
+            }
+
+        safe_paved_coords = [[G.nodes[n]['x'], G.nodes[n]['y']] for n in path_nodes]
 
         total_length_m = 0
         for i in range(len(path_nodes) - 1):
             edge_data = G.get_edge_data(path_nodes[i], path_nodes[i + 1])
             total_length_m += edge_data.get(0, {}).get('length', 0)
 
-        # ── Flood intersection check ──────────────────────────────────────────
-        flood_check = _check_route_flood_intersection(coordinates, flood_geojson)
+        features = []
 
-        features = [
-            {
-                "type": "Feature",
-                "properties": {
-                    "segment_type":          "safe",
-                    "route_status":          flood_check["route_status"],
-                    "blocked_pct":           flood_check["blocked_pct"],
-                    "route_suitability_score": max(0.1, 0.92 - flood_check["blocked_pct"] / 100),
-                    "hazard_exposure_avoided_pct": 1.0 - flood_check["blocked_pct"] / 100,
-                    "added_distance_m":      round(total_length_m),
-                    "last_updated":          datetime.now(timezone.utc).isoformat(),
-                    "flood_warning":         flood_check["blocked"],
-                    "flood_warning_message": (
-                        f"WARNING: {flood_check['blocked_pct']}% of this route is within the "
-                        f"current flood inundation zone. Seek alternate route."
-                        if flood_check["blocked"] else "Route is clear of flood zones."
-                    ),
-                },
-                "geometry": {
-                    "type":        "LineString",
-                    "coordinates": flood_check["safe_coords"] or coordinates,
-                },
-            }
-        ]
+        # 4. Generate the "Kacha Way" if origin is not exactly on the safe node
+        orig_node_x, orig_node_y = G.nodes[orig_node]['x'], G.nodes[orig_node]['y']
+        dist_to_safe_node = ((origin_lon - orig_node_x)**2 + (origin_lat - orig_node_y)**2)**0.5
+        
+        # If distance is significant (e.g., > 10 meters roughly), generate a kacha way
+        if dist_to_safe_node > 0.0001: 
+            kacha_coords = [[origin_lon, origin_lat], [orig_node_x, orig_node_y]]
+            
+            # Simple detour heuristic: if the straight kacha line intersects flood, detour it
+            if flood_union:
+                kacha_line = LineString(kacha_coords)
+                if kacha_line.intersects(flood_union):
+                    # Detour: find the centroid of the flood, push the midpoint away from it
+                    mid_x = (origin_lon + orig_node_x) / 2
+                    mid_y = (origin_lat + orig_node_y) / 2
+                    f_cent = flood_union.centroid
+                    
+                    # Push away vector
+                    dx, dy = mid_x - f_cent.x, mid_y - f_cent.y
+                    norm = (dx**2 + dy**2)**0.5
+                    if norm > 0:
+                        detour_x = mid_x + (dx/norm) * 0.005  # ~500m detour
+                        detour_y = mid_y + (dy/norm) * 0.005
+                        kacha_coords = [[origin_lon, origin_lat], [detour_x, detour_y], [orig_node_x, orig_node_y]]
 
-        # Add blocked segment as a separate RED feature if any exists
-        if flood_check["blocked_coords"]:
             features.append({
                 "type": "Feature",
                 "properties": {
-                    "segment_type": "blocked",
-                    "route_status": "BLOCKED",
-                    "reason":       "flood_inundation",
-                    "display_color": "#FF3333",
+                    "segment_type": "kacha_way",
+                    "route_status": "KACHA_WAY",
+                    "display_color": "#8B4513", # SaddleBrown for dirt path
+                    "description": "Unpaved safe emergency detour",
                 },
                 "geometry": {
-                    "type":        "LineString",
-                    "coordinates": flood_check["blocked_coords"],
+                    "type": "LineString",
+                    "coordinates": kacha_coords,
                 },
             })
+
+        # 5. Add the Safe Paved Route
+        features.append({
+            "type": "Feature",
+            "properties": {
+                "segment_type":          "paved_safe",
+                "route_status":          "CLEAR",
+                "blocked_pct":           0.0,
+                "route_suitability_score": 1.0,
+                "hazard_exposure_avoided_pct": 1.0,
+                "added_distance_m":      round(total_length_m),
+                "last_updated":          datetime.now(timezone.utc).isoformat(),
+                "flood_warning":         False,
+                "flood_warning_message": "Route explicitly avoids all known flood zones.",
+            },
+            "geometry": {
+                "type":        "LineString",
+                "coordinates": safe_paved_coords,
+            },
+        })
 
         return {"type": "FeatureCollection", "features": features}
 

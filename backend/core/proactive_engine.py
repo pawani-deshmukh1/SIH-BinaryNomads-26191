@@ -259,6 +259,19 @@ class ProactiveEngine:
             ls_explanation = fl_explanation = {"top_factors": [], "plain_english": "Models not loaded.", "method": "heuristic"}
             model_used = "heuristic_fallback"
 
+        # ── Cascading Hazard SHAP Injection ──────────────────────────────────
+        from core.settings import get_settings
+        settings = get_settings()
+        precip = features.get("precip_daily_mm", 0)
+        slope = features.get("slope", 0)
+        
+        if precip > 50.0 and slope > 15.0:
+            mult = settings.cascading_hazards.cascading_multiplier
+            ls_prob = min(1.0, ls_prob * mult)
+            cascade_msg = f"WARNING: Cascading Hazard detected. Extreme rainfall ({precip}mm) is causing rapid soil saturation, amplifying baseline slope instability by {mult}x."
+            if isinstance(ls_explanation, dict) and "plain_english" in ls_explanation:
+                ls_explanation["plain_english"] = f"{ls_explanation['plain_english']} {cascade_msg}"
+                
         zone = self._classify_zone(ls_prob, fl_prob)
 
         return {

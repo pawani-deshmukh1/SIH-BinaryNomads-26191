@@ -27,12 +27,24 @@ class ScoringThresholds(BaseModel):
     red_zone_red: float = 0.70
     red_zone_orange: float = 0.40
 
+class CascadingHazardsConfig(BaseModel):
+    cascading_multiplier: float = 1.5
+    adjacency_buffer_m: float = 500.0  # Buffer distance in meters to check for adjacency
+
+class SphereStandardsConfig(BaseModel):
+    m2_per_person: float = 3.5          # Minimum UNHCR standard
+    max_slope_deg: float = 8.0          # Max slope for a safe camp
+    max_distance_km: float = 150.0      # Max routing distance
+    water_litres_per_person: float = 15.0 # Daily water standard
+
 class AppSettings(BaseModel):
     risk_fusion: RiskFusionWeights = RiskFusionWeights()
     terrain: TerrainWeights = TerrainWeights()
     relocation_tiers: RelocationTierThresholds = RelocationTierThresholds()
     cell_tower: CellTowerDeadZoneConfig = CellTowerDeadZoneConfig()
     scoring: ScoringThresholds = ScoringThresholds()
+    cascading_hazards: CascadingHazardsConfig = CascadingHazardsConfig()
+    sphere_standards: SphereStandardsConfig = SphereStandardsConfig()
 
 # Singleton
 _settings = AppSettings()

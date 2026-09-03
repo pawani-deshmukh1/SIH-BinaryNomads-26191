@@ -67,16 +67,13 @@ def _fuse_red_zones(
     orange_threshold: float = 0.40,
 ) -> list[dict]:
     """
-    Geometrically-grounded multi-hazard fusion.
-
-    Each hazard polygon gets risk_score = own confidence x weight,
-    PLUS contributions from other hazards ONLY IF those polygons spatially
-    intersect it (shapely check). contributing_factors[x].overlap is always
-    truthful -- False means that hazard did not reach this zone.
-
-    Thresholds passed from function args (read from settings by caller),
-    not hardcoded -- so judges can adjust them live via settings_api.
+    Geometrically-grounded multi-hazard fusion with Cascading Physics.
     """
+    from core.settings import get_settings
+    settings = get_settings()
+    cascading_mult = settings.cascading_hazards.cascading_multiplier
+    buffer_deg = settings.cascading_hazards.adjacency_buffer_m / 111000.0  # rough conversion to degrees
+
     now = datetime.now(timezone.utc).isoformat()
     red_zones = []
 
@@ -91,10 +88,11 @@ def _fuse_red_zones(
     flood_shapes  = _shapes(flood_features)
     slide_shapes  = _shapes(landslide_features)
 
-    def _intersects(geom, other_shapes):
+    def _intersects(geom, other_shapes, buffer_amount=0.0):
+        check_geom = geom.buffer(buffer_amount) if buffer_amount > 0 else geom
         for feat, shp in other_shapes:
             try:
-                if geom.intersects(shp):
+                if check_geom.intersects(shp):
                     return True, float(feat.get("properties", {}).get("confidence", 0.0))
             except Exception:
                 pass
@@ -148,15 +146,24 @@ def _fuse_red_zones(
     for feat, geom in slide_shapes:
         conf = float(feat.get("properties", {}).get("confidence", 0.0))
         dmg_hit, dmg_conf   = _intersects(geom, damage_shapes)
-        flood_hit, flood_conf = _intersects(geom, flood_shapes)
+        # Use adjacency buffer to check if flood is near the landslide
+        flood_hit, flood_conf = _intersects(geom, flood_shapes, buffer_amount=buffer_deg)
+        
+        # Cascading Effect: If there is a severe flood nearby, soil saturates, multiplying landslide risk
+        is_cascading = flood_hit and flood_conf > 0.6
+        actual_mult = cascading_mult if is_cascading else 1.0
+        
         risk_score = min(1.0, round(
-            conf * landslide_weight
+            (conf * landslide_weight * actual_mult)
             + (dmg_conf   * damage_weight if dmg_hit   else 0.0)
             + (flood_conf * flood_weight  if flood_hit else 0.0), 4))
+            
         red_zones.append({"type": "Feature", "properties": {
             **feat.get("properties", {}), "layer_type": "red_zone",
             "primary_hazard": "landslide", "risk_score": risk_score,
             "color_tier": _tier(risk_score),
+            "cascading_effects_active": is_cascading,
+            "cascading_multiplier": actual_mult,
             "contributing_factors": {
                 "damage":    {"weight": damage_weight,    "value": dmg_conf,   "overlap": dmg_hit},
                 "flood":     {"weight": flood_weight,     "value": flood_conf, "overlap": flood_hit},

@@ -12,8 +12,7 @@ carrying_capacity.py — Safe Zone Evaluation Engine
 import math
 from typing import List, Dict, Any
 from core.proactive_engine import proactive_engine
-
-SPHERE_M2_PER_PERSON = 3.5  # Relaxed to absolute minimum UNHCR standard for demo
+from core.settings import get_settings
 
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculate distance in km between two points."""
@@ -28,7 +27,7 @@ def calculate_capacity(site_area_sqm: float) -> int:
     """Sphere standard capacity calculation."""
     if not site_area_sqm or site_area_sqm <= 0:
         return 0
-    return int(site_area_sqm / SPHERE_M2_PER_PERSON)
+    return int(site_area_sqm / get_settings().sphere_standards.m2_per_person)
 
 def evaluate_safe_zones(
     safe_zones: List[Dict[str, Any]], 
@@ -40,6 +39,7 @@ def evaluate_safe_zones(
     Evaluates a list of safe zones against an evacuated habitation.
     Returns ranked valid sites and a list of rejected sites with reasons.
     """
+    settings = get_settings()
     valid_candidates = []
     rejected_sites = []
 
@@ -65,10 +65,10 @@ def evaluate_safe_zones(
         reasons = []
         if combined_risk >= 0.55:
             reasons.append(f"Site is hazardous (Flood: {flood_risk:.2f}, LS: {landslide_risk:.2f})")
-        if terrain.get("slope", 0) > 8.0:
-            reasons.append(f"Terrain too steep for camp (Slope: {terrain['slope']}° > 8°)")
-        if distance_km > 150.0:
-            reasons.append(f"Too far from habitation ({distance_km:.1f}km > 150km)")
+        if terrain.get("slope", 0) > settings.sphere_standards.max_slope_deg:
+            reasons.append(f"Terrain too steep for camp (Slope: {terrain['slope']}° > {settings.sphere_standards.max_slope_deg}°)")
+        if distance_km > settings.sphere_standards.max_distance_km:
+            reasons.append(f"Too far from habitation ({distance_km:.1f}km > {settings.sphere_standards.max_distance_km}km)")
         if capacity < displaced_population:
             reasons.append(f"Insufficient capacity (Holds {capacity}, Need {displaced_population})")
             
@@ -96,7 +96,7 @@ def evaluate_safe_zones(
         else: acc_score = 0.3 # foot/heli
         
         # Proximity score (normalized to 150km max)
-        prox_score = max(0.0, 1.0 - (distance_km / 150.0))
+        prox_score = max(0.0, 1.0 - (distance_km / settings.sphere_standards.max_distance_km))
         
         composite_score = (
             (0.35 * hazard_safety) +
@@ -135,11 +135,11 @@ def evaluate_safe_zones(
 
 def calculate_resources(population: int, days: int = 5) -> Dict[str, Any]:
     """Calculate basic resource needs for the displaced population."""
-    # Sphere standards
+    settings = get_settings()
     return {
         "tents_50_person": math.ceil(population / 50.0),
-        "water_litres_per_day": population * 15, # 15L per person per day
-        "total_water_litres": population * 15 * days,
+        "water_litres_per_day": population * settings.sphere_standards.water_litres_per_person,
+        "total_water_litres": population * settings.sphere_standards.water_litres_per_person * days,
         "food_rations_daily": population,
         "duration_days": days
     }

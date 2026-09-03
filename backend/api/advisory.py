@@ -92,30 +92,65 @@ async def generate_advisory(habitation_id: str, region: str = Query(default="ass
         "hand_proxy_m":    hab.get("hand_proxy_m", 5.0),
     })
 
-    # 4. Evaluate Safe Zones
-    evaluation = evaluate_safe_zones(
-        safe_zones=safe_zones,
-        displaced_population=pop,
-        hab_lat=hab["lat"],
-        hab_lng=hab["lng"]
-    )
+    # 4. Evaluate Safe Zones (Check Dynamic Relocation Plan first)
+    from core.analysis_state import get_last_relocation
+    last_plan = get_last_relocation()
     
-    valid_candidates = evaluation["valid_candidates"]
-    rejected_sites = evaluation["rejected_sites"]
-    
-    if not valid_candidates:
-        return JSONResponse(status_code=404, content={
-            "status": "error",
-            "message": "NO VALID SAFE ZONES FOUND. All candidates failed hard filters.",
-            "rejected_sites": rejected_sites
-        })
+    hab_assignments = []
+    if last_plan:
+        hab_assignments = [a for a in last_plan.get("assignments", []) if str(a["habitation_id"]) == str(habitation_id)]
         
-    best_site = valid_candidates[0]
+    if hab_assignments:
+        # Use dynamic assignments
+        primary = hab_assignments[0]
+        best_site = {
+            "id": primary["site_id"],
+            "name": primary["site_name"],
+            "distance_km": primary["distance_km"],
+            "access_mode": "ROAD", # Simplification
+            "hazard_safety_score": primary["recommendation_score"],
+            "capacity": primary["population"], # Actually assigned population
+            "is_overflow": primary.get("is_overflow", False),
+            "lat": primary.get("site_lat", 0),
+            "lng": primary.get("site_lng", 0)
+        }
+        
+        overflow_sites = []
+        for overflow in hab_assignments[1:]:
+            overflow_sites.append({
+                "id": overflow["site_id"],
+                "name": overflow["site_name"],
+                "distance_km": overflow["distance_km"],
+                "assigned_population": overflow["population"],
+                "is_overflow": overflow.get("is_overflow", True)
+            })
+            
+        valid_candidates = [best_site] + overflow_sites
+        rejected_sites = []
+    else:
+        # Fallback to static evaluation if optimizer hasn't run
+        evaluation = evaluate_safe_zones(
+            safe_zones=safe_zones,
+            displaced_population=pop,
+            hab_lat=hab["lat"],
+            hab_lng=hab["lng"]
+        )
+        valid_candidates = evaluation["valid_candidates"]
+        rejected_sites = evaluation["rejected_sites"]
+        
+        if not valid_candidates:
+            return JSONResponse(status_code=404, content={
+                "status": "error",
+                "message": "NO VALID SAFE ZONES FOUND. All candidates failed hard filters.",
+                "rejected_sites": rejected_sites
+            })
+        best_site = valid_candidates[0]
+        overflow_sites = []
     
-    # 4. Calculate Resource Needs
+    # 5. Calculate Resource Needs
     resources = calculate_resources(pop)
     
-    # 5. Generate structured advisory
+    # 6. Generate structured advisory
     advisory = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "urgency": "CRITICAL",
@@ -139,10 +174,11 @@ async def generate_advisory(habitation_id: str, region: str = Query(default="ass
         },
         "relocation_plan": {
             "recommended_site": best_site,
-            "alternative_sites": valid_candidates[1:3],
+            "overflow_sites": overflow_sites, # Newly added for capacity load balancing
+            "alternative_sites": valid_candidates[1:3] if not overflow_sites else [],
             "logistics": {
-                "evacuation_mode": best_site["access_mode"],
-                "distance_km": best_site["distance_km"],
+                "evacuation_mode": best_site.get("access_mode", "ROAD"),
+                "distance_km": best_site.get("distance_km", 0),
             },
             "resources_required": resources
         },

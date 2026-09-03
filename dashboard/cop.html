@@ -279,9 +279,33 @@
             radius: 8, color: '#fff', weight: 2, fillColor: '#10b981', fillOpacity: 1
           }).bindPopup(`<b>Approved Safe Zone: ${site.name}</b>`).addTo(map);
           
-          L.polyline([[currentHab.lat, currentHab.lng], [site.lat, site.lng]], {
-            color: '#3b82f6', weight: 2, dashArray: '6,6', opacity: 0.8
-          }).bindPopup(`Evac Route: ${site.distance_km} km`).addTo(map);
+          // Fetch dynamic hazard-aware route
+          fetch(`http://127.0.0.1:8000/route/?origin_lat=${currentHab.lat}&origin_lon=${currentHab.lng}&dest_lat=${site.lat}&dest_lon=${site.lng}`, {
+             method: 'POST',
+             headers: {'Content-Type': 'application/json'},
+             body: JSON.stringify({}) 
+          }).then(r => r.json()).then(routeData => {
+             if (routeData && routeData.features) {
+                 routeData.features.forEach(feat => {
+                     const latlngs = feat.geometry.coordinates.map(c => [c[1], c[0]]);
+                     let color = '#10b981'; 
+                     let dash = null;
+                     if (feat.properties.segment_type === 'kacha_way') {
+                         color = '#3b82f6'; // Blue dashed for kacha way as requested
+                         dash = '6,6';
+                     } else if (feat.properties.segment_type === 'blocked') {
+                         color = '#ef4444'; 
+                     }
+                     L.polyline(latlngs, {
+                         color: color, weight: 3, dashArray: dash, opacity: 0.9
+                     }).bindPopup(feat.properties.description || feat.properties.segment_type).addTo(map);
+                 });
+             }
+          }).catch(err => {
+             L.polyline([[currentHab.lat, currentHab.lng], [site.lat, site.lng]], {
+                color: '#3b82f6', weight: 2, dashArray: '6,6', opacity: 0.8
+             }).bindPopup(`Evac Route: ${site.distance_km} km`).addTo(map);
+          });
 
           document.getElementById('approved-safe-zone').innerHTML = `
             <div class="data-card approved-card">

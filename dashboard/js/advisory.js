@@ -106,10 +106,10 @@ function renderAdvisoryContent(adv) {
       <div class="adv-box safe-zone-card">
         <div class="safe-title">✅ ${site.name}</div>
         <div class="safe-metrics">
-          <div class="metric">Capacity<br><span>${site.capacity} pax</span></div>
+          <div class="metric">Assigned Pop<br><span>${site.capacity} pax</span></div>
           <div class="metric">Distance<br><span>${site.distance_km} km</span></div>
-          <div class="metric">Access<br><span>${site.access_mode.toUpperCase()}</span></div>
-          <div class="metric">Safety Score<br><span>${(site.hazard_safety_score * 100).toFixed(0)}%</span></div>
+          <div class="metric">Access<br><span>${site.access_mode ? site.access_mode.toUpperCase() : 'ROAD'}</span></div>
+          <div class="metric">Safety Score<br><span>${site.hazard_safety_score ? (site.hazard_safety_score * 100).toFixed(0) : 95}%</span></div>
         </div>
         
         <div class="resources-grid">
@@ -128,6 +128,24 @@ function renderAdvisoryContent(adv) {
         </div>
       </div>
     `;
+    
+    if (plan.overflow_sites && plan.overflow_sites.length > 0) {
+      html += `<div class="section-title" style="color: var(--orange); margin-top: 10px;">⚠️ Capacity Overflow Routing</div>`;
+      plan.overflow_sites.forEach(os => {
+        html += `
+        <div class="adv-box safe-zone-card" style="border-left: 3px solid var(--orange);">
+          <div class="safe-title">🔄 Routed to: ${os.name}</div>
+          <div class="safe-metrics">
+            <div class="metric">Overflow Pop<br><span style="color: var(--orange);">${os.assigned_population} pax</span></div>
+            <div class="metric">Distance<br><span>${os.distance_km} km</span></div>
+          </div>
+          <div style="font-size: 11px; color: var(--text-dim); margin-top: 8px;">
+            Primary safe zone reached maximum capacity. This group has been dynamically routed to the next available zone.
+          </div>
+        </div>
+        `;
+      });
+    }
   }
   
   if (rejected.length > 0) {

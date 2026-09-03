@@ -293,6 +293,45 @@ function checkInundation(lat, lng, ds, entity, habId) {
       const siteDistrict = site?.district ? ', ' + site.district : '';
       li2.innerHTML = `✅ Relocate to: <strong>${siteName}${siteDistrict}</strong>`;
       ul.appendChild(li2);
+
+      // Fetch and draw route
+      if (site && site.lat && site.lng) {
+         const requestBody = stageData && stageData.geojson ? stageData.geojson : {};
+         fetch(`http://127.0.0.1:8000/route/?origin_lat=${lat}&origin_lon=${lng}&dest_lat=${site.lat}&dest_lon=${site.lng}`, {
+             method: 'POST',
+             headers: {'Content-Type': 'application/json'},
+             body: JSON.stringify(requestBody)
+         }).then(r => r.json()).then(routeData => {
+             if (routeData && routeData.features) {
+                 routeData.features.forEach(feat => {
+                     let flatCoords = [];
+                     feat.geometry.coordinates.forEach(c => { flatCoords.push(c[0]); flatCoords.push(c[1]); });
+                     
+                     let color = Cesium.Color.LIME;
+                     let dashLen = 0;
+                     if (feat.properties.segment_type === 'kacha_way') {
+                         color = Cesium.Color.SADDLEBROWN;
+                         dashLen = 20.0;
+                     } else if (feat.properties.segment_type === 'blocked') {
+                         color = Cesium.Color.RED;
+                     }
+                     
+                     const material = dashLen > 0 
+                         ? new Cesium.PolylineDashMaterialProperty({ color: color, dashLength: dashLen })
+                         : color;
+                         
+                     viewer.entities.add({
+                         polyline: {
+                             positions: Cesium.Cartesian3.fromDegreesArray(flatCoords),
+                             width: feat.properties.segment_type === 'kacha_way' ? 4 : 6,
+                             material: material,
+                             clampToGround: true
+                         }
+                     });
+                 });
+             }
+         }).catch(err => console.error("Routing error:", err));
+      }
     });
   }
 }

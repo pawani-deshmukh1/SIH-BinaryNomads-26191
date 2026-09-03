@@ -81,6 +81,7 @@ class Assignment:
     hab_lng: float = 0.0
     site_lat: float = 0.0
     site_lng: float = 0.0
+    is_overflow: bool = False
     last_updated: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def to_dict(self) -> dict:
@@ -99,6 +100,7 @@ class Assignment:
             "hab_lng": self.hab_lng,
             "site_lat": self.site_lat,
             "site_lng": self.site_lng,
+            "is_overflow": self.is_overflow,
             "last_updated": self.last_updated,
         }
 
@@ -219,24 +221,29 @@ def compute_relocation_plan(
 
     row_ind, col_ind = linear_sum_assignment(padded)
 
-    # --- Build assignments ---
+    # --- Build assignments with Dynamic Load Balancing ---
     assignments: list[Assignment] = []
     unassigned: list[str] = []
 
+    # Map each habitation to its Hungarian-preferred site
+    preferred_sites = {}
     for i, j in zip(row_ind, col_ind):
-        if i >= n_habs:
-            continue
-        hab = habs[i]
-        if j >= n_cols or padded[i, j] >= BIG:
-            unassigned.append(str(hab.get("id", i)))
-            continue
+        if i < n_habs and j < n_cols and padded[i, j] < BIG:
+            preferred_sites[i] = expanded_sites[j]
 
-        site = expanded_sites[j]
-        dist = _haversine_km(
-            float(hab.get("lat", 0)), float(hab.get("lng", 0)),
-            float(site["lat"]), float(site["lng"]),
-        )
+    # Process habitations in strict priority order (most vulnerable first)
+    # They are already sorted in `habs`.
+    
+    # Keep track of actual remaining capacities 
+    site_capacities = {
+        s["id"]: int(s.get("capacity_remaining", s.get("capacity_persons", 0)))
+        for s in sites
+    }
 
+    for i, hab in enumerate(habs):
+        hab_id = str(hab.get("id", i))
+        pop_to_assign = int(hab.get("population", 0))
+        
         vs = float(hab.get("vulnerability_score", 0))
         if vs >= immediate_threshold:
             tier = "immediate"
@@ -245,27 +252,74 @@ def compute_relocation_plan(
         else:
             tier = "medium_term"
 
-        # Assignment quality: weighted combination of site quality + proximity
-        # Site quality weighted higher (0.6) because a closer bad site < farther safe site.
-        max_reasonable_dist = 30.0  # km — normalisation constant
-        proximity_score = max(0.0, 1.0 - dist / max_reasonable_dist)
-        rec_score = float(site.get("recommendation_score", 0.5)) * 0.6 + proximity_score * 0.4
-
-        assignments.append(Assignment(
-            habitation_id=str(hab.get("id", i)),
-            habitation_name=str(hab.get("name", f"HAB-{i}")),
-            population=int(hab.get("population", 0)),
-            vulnerability_score=vs,
-            tier=tier,
-            site_id=str(site["id"]),
-            site_name=str(site["name"]),
-            distance_km=dist,
-            recommendation_score=rec_score,
-            hab_lat=float(hab.get("lat", 0)),
-            hab_lng=float(hab.get("lng", 0)),
-            site_lat=float(site.get("lat", 0)),
-            site_lng=float(site.get("lng", 0)),
-        ))
+        # Determine the order of sites to check. 
+        # 1. Preferred site from Hungarian
+        # 2. All other sites sorted by distance
+        site_queue = []
+        pref_site = preferred_sites.get(i)
+        
+        # Calculate distances to all sites for fallback routing
+        all_sites_dist = []
+        for s in sites:
+            d = _haversine_km(
+                float(hab.get("lat", 0)), float(hab.get("lng", 0)),
+                float(s["lat"]), float(s["lng"])
+            )
+            all_sites_dist.append((s, d))
+        
+        all_sites_dist.sort(key=lambda x: x[1]) # Sort by distance
+        
+        if pref_site:
+            site_queue.append(pref_site)
+        for s, d in all_sites_dist:
+            if not pref_site or s["id"] != pref_site["id"]:
+                site_queue.append(s)
+                
+        is_overflow = False
+        
+        for site in site_queue:
+            if pop_to_assign <= 0:
+                break
+                
+            rem_cap = site_capacities[site["id"]]
+            if rem_cap <= 0:
+                continue
+                
+            # Assign as much as possible
+            assigned_pop = min(pop_to_assign, rem_cap)
+            site_capacities[site["id"]] -= assigned_pop
+            pop_to_assign -= assigned_pop
+            
+            dist = _haversine_km(
+                float(hab.get("lat", 0)), float(hab.get("lng", 0)),
+                float(site["lat"]), float(site["lng"])
+            )
+            
+            proximity_score = max(0.0, 1.0 - dist / 30.0)
+            rec_score = float(site.get("recommendation_score", 0.5)) * 0.6 + proximity_score * 0.4
+            
+            assignments.append(Assignment(
+                habitation_id=hab_id,
+                habitation_name=str(hab.get("name", f"HAB-{i}")),
+                population=assigned_pop, # Only the portion going to this site
+                vulnerability_score=vs,
+                tier=tier,
+                site_id=str(site["id"]),
+                site_name=str(site["name"]),
+                distance_km=dist,
+                recommendation_score=rec_score,
+                hab_lat=float(hab.get("lat", 0)),
+                hab_lng=float(hab.get("lng", 0)),
+                site_lat=float(site.get("lat", 0)),
+                site_lng=float(site.get("lng", 0)),
+                is_overflow=is_overflow
+            ))
+            
+            # If we had to assign to a site, any subsequent assignments for this hab are overflow
+            is_overflow = True
+            
+        if pop_to_assign > 0:
+            unassigned.append(hab_id)
 
     # Sort: immediate first, then by vulnerability desc within each tier
     tier_order = {"immediate": 0, "short_term": 1, "medium_term": 2}

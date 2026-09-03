@@ -24,6 +24,7 @@
     </div>
     <div class="header-actions">
       <div class="time-sync">
+        <button class="btn" style="padding: 6px 12px; background: rgba(255,255,255,0.1); color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 12px; font-weight: 600; font-size: 13px;" onclick="openSettingsModal()">⚙️ Settings</button>
         <button class="btn" style="padding: 6px 12px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 12px; font-weight: 600; font-size: 13px;" onclick="startMainTutorial()">🎓 Guided Tour</button>
         🕐 <span id="last-sync">Just now</span>
       </div>
@@ -109,9 +110,27 @@
     ⚠️ 3 habitations escalated to RED due to heavy rainfall forecast.
   </div>
 
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+    <div class="modal-content" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; width:500px; max-width:90%; max-height:90vh; overflow-y:auto;">
+      <div style="padding:16px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0;">System Settings</h3>
+        <button class="btn-close" onclick="closeSettingsModal()" style="background:none; border:none; color:var(--text-dim); font-size:24px; cursor:pointer;">&times;</button>
+      </div>
+      <div style="padding:24px;" id="settings-form">
+        <div style="text-align: center; color: var(--text-dim);">Loading settings...</div>
+      </div>
+      <div style="padding:16px 24px; border-top:1px solid var(--border); text-align:right;">
+        <button class="btn" style="background:rgba(255,255,255,0.1); width:auto; display:inline-block; margin-right:8px;" onclick="closeSettingsModal()">Cancel</button>
+        <button class="btn" style="width:auto; display:inline-block;" onclick="saveSettings()">Save Configuration</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
+  <script src="js/settings.js"></script>
   <script src="js/weather.js"></script>
   <script src="js/advisory.js"></script>
   <script src="js/radar_sweep.js"></script>

@@ -1,22 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>DISHA — 3D Disaster Growth Simulation</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
   <!-- CesiumJS CSS -->
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-  
+
   <!-- DISHA Global CSS -->
   <link rel="stylesheet" href="css/style.css">
-  
+
   <!-- Turf.js for spatial math -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
 
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body class="sim-page">
 
   <header>
@@ -31,16 +33,16 @@
   <div id="sim-layout">
     <!-- Cesium 3D Viewer Container -->
     <div id="cesiumContainer"></div>
-    
+
     <!-- Right Panel -->
     <aside id="sim-panel">
-      
+
       <!-- Habitation Info -->
       <div class="panel-section">
         <h2 id="sim-hab-name">Loading...</h2>
         <div id="sim-hab-id" class="subtext">--</div>
       </div>
-      
+
       <!-- Weather Trigger Widget -->
       <div class="panel-section">
         <h3>Live Weather Trigger</h3>
@@ -92,9 +94,10 @@
 
   <!-- CesiumJS Core (Loaded last to not block rendering) -->
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Cesium.js"></script>
-  
+
   <!-- Simulation Controller -->
-  <script src="js/simulation_3d.js?v=14"></script>
+  <script src="js/simulation_3d.js?v=13"></script>
 
 </body>
+
 </html>
