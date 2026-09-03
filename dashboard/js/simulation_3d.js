@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('sim-loader').style.display = 'none';
 
-  } catch(e) {
+  } catch (e) {
     console.error(e);
     document.getElementById('sim-loader-text').innerText = "Error: " + e.message;
   }
@@ -65,20 +65,24 @@ async function initCesiumViewer(data) {
   // Disable day/night sun lighting — always show full brightness
   viewer.scene.globe.enableLighting = false;
 
-  // We are using Cesium's default Bing Maps Aerial (Satellite) imagery.
-  // Because we have a valid Ion Token, this will load natively without any
-  // CORS issues (unlike ESRI), guaranteeing a beautiful satellite globe.
-
-
+  // We are using Cesium's default Bing Maps Aerial as the absolute fallback,
+  // but now we are adding ESRI Satellite back on top. 
+  // Since we are moving to the localhost HTTP server, CORS will no longer block it!
+  viewer.imageryLayers.addImageryProvider(
+    new Cesium.UrlTemplateImageryProvider({
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      credit: 'ESRI World Imagery'
+    })
+  );
 
   // Clock: force start at daytime (06:00 UTC = noon India IST)
   const start = Cesium.JulianDate.fromIso8601('2026-09-04T06:00:00Z');
-  const stop  = Cesium.JulianDate.addHours(start, 36, new Cesium.JulianDate());
-  viewer.clock.startTime   = start.clone();
-  viewer.clock.stopTime    = stop.clone();
+  const stop = Cesium.JulianDate.addHours(start, 36, new Cesium.JulianDate());
+  viewer.clock.startTime = start.clone();
+  viewer.clock.stopTime = stop.clone();
   viewer.clock.currentTime = start.clone();
-  viewer.clock.clockRange  = Cesium.ClockRange.CLAMPED;
-  viewer.clock.multiplier  = 600;
+  viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
+  viewer.clock.multiplier = 600;
   viewer.timeline.zoomTo(start, stop);
 
   // Stage colors: light blue → medium blue → dark blue → red
@@ -260,13 +264,13 @@ function checkInundation(lat, lng, ds, entity, habId) {
   const stageData = simulationData.stages[ds._stageIndex];
   if (stageData && stageData.geojson && stageData.geojson.features.length > 0) {
     const poly = stageData.geojson.features[0];
-    try { if (turf.booleanPointInPolygon(pt, poly)) isSubmerged = true; } catch(e) {}
+    try { if (turf.booleanPointInPolygon(pt, poly)) isSubmerged = true; } catch (e) { }
   }
 
   const lsStageData = simulationData.landslide_cone.stages[ds._stageIndex];
   if (lsStageData && lsStageData.cone_geojson && lsStageData.cone_geojson.features.length > 0) {
     const lsPoly = lsStageData.cone_geojson.features[0];
-    try { if (turf.booleanPointInPolygon(pt, lsPoly)) isSubmerged = true; } catch(e) {}
+    try { if (turf.booleanPointInPolygon(pt, lsPoly)) isSubmerged = true; } catch (e) { }
   }
 
   if (isSubmerged) {
