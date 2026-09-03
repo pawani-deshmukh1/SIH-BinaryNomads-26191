@@ -27,69 +27,99 @@ MANNINGS_C          = 25     # roughness coeff for braided rivers
 
 async def _get_openmeteo_water_levels(lat: float, lng: float, risk_multiplier: float) -> list:
     """
-    Derive stage-specific water levels from Open-Meteo hourly precipitation.
+    3-level fallback chain for real water level data.
 
-    Method:
-      1. Fetch 36h hourly precipitation forecast.
-      2. Compute cumulative rainfall at T+0, T+6, T+18, T+36.
-      3. Convert rainfall -> surface runoff -> approximate channel discharge
-         -> water depth via Manning's simplified equation.
-      4. Scale by risk_multiplier from hazard_trigger.
-
-    Fallback: static FALLBACK_WATER_LEVELS if API call fails.
+    Level 1 (PRIMARY): Open-Meteo Flood API - GloFAS v4 river discharge (m3/s)
+                       No API key. 30-day forecast. Covers Brahmaputra and all
+                       its tributaries in Assam. Free for non-commercial use.
+                       https://flood-api.open-meteo.com/v1/flood
+    Level 2 (FALLBACK): Open-Meteo precipitation -> Manning rational method
+    Level 3 (OFFLINE):  Static hardcoded values scaled by risk_multiplier
     """
     import httpx
+
+    # ── Level 1: GloFAS river discharge (Open-Meteo Flood API, no key needed) ─
     try:
-        url = (
-            f"https://api.open-meteo.com/v1/forecast"
+        flood_url = (
+            "https://flood-api.open-meteo.com/v1/flood"
             f"?latitude={lat}&longitude={lng}"
-            f"&hourly=precipitation&forecast_days=2"
+            "&daily=river_discharge&forecast_days=7"
         )
         async with httpx.AsyncClient() as client:
-            resp = await client.get(url, timeout=6.0)
+            resp = await client.get(flood_url, timeout=6.0)
+
+        if resp.status_code == 200:
+            discharge_series = resp.json().get("daily", {}).get("river_discharge", [])
+
+            if discharge_series and len(discharge_series) >= 2:
+                # Map T+hours to approximate day index in the daily GloFAS series
+                day_map = {0: 0, 6: 0, 18: 1, 36: 2}
+                levels = []
+
+                for hour in STAGE_HOURS:
+                    day_idx = min(day_map[hour], len(discharge_series) - 1)
+                    Q = float(discharge_series[day_idx] or 0.0)
+
+                    # Manning depth from discharge: h = (Q / (width * C))^0.6
+                    # 200m width / C=20 for main river reported by GloFAS
+                    h = (max(Q, 1.0) / (200 * 20)) ** 0.6
+                    h_scaled = min(8.0, round(h * risk_multiplier, 2))
+                    if levels:
+                        h_scaled = max(h_scaled, levels[-1])
+                    levels.append(h_scaled)
+
+                levels[0] = max(0.3, levels[0])
+                logger.info(
+                    "[Simulation] GloFAS Q=%.1fm3/s -> levels: %s",
+                    discharge_series[0], levels
+                )
+                return levels
+            raise ValueError("Empty discharge series from GloFAS")
+
+    except Exception as e:
+        logger.warning("[Simulation] Level 1 GloFAS failed: %s - trying Level 2", e)
+
+    # ── Level 2: Rainfall -> Manning rational method ───────────────────────────
+    try:
+        rain_url = (
+            "https://api.open-meteo.com/v1/forecast"
+            f"?latitude={lat}&longitude={lng}"
+            "&hourly=precipitation&forecast_days=2"
+        )
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(rain_url, timeout=6.0)
+
         if resp.status_code != 200:
             raise ValueError(f"HTTP {resp.status_code}")
 
         hourly_rain = resp.json().get("hourly", {}).get("precipitation", [])
-
         levels = []
+
         for hour in STAGE_HOURS:
-            # Cumulative rainfall from T=0 to T=hour
             cumulative_mm = sum(hourly_rain[:max(1, hour)])
-
-            # Surface runoff (mm) using rational method
             runoff_mm = cumulative_mm * RUNOFF_COEFFICIENT
-
-            # Approximate discharge Q (m3/s) for a unit catchment (~10 km2)
-            catchment_m2 = 10_000_000  # 10 km2 typical small char tributary catchment
-            duration_s   = max(3600, hour * 3600)  # avoid division by zero
-            Q = (runoff_mm / 1000) * catchment_m2 / duration_s  # m3/s
-
-            # Water depth via Manning's simplified: h = (Q / (w * C))^0.6
-            if Q > 0:
-                h = (Q / (CHANNEL_WIDTH_M * MANNINGS_C)) ** 0.6
-            else:
-                h = FALLBACK_WATER_LEVELS[hour]  # use static if no rain
-
-            # Scale by risk multiplier and cap at 8m
+            catchment_m2 = 10_000_000
+            duration_s = max(3600, hour * 3600)
+            Q = (runoff_mm / 1000) * catchment_m2 / duration_s
+            h = (Q / (CHANNEL_WIDTH_M * MANNINGS_C)) ** 0.6 if Q > 0 else FALLBACK_WATER_LEVELS[hour]
             h_scaled = min(8.0, round(h * risk_multiplier, 2))
-            # Ensure water levels are monotonically increasing across stages
             if levels:
                 h_scaled = max(h_scaled, levels[-1])
-
             levels.append(h_scaled)
 
-        # Ensure at least 0.3m at T+0 (minimum bankfull condition)
         levels[0] = max(0.3, levels[0])
-        logger.info(f"[Simulation] Open-Meteo water levels: {levels}")
+        logger.info("[Simulation] Level 2 rainfall -> levels: %s", levels)
         return levels
 
     except Exception as e:
-        logger.warning(f"[Simulation] Open-Meteo water level fetch failed ({e}) — using static fallback")
-        return [
-            round(FALLBACK_WATER_LEVELS[h] * (risk_multiplier if h > 0 else 1.0), 2)
-            for h in STAGE_HOURS
-        ]
+        logger.warning("[Simulation] Level 2 rainfall failed: %s - Level 3 static", e)
+
+    # ── Level 3: Static fallback ───────────────────────────────────────────────
+    logger.info("[Simulation] Level 3: static fallback")
+    return [
+        round(FALLBACK_WATER_LEVELS[h] * (risk_multiplier if h > 0 else 1.0), 2)
+        for h in STAGE_HOURS
+    ]
 
 # Base landslide cone radius in km per stage
 BASE_LANDSLIDE_RADIUS = {
