@@ -46,11 +46,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function initCesiumViewer(data) {
-  // Restore original working terrain (Ion world terrain with 3D elevation)
-  const terrainProvider = await Cesium.createWorldTerrainAsync();
+  // Use Ellipsoid terrain (no Ion token required, guaranteed to render)
+  const terrain = new Cesium.EllipsoidTerrainProvider();
 
   viewer = new Cesium.Viewer('cesiumContainer', {
-    terrainProvider: terrainProvider,
+    terrainProvider: terrain,
     timeline: true,
     animation: true,
     baseLayerPicker: false,
@@ -58,22 +58,19 @@ async function initCesiumViewer(data) {
     homeButton: false,
     sceneModePicker: false,
     navigationHelpButton: false,
-    infoBox: false
+    infoBox: false,
+    // Google Maps Satellite: High-res, no API key needed, open CORS for file:///
+    baseLayer: new Cesium.ImageryLayer(
+      new Cesium.UrlTemplateImageryProvider({
+        url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+        credit: 'Google Maps Satellite'
+      })
+    )
   });
 
   // Disable day/night sun lighting — always show full brightness
   viewer.scene.globe.enableLighting = false;
 
-  // ESRI World satellite tiles — direct tile URL, no key needed
-  // We DO NOT call removeAll() here. If the user opens this via file:///
-  // and CORS blocks the ESRI tiles, it will gracefully fall back to the 
-  // default Cesium Bing Maps satellite imagery so the globe never goes black.
-  viewer.imageryLayers.addImageryProvider(
-    new Cesium.UrlTemplateImageryProvider({
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      credit: 'ESRI World Imagery'
-    })
-  );
 
 
   // Clock: force start at daytime (06:00 UTC = noon India IST)
