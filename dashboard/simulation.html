@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DISHA — 3D Disaster Growth Simulation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- CesiumJS CSS -->
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  
+  <!-- DISHA Global CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Turf.js for spatial math -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="sim-page">
+
+  <header>
+    <div class="brand">
+      DISHA <span style="font-size:12px;color:var(--accent);">| 3D TACTICAL SIMULATION</span>
+    </div>
+    <div class="actions">
+      <a href="javascript:history.back()" class="btn-outline">← Back to COP</a>
+    </div>
+  </header>
+
+  <div id="sim-layout">
+    <!-- Cesium 3D Viewer Container -->
+    <div id="cesiumContainer"></div>
+    
+    <!-- Right Panel -->
+    <aside id="sim-panel">
+      
+      <!-- Habitation Info -->
+      <div class="panel-section">
+        <h2 id="sim-hab-name">Loading...</h2>
+        <div id="sim-hab-id" class="subtext">--</div>
+      </div>
+      
+      <!-- Weather Trigger Widget -->
+      <div class="panel-section">
+        <h3>Live Weather Trigger</h3>
+        <div class="metric-row">
+          <span>Rain (mm/hr):</span>
+          <strong id="sim-rain-current">--</strong>
+        </div>
+        <div class="metric-row">
+          <span>72h Forecast:</span>
+          <strong id="sim-rain-72h">--</strong>
+        </div>
+        <div class="metric-row">
+          <span>Trigger Status:</span>
+          <strong id="sim-trigger-status" class="badge">--</strong>
+        </div>
+        <div class="metric-row">
+          <span>Risk Multiplier:</span>
+          <strong id="sim-risk-multiplier" style="color:var(--accent);">--</strong>
+        </div>
+      </div>
+
+      <!-- Stage Legend -->
+      <div class="panel-section">
+        <h3>Simulation Stages</h3>
+        <div class="stage-legend">
+          <div class="stage-item" id="stage-0"><span class="color-box stage-0-color"></span> T+0h (Base)</div>
+          <div class="stage-item" id="stage-6"><span class="color-box stage-6-color"></span> T+6h</div>
+          <div class="stage-item" id="stage-18"><span class="color-box stage-18-color"></span> T+18h</div>
+          <div class="stage-item" id="stage-36"><span class="color-box stage-36-color"></span> T+36h (Peak)</div>
+        </div>
+      </div>
+
+      <!-- Live Advisory Log -->
+      <div class="panel-section" style="flex:1;">
+        <h3>Live Advisory Triggers</h3>
+        <ul id="sim-advisory-log" class="advisory-list">
+          <li class="empty-log">Simulation standing by. Awaiting clock start.</li>
+        </ul>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="sim-loader">
+    <div class="spinner"></div>
+    <div id="sim-loader-text">Initializing 3D Terrain...</div>
+  </div>
+
+  <!-- CesiumJS Core (Loaded last to not block rendering) -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Cesium.js"></script>
+  
+  <!-- Simulation Controller -->
+  <script src="js/simulation_3d.js"></script>
+
+</body>
+</html>

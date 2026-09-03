@@ -118,6 +118,7 @@
       <span class="subtitle">Common Operating Picture (COP)</span>
     </div>
     <div style="display: flex; align-items: center; gap: 16px;">
+      <a href="#" id="btn-3d-sim" class="btn" style="padding: 6px 12px; background: var(--accent); color: white; text-decoration: none; font-size: 12px; border-radius: 6px; font-weight: 600;">🌊 View 3D Simulation</a>
       <button class="btn" style="padding: 6px 12px; background: rgba(255,255,255,0.1); width: auto; font-size: 12px;" onclick="startCopTutorial()">🎓 Guided Tour</button>
       <div style="font-size: 14px; font-weight: 600;" id="header-hab-name">Loading...</div>
     </div>
@@ -214,6 +215,8 @@
         document.getElementById('loader').innerHTML = "No Habitation ID provided.";
         return;
       }
+      
+      document.getElementById('btn-3d-sim').href = `simulation.html?hab_id=${habId}`;
 
       try {
         // 1. Fetch live ML scores for the map

@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
 
 app = FastAPI(
     title="DISHA Backend API",
@@ -20,7 +22,7 @@ app.add_middleware(
 def health_check():
     return {"status": "ok"}
 
-from api import settings_api, damage, flood, landslide, red_zones, relocation, routes, towers, ground_situation, evac_zones, feedback, analyze, inundation, live_risk, susceptibility, advisory
+from api import settings_api, damage, flood, landslide, red_zones, relocation, routes, towers, ground_situation, evac_zones, feedback, analyze, inundation, live_risk, susceptibility, advisory, simulation
 
 app.include_router(settings_api.router)
 app.include_router(damage.router)
@@ -38,4 +40,10 @@ app.include_router(inundation.router)
 app.include_router(live_risk.router)
 app.include_router(susceptibility.router)
 app.include_router(advisory.router)
- 
+app.include_router(simulation.router)
+
+# Serve the dashboard as static files at /app/
+# Open http://127.0.0.1:8000/app/simulation.html?hab_id=...
+DASHBOARD_DIR = os.path.join(os.path.dirname(__file__), "..", "dashboard")
+app.mount("/app", StaticFiles(directory=DASHBOARD_DIR, html=True), name="dashboard")
+

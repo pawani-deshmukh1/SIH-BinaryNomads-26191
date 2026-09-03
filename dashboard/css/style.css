@@ -575,6 +575,160 @@ header {
 }
 
 /* ────────────────────────────────────────────────────────
+   3D SIMULATION PAGE STYLES
+──────────────────────────────────────────────────────── */
+
+.sim-page {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#sim-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+#cesiumContainer {
+  flex: 1;
+  position: relative;
+}
+
+#sim-panel {
+  width: 380px;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  gap: 24px;
+  overflow-y: auto;
+}
+
+#sim-loader {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 10, 15, 0.9);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#sim-loader-text {
+  margin-top: 16px;
+  color: var(--text-dim);
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.panel-section {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.panel-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+#sim-hab-name {
+  margin: 0;
+  font-size: 24px;
+  color: white;
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.metric-row span {
+  color: var(--text-dim);
+}
+
+.metric-row strong {
+  font-weight: 600;
+  color: white;
+}
+
+.stage-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  opacity: 0.5;
+  transition: opacity 0.3s;
+}
+
+.color-box {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.stage-0-color { background: rgba(0, 191, 255, 0.5); }
+.stage-6-color { background: rgba(30, 144, 255, 0.6); }
+.stage-18-color { background: rgba(65, 105, 225, 0.7); }
+.stage-36-color { background: rgba(220, 20, 60, 0.7); }
+
+.advisory-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.advisory-list li {
+  font-size: 13px;
+  padding: 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+  line-height: 1.5;
+}
+
+.advisory-list li.empty-log {
+  border-left: none;
+  background: none;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 24px;
+}
+
+/* Cesium UI Overrides for Dark Mode */
+.cesium-viewer-timelineContainer,
+.cesium-viewer-animationContainer {
+  background: rgba(9, 10, 15, 0.8) !important;
+  border-top: 1px solid var(--border) !important;
+}
+.cesium-button {
+  background: rgba(255,255,255,0.1) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+}
+
+/* ────────────────────────────────────────────────────────
    INTRO.JS CUSTOM OVERRIDES (DARK THEME)
 ──────────────────────────────────────────────────────── */
 .introjs-tooltip {
