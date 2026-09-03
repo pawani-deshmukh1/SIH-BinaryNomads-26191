@@ -11,13 +11,16 @@ from fastapi import APIRouter, Query, HTTPException
 from fastapi.responses import JSONResponse
 from datetime import datetime, timezone
 import json
-from pathlib import Path
+from pathlib import Path # Trigger hot reload
 from core.carrying_capacity import evaluate_safe_zones, calculate_resources
 from core.hazard_trigger import get_live_weather_trigger
 from core.proactive_engine import proactive_engine
 
+from functools import lru_cache
+
 router = APIRouter(prefix="/advisory", tags=["Relocation Advisory"])
 
+@lru_cache(maxsize=32)
 def load_json_fixture(filename: str):
     path = Path(__file__).resolve().parent.parent / "fixtures" / filename
     if not path.exists():
@@ -103,16 +106,19 @@ async def generate_advisory(habitation_id: str, region: str = Query(default="ass
     if hab_assignments:
         # Use dynamic assignments
         primary = hab_assignments[0]
+        site_id = primary["site_id"]
+        sz_match = next((sz for sz in safe_zones if sz.get("id") == site_id), {})
+        
         best_site = {
-            "id": primary["site_id"],
+            "id": site_id,
             "name": primary["site_name"],
             "distance_km": primary["distance_km"],
             "access_mode": "ROAD", # Simplification
             "hazard_safety_score": primary["recommendation_score"],
             "capacity": primary["population"], # Actually assigned population
             "is_overflow": primary.get("is_overflow", False),
-            "lat": primary.get("site_lat", 0),
-            "lng": primary.get("site_lng", 0)
+            "lat": sz_match.get("lat", primary.get("site_lat", 0)),
+            "lng": sz_match.get("lng", primary.get("site_lng", 0))
         }
         
         overflow_sites = []

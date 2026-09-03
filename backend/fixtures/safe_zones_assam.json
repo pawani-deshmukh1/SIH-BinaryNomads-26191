@@ -150,7 +150,7 @@
     "district": "Majuli",
     "lat": 26.9600,
     "lng": 94.1700,
-    "site_area_sqm": 6000,
+    "site_area_sqm": 12000,
     "water_source": false,
     "medical_facility_nearby": false,
     "access_mode": "boat_or_heli",

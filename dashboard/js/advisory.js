@@ -13,9 +13,19 @@ function getIconForType(type) {
   }
 }
 
+let currentRouteLayers = [];
+
+function clearRouteLayers() {
+  if (typeof map !== 'undefined' && currentRouteLayers) {
+    currentRouteLayers.forEach(layer => map.removeLayer(layer));
+    currentRouteLayers = [];
+  }
+}
+
 async function openAdvisory(habId) {
   // 1. Slide in the panel immediately
   panel.classList.add('active');
+  clearRouteLayers();
   
   // 2. Set loading state
   document.getElementById('adv-title').textContent = 'Loading...';
@@ -46,6 +56,7 @@ async function openAdvisory(habId) {
 
 function closeAdvisory() {
   panel.classList.remove('active');
+  clearRouteLayers();
 }
 
 function renderAdvisoryContent(adv) {
@@ -100,6 +111,61 @@ function renderAdvisoryContent(adv) {
   if (plan.recommended_site) {
     const site = plan.recommended_site;
     const res = plan.resources_required;
+    
+    // FETCH ROUTE AND DRAW IT ON LEAFLET MAP
+    if (typeof currentHabitations !== 'undefined') {
+      const habData = currentHabitations.find(h => h.id === hab.id);
+      if (habData && site.lat && site.lng) {
+        fetch(`http://127.0.0.1:8000/route/?origin_lat=${habData.lat}&origin_lon=${habData.lng}&dest_lat=${site.lat}&dest_lon=${site.lng}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({}) // no flood geojson for 2D map
+        }).then(r => r.json()).then(routeData => {
+            if (routeData && routeData.features) {
+                routeData.features.forEach(feat => {
+                    let color = '#22c55e'; // GREEN
+                    let dashArray = null;
+                    if (feat.properties.segment_type === 'kacha_way') {
+                        color = '#8B4513'; // BROWN
+                        dashArray = '10, 10';
+                    } else if (feat.properties.segment_type === 'blocked' || feat.properties.route_status === 'ERROR' || feat.properties.route_status === 'ISOLATED') {
+                        color = '#ef4444'; // RED
+                        dashArray = '5, 5'; // Make error lines dashed so they are distinguishable
+                    }
+                    
+                    if (feat.geometry && feat.geometry.coordinates) {
+                        const latlngs = feat.geometry.coordinates.map(c => [c[1], c[0]]);
+                        const polyline = L.polyline(latlngs, {
+                            color: color,
+                            weight: 4,
+                            opacity: 0.9,
+                            dashArray: dashArray
+                        }).addTo(map);
+                        
+                        currentRouteLayers.push(polyline);
+                    }
+                });
+                
+                // Add Destination Marker
+                const destIcon = L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div style="background-color: #22c55e; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                });
+                const destMarker = L.marker([site.lat, site.lng], {icon: destIcon})
+                  .bindTooltip("Safe Zone: " + site.name, {permanent: true, direction: 'right', className: 'safe-zone-tooltip'})
+                  .addTo(map);
+                currentRouteLayers.push(destMarker);
+
+                // Zoom map to fit both start and end points
+                const bounds = L.latLngBounds([[habData.lat, habData.lng], [site.lat, site.lng]]);
+                // 300px right padding to avoid hiding behind the advisory panel
+                map.flyToBounds(bounds, { paddingBottomRight: [400, 50], paddingTopLeft: [50, 50], duration: 1.5 });
+            }
+        }).catch(err => console.error("Route fetch failed:", err));
+      }
+    }
     
     html += `
       <div class="section-title">Relocation Plan</div>

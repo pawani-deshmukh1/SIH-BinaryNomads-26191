@@ -287,8 +287,21 @@ function checkInundation(lat, lng, ds, entity, habId) {
     ul.appendChild(li);
 
     fetch('http://127.0.0.1:8000/advisory/' + habId).then(r => r.json()).then(res => {
-      const li2 = document.createElement('li');
       const site = res?.advisory?.relocation_plan?.recommended_site;
+      
+      let approved = true;
+      if (site && site.is_overflow) {
+          approved = confirm(`[HUMAN-IN-THE-LOOP AUTHORIZATION]\n\nThe primary safe zone has exceeded Sphere Standards capacity.\nDynamic Optimization Engine suggests re-routing to: ${site.name}.\n\nApprove this dynamic re-routing?`);
+      }
+
+      const li2 = document.createElement('li');
+      if (!approved) {
+          li2.innerHTML = `❌ Dynamic Re-routing Rejected by Commander. Awaiting manual override.`;
+          li2.style.color = "var(--orange)";
+          ul.appendChild(li2);
+          return;
+      }
+
       const siteName = site?.name || 'N/A';
       const siteDistrict = site?.district ? ', ' + site.district : '';
       li2.innerHTML = `✅ Relocate to: <strong>${siteName}${siteDistrict}</strong>`;
@@ -296,6 +309,19 @@ function checkInundation(lat, lng, ds, entity, habId) {
 
       // Fetch and draw route
       if (site && site.lat && site.lng) {
+         // Draw Safe Zone Marker
+         viewer.entities.add({
+             position: Cesium.Cartesian3.fromDegrees(site.lng, site.lat),
+             point: { pixelSize: 14, color: Cesium.Color.LIME, outlineColor: Cesium.Color.WHITE, outlineWidth: 2 },
+             label: { text: "Safe Zone: " + site.name, font: '14pt Inter', style: Cesium.LabelStyle.FILL_AND_OUTLINE, verticalOrigin: Cesium.VerticalOrigin.BOTTOM, pixelOffset: new Cesium.Cartesian2(0, -15) }
+         });
+         
+         // Automatically zoom camera to fit both origin and destination
+         const startCartesian = Cesium.Cartesian3.fromDegrees(lng, lat);
+         const destCartesian = Cesium.Cartesian3.fromDegrees(site.lng, site.lat);
+         const boundingSphere = Cesium.BoundingSphere.fromPoints([startCartesian, destCartesian]);
+         viewer.camera.flyToBoundingSphere(boundingSphere, { duration: 3.0 });
+
          const requestBody = stageData && stageData.geojson ? stageData.geojson : {};
          fetch(`http://127.0.0.1:8000/route/?origin_lat=${lat}&origin_lon=${lng}&dest_lat=${site.lat}&dest_lon=${site.lng}`, {
              method: 'POST',
