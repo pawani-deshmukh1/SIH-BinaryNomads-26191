@@ -47,7 +47,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function initCesiumViewer(data) {
   // Use the standard Ellipsoid (flat) terrain to avoid any Ion token failures
-  // that were causing the globe to turn invisible.
   const terrain = new Cesium.EllipsoidTerrainProvider();
 
   viewer = new Cesium.Viewer('cesiumContainer', {
@@ -59,15 +58,20 @@ async function initCesiumViewer(data) {
     homeButton: false,
     sceneModePicker: false,
     navigationHelpButton: false,
-    infoBox: false,
-    // explicitly use OpenStreetMap to avoid ESRI CORS or Ion token issues
-    baseLayer: new Cesium.ImageryLayer(new Cesium.OpenStreetMapImageryProvider({
-      url : 'https://a.tile.openstreetmap.org/'
-    }))
+    infoBox: false
   });
 
   // Keep globe visible without dark sides for tactical overview
   viewer.scene.globe.enableLighting = false;
+
+  // Restore the direct URL ESRI Satellite Imagery
+  viewer.imageryLayers.removeAll();
+  viewer.imageryLayers.addImageryProvider(
+    new Cesium.UrlTemplateImageryProvider({
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      credit: 'ESRI World Imagery'
+    })
+  );
 
 
   // Clock: force start at daytime (06:00 UTC = noon India IST)
