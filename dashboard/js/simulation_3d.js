@@ -65,7 +65,9 @@ async function initCesiumViewer(data) {
   viewer.scene.globe.enableLighting = false;
 
   // ESRI World satellite tiles — direct tile URL, no key needed
-  viewer.imageryLayers.removeAll();
+  // We DO NOT call removeAll() here. If the user opens this via file:///
+  // and CORS blocks the ESRI tiles, it will gracefully fall back to the 
+  // default Cesium Bing Maps satellite imagery so the globe never goes black.
   viewer.imageryLayers.addImageryProvider(
     new Cesium.UrlTemplateImageryProvider({
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
