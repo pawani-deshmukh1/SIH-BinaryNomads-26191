@@ -1,4 +1,4 @@
-Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6Ijd4eTktYUF0N2FybDRhbGMiLCJqdGkiOiJhNTI3MWI5MS1jZDRkLTQ0MGItYTMzNy0yYTJiZTlhOWQwYmUiLCJpZCI6NDc5OTcyLCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3ODg0NDI5ODZ9.4Aq7limiGVKqhf4hQW8KrQKY99V_NKVo4y1Oq0ooZUE';
+Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6InFZa05DNzhtTElkZVpBTVUiLCJqdGkiOiI0NWM2NTc2Ny1lYTJkLTRkMmEtYjY3Yy0wMmY5Njc0YWQ3MjUiLCJpZCI6NDc5OTcyLCJzdWIiOiJBc2h1dG9zaE0iLCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoiQXNodXRvc2hNX2RlZmF1bHQiLCJpYXQiOjE3ODg0NTEwODF9.N8rv3vb1F0QVa3iJEpU1cf4EoXMoIPem8LeHAbVITnI';
 
 let viewer;
 let simulationData;
@@ -46,12 +46,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function initCesiumViewer(data) {
-  // Use Ellipsoid terrain (no Ion token required, guaranteed to render)
-  const terrain = new Cesium.EllipsoidTerrainProvider();
+  // Restore original working terrain (Ion world terrain with 3D elevation)
+  // Now that we have a valid token, this will work perfectly.
+  const terrainProvider = await Cesium.createWorldTerrainAsync();
 
-  // Initialize with absolute minimum options to prevent silent failures
   viewer = new Cesium.Viewer('cesiumContainer', {
-    terrainProvider: terrain,
+    terrainProvider: terrainProvider,
     timeline: true,
     animation: true,
     baseLayerPicker: false,
@@ -62,14 +62,15 @@ async function initCesiumViewer(data) {
     infoBox: false
   });
 
-  // Clear default Ion Bing Maps (which fails without a valid token)
-  viewer.imageryLayers.removeAll();
+  // Disable day/night sun lighting — always show full brightness
+  viewer.scene.globe.enableLighting = false;
 
-  // Add Google Maps Satellite fallback layer
+  // ESRI World satellite tiles — direct tile URL, no key needed
+  viewer.imageryLayers.removeAll();
   viewer.imageryLayers.addImageryProvider(
     new Cesium.UrlTemplateImageryProvider({
-      url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-      credit: 'Google Maps Satellite'
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      credit: 'ESRI World Imagery'
     })
   );
 
