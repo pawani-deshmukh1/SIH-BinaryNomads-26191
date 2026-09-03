@@ -46,11 +46,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function initCesiumViewer(data) {
-  // Use the standard Ellipsoid (flat) terrain to avoid any Ion token failures
-  const terrain = new Cesium.EllipsoidTerrainProvider();
+  // Restore original working terrain (Ion world terrain with 3D elevation)
+  const terrainProvider = await Cesium.createWorldTerrainAsync();
 
   viewer = new Cesium.Viewer('cesiumContainer', {
-    terrainProvider: terrain,
+    terrainProvider: terrainProvider,
     timeline: true,
     animation: true,
     baseLayerPicker: false,
@@ -61,12 +61,11 @@ async function initCesiumViewer(data) {
     infoBox: false
   });
 
-  // Keep globe visible without dark sides for tactical overview
+  // Disable day/night sun lighting — always show full brightness
   viewer.scene.globe.enableLighting = false;
 
-  // Add ESRI satellite imagery on top of default layer (don't removeAll — that
-  // causes a black globe when tiles are blocked by CORS under file:// protocol).
-  // The default Cesium natural-earth layer stays as a visible fallback.
+  // ESRI World satellite tiles — direct tile URL, no key needed
+  viewer.imageryLayers.removeAll();
   viewer.imageryLayers.addImageryProvider(
     new Cesium.UrlTemplateImageryProvider({
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
