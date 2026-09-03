@@ -73,29 +73,29 @@ async def _get_openmeteo_water_levels(lat: float, lng: float, risk_multiplier: f
             _GLOFAS_CACHE[cache_key] = (now, discharge_series)
 
         if len(discharge_series) >= 2:
-                # Map T+hours to approximate day index in the daily GloFAS series
-                day_map = {0: 0, 6: 0, 18: 1, 36: 2}
-                levels = []
+            # Map T+hours to approximate day index in the daily GloFAS series
+            day_map = {0: 0, 6: 0, 18: 1, 36: 2}
+            levels = []
 
-                for hour in STAGE_HOURS:
-                    day_idx = min(day_map[hour], len(discharge_series) - 1)
-                    Q = float(discharge_series[day_idx] or 0.0)
+            for hour in STAGE_HOURS:
+                day_idx = min(day_map[hour], len(discharge_series) - 1)
+                Q = float(discharge_series[day_idx] or 0.0)
 
-                    # Manning depth from discharge: h = (Q / (width * C))^0.6
-                    # 200m width / C=20 for main river reported by GloFAS
-                    h = (max(Q, 1.0) / (200 * 20)) ** 0.6
-                    h_scaled = min(8.0, round(h * risk_multiplier, 2))
-                    if levels:
-                        h_scaled = max(h_scaled, levels[-1])
-                    levels.append(h_scaled)
+                # Manning depth from discharge: h = (Q / (width * C))^0.6
+                # 200m width / C=20 for main river reported by GloFAS
+                h = (max(Q, 1.0) / (200 * 20)) ** 0.6
+                h_scaled = min(8.0, round(h * risk_multiplier, 2))
+                if levels:
+                    h_scaled = max(h_scaled, levels[-1])
+                levels.append(h_scaled)
 
-                levels[0] = max(0.3, levels[0])
-                logger.info(
-                    "[Simulation] GloFAS Q=%.1fm3/s -> levels: %s",
-                    discharge_series[0], levels
-                )
-                return levels
-            raise ValueError("Invalid discharge series from GloFAS")
+            levels[0] = max(0.3, levels[0])
+            logger.info(
+                "[Simulation] GloFAS Q=%.1fm3/s -> levels: %s",
+                discharge_series[0], levels
+            )
+            return levels
+        raise ValueError("Invalid discharge series from GloFAS")
 
     except Exception as e:
         logger.warning("[Simulation] Level 1 GloFAS failed: %s - trying Level 2", e)
