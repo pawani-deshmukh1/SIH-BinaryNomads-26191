@@ -49,6 +49,7 @@ async function initCesiumViewer(data) {
   // Use Ellipsoid terrain (no Ion token required, guaranteed to render)
   const terrain = new Cesium.EllipsoidTerrainProvider();
 
+  // Initialize with absolute minimum options to prevent silent failures
   viewer = new Cesium.Viewer('cesiumContainer', {
     terrainProvider: terrain,
     timeline: true,
@@ -58,15 +59,20 @@ async function initCesiumViewer(data) {
     homeButton: false,
     sceneModePicker: false,
     navigationHelpButton: false,
-    infoBox: false,
-    // Google Maps Satellite: High-res, no API key needed, open CORS for file:///
-    baseLayer: new Cesium.ImageryLayer(
-      new Cesium.UrlTemplateImageryProvider({
-        url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-        credit: 'Google Maps Satellite'
-      })
-    )
+    infoBox: false
   });
+
+  // Clear default Ion Bing Maps (which fails without a valid token)
+  viewer.imageryLayers.removeAll();
+
+  // Add Google Maps Satellite fallback layer
+  viewer.imageryLayers.addImageryProvider(
+    new Cesium.UrlTemplateImageryProvider({
+      url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+      credit: 'Google Maps Satellite'
+    })
+  );
+
 
   // Disable day/night sun lighting — always show full brightness
   viewer.scene.globe.enableLighting = false;
