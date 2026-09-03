@@ -46,10 +46,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function initCesiumViewer(data) {
-  const terrainProvider = await Cesium.createWorldTerrainAsync();
+  // Use the standard Ellipsoid (flat) terrain to avoid any Ion token failures
+  // that were causing the globe to turn invisible.
+  const terrain = new Cesium.EllipsoidTerrainProvider();
 
   viewer = new Cesium.Viewer('cesiumContainer', {
-    terrainProvider: terrainProvider,
+    terrainProvider: terrain,
     timeline: true,
     animation: true,
     baseLayerPicker: false,
@@ -57,21 +59,16 @@ async function initCesiumViewer(data) {
     homeButton: false,
     sceneModePicker: false,
     navigationHelpButton: false,
-    infoBox: false
+    infoBox: false,
+    // explicitly use OpenStreetMap to avoid ESRI CORS or Ion token issues
+    baseLayer: new Cesium.ImageryLayer(new Cesium.OpenStreetMapImageryProvider({
+      url : 'https://a.tile.openstreetmap.org/'
+    }))
   });
 
-  // Disable day/night sun lighting — always show full brightness
+  // Keep globe visible without dark sides for tactical overview
   viewer.scene.globe.enableLighting = false;
 
-  // ESRI World satellite tiles (free, no license needed, great India coverage)
-  // NOTE: Must be served via http:// (not file://) for CORS to work
-  viewer.imageryLayers.removeAll();
-  viewer.imageryLayers.addImageryProvider(
-    new Cesium.UrlTemplateImageryProvider({
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      credit: 'ESRI World Imagery'
-    })
-  );
 
   // Clock: force start at daytime (06:00 UTC = noon India IST)
   const start = Cesium.JulianDate.fromIso8601('2026-09-04T06:00:00Z');
