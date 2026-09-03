@@ -1,5 +1,6 @@
 import logging
 import math
+import time
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 import json
@@ -24,6 +25,12 @@ BASIN_FACTOR        = 0.009  # empirical for small Brahmaputra char tributaries
 CHANNEL_WIDTH_M     = 50     # avg channel width (m) for Manning's approximation
 MANNINGS_C          = 25     # roughness coeff for braided rivers
 
+# ── API Caching ─────────────────────────────────────────────────────────────
+# Cache API responses for 1 hour to prevent timeouts and rate limiting
+CACHE_TTL_SECONDS = 3600
+_GLOFAS_CACHE = {}  # {(lat, lng): (timestamp, discharge_series)}
+_RAIN_CACHE = {}    # {(lat, lng): (timestamp, hourly_rain)}
+
 
 async def _get_openmeteo_water_levels(lat: float, lng: float, risk_multiplier: float) -> list:
     """
@@ -40,18 +47,32 @@ async def _get_openmeteo_water_levels(lat: float, lng: float, risk_multiplier: f
 
     # ── Level 1: GloFAS river discharge (Open-Meteo Flood API, no key needed) ─
     try:
-        flood_url = (
-            "https://flood-api.open-meteo.com/v1/flood"
-            f"?latitude={lat}&longitude={lng}"
-            "&daily=river_discharge&forecast_days=7"
-        )
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(flood_url, timeout=6.0)
+        now = time.time()
+        cache_key = (round(lat, 3), round(lng, 3))
+        
+        # Check cache first
+        if cache_key in _GLOFAS_CACHE and (now - _GLOFAS_CACHE[cache_key][0]) < CACHE_TTL_SECONDS:
+            discharge_series = _GLOFAS_CACHE[cache_key][1]
+            logger.info("[Simulation] Using cached GloFAS discharge")
+        else:
+            flood_url = (
+                "https://flood-api.open-meteo.com/v1/flood"
+                f"?latitude={lat}&longitude={lng}"
+                "&daily=river_discharge&forecast_days=7"
+            )
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(flood_url, timeout=6.0)
 
-        if resp.status_code == 200:
+            if resp.status_code != 200:
+                raise ValueError(f"HTTP {resp.status_code}")
+                
             discharge_series = resp.json().get("daily", {}).get("river_discharge", [])
+            if not discharge_series:
+                raise ValueError("Empty discharge series from GloFAS")
+                
+            _GLOFAS_CACHE[cache_key] = (now, discharge_series)
 
-            if discharge_series and len(discharge_series) >= 2:
+        if len(discharge_series) >= 2:
                 # Map T+hours to approximate day index in the daily GloFAS series
                 day_map = {0: 0, 6: 0, 18: 1, 36: 2}
                 levels = []
@@ -74,25 +95,31 @@ async def _get_openmeteo_water_levels(lat: float, lng: float, risk_multiplier: f
                     discharge_series[0], levels
                 )
                 return levels
-            raise ValueError("Empty discharge series from GloFAS")
+            raise ValueError("Invalid discharge series from GloFAS")
 
     except Exception as e:
         logger.warning("[Simulation] Level 1 GloFAS failed: %s - trying Level 2", e)
 
     # ── Level 2: Rainfall -> Manning rational method ───────────────────────────
     try:
-        rain_url = (
-            "https://api.open-meteo.com/v1/forecast"
-            f"?latitude={lat}&longitude={lng}"
-            "&hourly=precipitation&forecast_days=2"
-        )
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(rain_url, timeout=6.0)
+        if cache_key in _RAIN_CACHE and (time.time() - _RAIN_CACHE[cache_key][0]) < CACHE_TTL_SECONDS:
+            hourly_rain = _RAIN_CACHE[cache_key][1]
+            logger.info("[Simulation] Using cached Open-Meteo rainfall")
+        else:
+            rain_url = (
+                "https://api.open-meteo.com/v1/forecast"
+                f"?latitude={lat}&longitude={lng}"
+                "&hourly=precipitation&forecast_days=2"
+            )
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(rain_url, timeout=6.0)
 
-        if resp.status_code != 200:
-            raise ValueError(f"HTTP {resp.status_code}")
+            if resp.status_code != 200:
+                raise ValueError(f"HTTP {resp.status_code}")
 
-        hourly_rain = resp.json().get("hourly", {}).get("precipitation", [])
+            hourly_rain = resp.json().get("hourly", {}).get("precipitation", [])
+            _RAIN_CACHE[cache_key] = (time.time(), hourly_rain)
+
         levels = []
 
         for hour in STAGE_HOURS:
