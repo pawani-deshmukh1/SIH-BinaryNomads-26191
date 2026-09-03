@@ -34,3 +34,6 @@ python-multipart==0.0.9
 
 # Elevation / inundation simulation
 srtm.py==0.3.6
+
+# Explainability
+shap>=0.44.0

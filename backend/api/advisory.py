@@ -14,6 +14,7 @@ import json
 from pathlib import Path
 from core.carrying_capacity import evaluate_safe_zones, calculate_resources
 from core.hazard_trigger import get_live_weather_trigger
+from core.proactive_engine import proactive_engine
 
 router = APIRouter(prefix="/advisory", tags=["Relocation Advisory"])
 
@@ -76,7 +77,22 @@ async def generate_advisory(habitation_id: str, region: str = Query(default="ass
     # 2. Get live weather trigger for context
     live_trigger = await get_live_weather_trigger(hab["lat"], hab["lng"])
     
-    # 3. Evaluate Safe Zones
+    # 3. Run proactive engine for SHAP risk explanation
+    risk_score_result = proactive_engine.score({
+        "lat": hab["lat"], "lng": hab["lng"],
+        "elevation":       hab.get("elevation_m", 100.0),
+        "slope":           hab.get("slope_deg", 10.0),
+        "aspect":          hab.get("aspect_deg", 180.0),
+        "tri":             hab.get("tri", 5.0),
+        "twi":             hab.get("twi", 6.0),
+        "dist_to_river_m": hab.get("dist_to_river_m", 500.0),
+        "precip_annual_mm":hab.get("precip_annual_mm", 1800.0),
+        "precip_daily_mm": live_trigger.get("current_rain_mm_hr", 10.0),
+        "vegetation_proxy":hab.get("vegetation_proxy", 0.5),
+        "hand_proxy_m":    hab.get("hand_proxy_m", 5.0),
+    })
+
+    # 4. Evaluate Safe Zones
     evaluation = evaluate_safe_zones(
         safe_zones=safe_zones,
         displaced_population=pop,
@@ -114,6 +130,12 @@ async def generate_advisory(habitation_id: str, region: str = Query(default="ass
         "trigger": {
             "reason": "Risk threshold exceeded",
             "live_weather": live_trigger
+        },
+        "risk_explanation": {
+            "flood":     risk_score_result.get("flood_explanation", {}),
+            "landslide": risk_score_result.get("landslide_explanation", {}),
+            "zone_class": risk_score_result.get("zone_class", "RED"),
+            "combined_score": risk_score_result.get("combined_score", 0.0),
         },
         "relocation_plan": {
             "recommended_site": best_site,

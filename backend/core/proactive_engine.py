@@ -49,6 +49,8 @@ class ProactiveEngine:
         self._flood_model = None
         self._landslide_features: list[str] = []
         self._flood_features: list[str] = []
+        self._ls_explainer = None
+        self._fl_explainer = None
         self._loaded = False
         self._load_models()
 
@@ -78,6 +80,17 @@ class ProactiveEngine:
             self._loaded = True
             logger.info(f"[ProactiveEngine] Loaded landslide model. Features: {self._landslide_features}")
             logger.info(f"[ProactiveEngine] Loaded flood model. Features: {self._flood_features}")
+
+            # Initialise SHAP TreeExplainer (fast, tree-native)
+            try:
+                import shap
+                self._ls_explainer = shap.TreeExplainer(self._landslide_model)
+                self._fl_explainer = shap.TreeExplainer(self._flood_model)
+                logger.info("[ProactiveEngine] SHAP TreeExplainer initialised for both models.")
+            except Exception as shap_err:
+                logger.warning(f"[ProactiveEngine] SHAP not available — using feature_importances_ fallback: {shap_err}")
+                self._ls_explainer = None
+                self._fl_explainer = None
         except Exception as e:
             logger.error(f"[ProactiveEngine] Failed to load models: {e}")
 
@@ -133,6 +146,66 @@ class ProactiveEngine:
         except Exception:
             return []
 
+    def _shap_explain(self, explainer, row_df: "pd.DataFrame", feature_names: list[str],
+                      feature_vals: dict, n: int = 3) -> dict:
+        """
+        Generate per-sample SHAP explanation.
+        Returns top-N factors with value, SHAP contribution, and a plain-English sentence.
+        """
+        try:
+            shap_values = explainer.shap_values(row_df)
+            # For binary classifiers shap_values may be [neg_class, pos_class]
+            if isinstance(shap_values, list) and len(shap_values) == 2:
+                sv = shap_values[1][0]   # positive class (risk=1) SHAP values
+            else:
+                sv = shap_values[0]      # regression / single output
+
+            # Pair features with their SHAP contribution
+            pairs = sorted(
+                zip(feature_names, row_df.iloc[0].tolist(), sv),
+                key=lambda x: abs(x[2]),
+                reverse=True
+            )
+            top = pairs[:n]
+
+            factors = [
+                {
+                    "feature":      f,
+                    "value":        round(float(v), 3),
+                    "shap_impact":  round(float(s), 4),
+                    "direction":    "increases risk" if s > 0 else "reduces risk",
+                }
+                for f, v, s in top
+            ]
+
+            # Plain-English summary (top 2 factors)
+            def _fmt(f, v, s):
+                feat_labels = {
+                    "dist_to_river_m": f"{v:.0f}m from river",
+                    "twi":             f"TWI={v:.1f} (terrain wetness)",
+                    "slope":           f"slope={v:.1f}°",
+                    "elevation":       f"elevation={v:.0f}m",
+                    "precip_daily_mm": f"{v:.1f}mm/day rainfall",
+                    "vegetation_proxy":f"vegetation cover={v:.2f}",
+                    "hand_proxy_m":    f"HAND={v:.1f}m above drainage",
+                    "tri":             f"TRI={v:.1f}",
+                }
+                return feat_labels.get(f, f"{f}={v:.2f}")
+
+            reason_parts = [_fmt(f, v, s) for f, v, s in top[:2]]
+            direction = "HIGH" if top[0][2] > 0 else "MODERATE"
+            plain = f"Risk is {direction} primarily due to {reason_parts[0]}"
+            if len(reason_parts) > 1:
+                plain += f" and {reason_parts[1]}"
+            plain += "."
+
+            return {"top_factors": factors, "plain_english": plain, "method": "shap_tree_explainer"}
+
+        except Exception as e:
+            logger.debug(f"[SHAP] Explanation failed: {e}")
+            return {"top_factors": [], "plain_english": "Explanation unavailable.", "method": "shap_failed"}
+
+
     def score(self, features: dict) -> dict:
         """
         Score a single habitation.
@@ -162,14 +235,28 @@ class ProactiveEngine:
                 top_fl = self._get_top_factors(self._flood_model, self._flood_features)
                 model_used = "xgboost_nasa_chirps_hydrorivers"
 
+                # Per-sample SHAP explanation (Lv et al. 2022 methodology)
+                if self._ls_explainer and self._fl_explainer:
+                    ls_explanation = self._shap_explain(
+                        self._ls_explainer, ls_row, self._landslide_features, features
+                    )
+                    fl_explanation = self._shap_explain(
+                        self._fl_explainer, fl_row, self._flood_features, features
+                    )
+                else:
+                    ls_explanation = {"top_factors": top_ls, "plain_english": "Install 'shap' for detailed explanation.", "method": "feature_importance_fallback"}
+                    fl_explanation = {"top_factors": top_fl, "plain_english": "Install 'shap' for detailed explanation.", "method": "feature_importance_fallback"}
+
             except Exception as e:
                 logger.warning(f"[ProactiveEngine] Model inference failed, using heuristic: {e}")
                 ls_prob, fl_prob = self._heuristic_score(features)
                 top_ls, top_fl = [], []
+                ls_explanation = fl_explanation = {"top_factors": [], "plain_english": "Model inference failed.", "method": "heuristic"}
                 model_used = "heuristic_fallback"
         else:
             ls_prob, fl_prob = self._heuristic_score(features)
             top_ls, top_fl = [], []
+            ls_explanation = fl_explanation = {"top_factors": [], "plain_english": "Models not loaded.", "method": "heuristic"}
             model_used = "heuristic_fallback"
 
         zone = self._classify_zone(ls_prob, fl_prob)
@@ -181,6 +268,8 @@ class ProactiveEngine:
             "combined_score":  round(max(ls_prob, fl_prob), 4),
             "top_landslide_factors": top_ls,
             "top_flood_factors":     top_fl,
+            "landslide_explanation": ls_explanation,
+            "flood_explanation":      fl_explanation,
             "model_used":      model_used,
             "scored_at":       datetime.now(timezone.utc).isoformat(),
         }

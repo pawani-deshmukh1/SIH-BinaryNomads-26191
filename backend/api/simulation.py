@@ -14,12 +14,82 @@ router = APIRouter(prefix="/simulation", tags=["3D Growth Simulation"])
 # Base water level increments in meters per stage
 # (Assuming baseline overflow at T+0 is 0.5m)
 STAGE_HOURS = [0, 6, 18, 36]
-BASE_WATER_LEVELS = {
-    0: 0.5,
-    6: 1.5,
-    18: 3.0,
-    36: 5.0
-}
+
+# Static fallback water levels (used only when Open-Meteo is unavailable)
+FALLBACK_WATER_LEVELS = {0: 0.5, 6: 1.5, 18: 3.0, 36: 5.0}
+
+# Runoff/basin parameters for Brahmaputra tributary floodplains
+RUNOFF_COEFFICIENT  = 0.65   # flat agricultural land in Assam (standard)
+BASIN_FACTOR        = 0.009  # empirical for small Brahmaputra char tributaries
+CHANNEL_WIDTH_M     = 50     # avg channel width (m) for Manning's approximation
+MANNINGS_C          = 25     # roughness coeff for braided rivers
+
+
+async def _get_openmeteo_water_levels(lat: float, lng: float, risk_multiplier: float) -> list:
+    """
+    Derive stage-specific water levels from Open-Meteo hourly precipitation.
+
+    Method:
+      1. Fetch 36h hourly precipitation forecast.
+      2. Compute cumulative rainfall at T+0, T+6, T+18, T+36.
+      3. Convert rainfall -> surface runoff -> approximate channel discharge
+         -> water depth via Manning's simplified equation.
+      4. Scale by risk_multiplier from hazard_trigger.
+
+    Fallback: static FALLBACK_WATER_LEVELS if API call fails.
+    """
+    import httpx
+    try:
+        url = (
+            f"https://api.open-meteo.com/v1/forecast"
+            f"?latitude={lat}&longitude={lng}"
+            f"&hourly=precipitation&forecast_days=2"
+        )
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(url, timeout=6.0)
+        if resp.status_code != 200:
+            raise ValueError(f"HTTP {resp.status_code}")
+
+        hourly_rain = resp.json().get("hourly", {}).get("precipitation", [])
+
+        levels = []
+        for hour in STAGE_HOURS:
+            # Cumulative rainfall from T=0 to T=hour
+            cumulative_mm = sum(hourly_rain[:max(1, hour)])
+
+            # Surface runoff (mm) using rational method
+            runoff_mm = cumulative_mm * RUNOFF_COEFFICIENT
+
+            # Approximate discharge Q (m3/s) for a unit catchment (~10 km2)
+            catchment_m2 = 10_000_000  # 10 km2 typical small char tributary catchment
+            duration_s   = max(3600, hour * 3600)  # avoid division by zero
+            Q = (runoff_mm / 1000) * catchment_m2 / duration_s  # m3/s
+
+            # Water depth via Manning's simplified: h = (Q / (w * C))^0.6
+            if Q > 0:
+                h = (Q / (CHANNEL_WIDTH_M * MANNINGS_C)) ** 0.6
+            else:
+                h = FALLBACK_WATER_LEVELS[hour]  # use static if no rain
+
+            # Scale by risk multiplier and cap at 8m
+            h_scaled = min(8.0, round(h * risk_multiplier, 2))
+            # Ensure water levels are monotonically increasing across stages
+            if levels:
+                h_scaled = max(h_scaled, levels[-1])
+
+            levels.append(h_scaled)
+
+        # Ensure at least 0.3m at T+0 (minimum bankfull condition)
+        levels[0] = max(0.3, levels[0])
+        logger.info(f"[Simulation] Open-Meteo water levels: {levels}")
+        return levels
+
+    except Exception as e:
+        logger.warning(f"[Simulation] Open-Meteo water level fetch failed ({e}) — using static fallback")
+        return [
+            round(FALLBACK_WATER_LEVELS[h] * (risk_multiplier if h > 0 else 1.0), 2)
+            for h in STAGE_HOURS
+        ]
 
 # Base landslide cone radius in km per stage
 BASE_LANDSLIDE_RADIUS = {
@@ -115,14 +185,9 @@ async def get_simulation_data(habitation_id: str):
         trigger = await get_live_weather_trigger(lat, lng)
         risk_multiplier = trigger.get("risk_multiplier", 1.0)
         
-        # 2. Map rainfall escalation to water levels
-        water_levels = []
-        for hour in STAGE_HOURS:
-            if hour == 0:
-                water_levels.append(BASE_WATER_LEVELS[hour]) # Current state
-            else:
-                water_levels.append(round(BASE_WATER_LEVELS[hour] * risk_multiplier, 2))
-                
+        # 2. Derive water levels from real Open-Meteo rainfall forecast
+        water_levels = await _get_openmeteo_water_levels(lat, lng, risk_multiplier)
+
         # 3. Run Bathtub Scenarios
         inundation_result = compute_inundation_scenarios(
             lat=lat, 
