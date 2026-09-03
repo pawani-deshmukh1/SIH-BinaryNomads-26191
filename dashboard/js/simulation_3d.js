@@ -64,8 +64,9 @@ async function initCesiumViewer(data) {
   // Keep globe visible without dark sides for tactical overview
   viewer.scene.globe.enableLighting = false;
 
-  // Restore the direct URL ESRI Satellite Imagery
-  viewer.imageryLayers.removeAll();
+  // Add ESRI satellite imagery on top of default layer (don't removeAll — that
+  // causes a black globe when tiles are blocked by CORS under file:// protocol).
+  // The default Cesium natural-earth layer stays as a visible fallback.
   viewer.imageryLayers.addImageryProvider(
     new Cesium.UrlTemplateImageryProvider({
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
