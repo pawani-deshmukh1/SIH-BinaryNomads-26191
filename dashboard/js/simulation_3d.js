@@ -65,18 +65,9 @@ async function initCesiumViewer(data) {
   // Disable day/night sun lighting — always show full brightness
   viewer.scene.globe.enableLighting = false;
 
-  // ESRI World satellite tiles — direct tile URL, no key needed
-  viewer.imageryLayers.removeAll();
-  viewer.imageryLayers.addImageryProvider(
-    new Cesium.UrlTemplateImageryProvider({
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      credit: 'ESRI World Imagery'
-    })
-  );
-
-
-  // Disable day/night sun lighting — always show full brightness
-  viewer.scene.globe.enableLighting = false;
+  // We are using Cesium's default Bing Maps Aerial (Satellite) imagery.
+  // Because we have a valid Ion Token, this will load natively without any
+  // CORS issues (unlike ESRI), guaranteeing a beautiful satellite globe.
 
 
 
