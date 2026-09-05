@@ -13,6 +13,40 @@ function getIconForType(type) {
   }
 }
 
+function renderShapChart(title, explanation) {
+  if (!explanation || !explanation.top_factors || explanation.top_factors.length === 0) return '';
+  let html = `<div style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px;">`;
+  html += `<div style="font-size: 11px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px;">Explainable AI (SHAP): ${title}</div>`;
+  
+  // get max abs value for scaling
+  let maxVal = Math.max(...explanation.top_factors.map(f => {
+      let val = Array.isArray(f) ? f[1] : (f.shap_impact !== undefined ? f.shap_impact : f.value);
+      return Math.abs(val);
+  }));
+  if (maxVal === 0 || isNaN(maxVal)) maxVal = 1;
+
+  explanation.top_factors.slice(0, 5).forEach(factor => {
+      const isArr = Array.isArray(factor);
+      const nameRaw = isArr ? factor[0] : factor.feature;
+      const val = isArr ? factor[1] : (factor.shap_impact !== undefined ? factor.shap_impact : factor.value);
+      const name = nameRaw ? nameRaw.replace(/_/g, ' ') : 'Unknown';
+      const pct = (Math.abs(val) / maxVal) * 100;
+      const color = val > 0 ? 'var(--red)' : 'var(--success)';
+      const sign = val > 0 ? '+' : '';
+      html += `
+          <div style="display: flex; align-items: center; margin-bottom: 4px; font-size: 11px;">
+              <div style="width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text);" title="${name}">${name}</div>
+              <div style="flex: 1; margin: 0 8px; background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px; overflow: hidden;">
+                  <div style="width: ${pct}%; height: 100%; background: ${color}; border-radius: 3px;"></div>
+              </div>
+              <div style="width: 35px; text-align: right; color: ${color}; font-family: monospace;">${sign}${val.toFixed(2)}</div>
+          </div>
+      `;
+  });
+  html += `</div>`;
+  return html;
+}
+
 let currentRouteLayers = [];
 
 function clearRouteLayers() {
@@ -39,7 +73,7 @@ async function openAdvisory(habId) {
   
   // 3. Fetch data from backend
   try {
-    const res = await fetch(`/advisory/${habId}`);
+    const res = await fetch(`http://127.0.0.1:8000/advisory/${habId}`);
     const data = await res.json();
     if (!res.ok && res.status !== 404) throw new Error('Failed to fetch');
     
@@ -80,9 +114,21 @@ function renderAdvisoryContent(adv) {
         <span style="color:var(--text-dim)">Households</span>
         <strong>${hab.households}</strong>
       </div>
-      <div style="display:flex; justify-content:space-between; font-size:12px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:12px;">
         <span style="color:var(--text-dim)">Vulnerability (SC/ST)</span>
         <strong>${hab.vulnerability_sc_st_pct}%</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:12px;">
+        <span style="color:var(--text-dim)">Women</span>
+        <strong>${hab.women_percent || 49}%</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:12px;">
+        <span style="color:var(--text-dim)">Children</span>
+        <strong>${hab.children_percent || 29}%</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:12px;">
+        <span style="color:var(--text-dim)">Elderly</span>
+        <strong>${hab.elderly_percent || 8}%</strong>
       </div>
     </div>
     
@@ -106,6 +152,16 @@ function renderAdvisoryContent(adv) {
       </div>
     `;
   }
+  
+  if (adv.risk_explanation) {
+    if (adv.risk_explanation.landslide && adv.risk_explanation.landslide.top_factors && adv.risk_explanation.landslide.top_factors.length > 0) {
+        html += renderShapChart('Landslide Drivers', adv.risk_explanation.landslide);
+    }
+    if (adv.risk_explanation.flood && adv.risk_explanation.flood.top_factors && adv.risk_explanation.flood.top_factors.length > 0) {
+        html += renderShapChart('Flood Drivers', adv.risk_explanation.flood);
+    }
+  }
+
   html += `</div>`;
   
   if (plan.recommended_site) {
@@ -116,7 +172,7 @@ function renderAdvisoryContent(adv) {
     if (typeof currentHabitations !== 'undefined') {
       const habData = currentHabitations.find(h => h.id === hab.id);
       if (habData && site.lat && site.lng) {
-        fetch(`/route/?origin_lat=${habData.lat}&origin_lon=${habData.lng}&dest_lat=${site.lat}&dest_lon=${site.lng}`, {
+        fetch(`http://127.0.0.1:8000/route/?origin_lat=${habData.lat}&origin_lon=${habData.lng}&dest_lat=${site.lat}&dest_lon=${site.lng}`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({}) // no flood geojson for 2D map
@@ -149,12 +205,12 @@ function renderAdvisoryContent(adv) {
                 // Add Destination Marker
                 const destIcon = L.divIcon({
                     className: 'custom-div-icon',
-                    html: `<div style="background-color: #22c55e; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
+                    html: `<div style="background-color: #3b82f6; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
                     iconSize: [20, 20],
                     iconAnchor: [10, 10]
                 });
                 const destMarker = L.marker([site.lat, site.lng], {icon: destIcon})
-                  .bindTooltip("Safe Zone: " + site.name, {permanent: true, direction: 'right', className: 'safe-zone-tooltip'})
+                  .bindTooltip("Relief Camp: " + site.name, {permanent: true, direction: 'right', className: 'safe-zone-tooltip'})
                   .addTo(map);
                 currentRouteLayers.push(destMarker);
 
@@ -169,8 +225,8 @@ function renderAdvisoryContent(adv) {
     
     html += `
       <div class="section-title">Relocation Plan</div>
-      <div class="adv-box safe-zone-card">
-        <div class="safe-title">✅ ${site.name}</div>
+      <div class="adv-box safe-zone-card" style="border-left: 3px solid #3b82f6;">
+        <div class="safe-title" style="color: #3b82f6;">🏕️ ${site.name}</div>
         <div class="safe-metrics">
           <div class="metric">Assigned Pop<br><span>${site.capacity} pax</span></div>
           <div class="metric">Distance<br><span>${site.distance_km} km</span></div>
@@ -232,7 +288,7 @@ function renderAdvisoryContent(adv) {
     <button class="btn" style="width:100%; margin-top:24px; padding:12px; font-size:14px; background:var(--accent); color:white; border:none; border-radius:6px; cursor:pointer;" onclick="window.open('cop.html?hab_id=${hab.id}', '_blank')">
       🔍 Advanced Analysis (COP) & Simulation
     </button>
-    <button class="btn btn-primary" style="width:100%; margin-top:12px; padding:12px; font-size:14px;" onclick="alert('PDF Generation simulated.')">
+    <button class="btn btn-primary" style="width:100%; margin-top:12px; padding:12px; font-size:14px;" onclick="window.open('pdf_template.html?hab_id=${hab.id}', '_blank')">
       📥 Download Relocation Order PDF
     </button>
   `;

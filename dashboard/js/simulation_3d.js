@@ -16,13 +16,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     document.getElementById('sim-loader-text').innerText = "Fetching Secure Config...";
-    const configRes = await fetch('/api/config');
+    const configRes = await fetch('http://127.0.0.1:8000/api/config');
     const config = await configRes.json();
     Cesium.Ion.defaultAccessToken = config.CESIUM_ION_TOKEN;
 
     document.getElementById('sim-loader-text').innerText = "Running Bathtub Simulation Engine...";
 
-    const res = await fetch(`/simulation/${habId}`);
+    const res = await fetch(`http://127.0.0.1:8000/simulation/${habId}`);
     if (!res.ok) throw new Error("Simulation endpoint failed.");
     simulationData = await res.json();
 
@@ -43,6 +43,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initCesiumViewer(simulationData);
 
     document.getElementById('sim-loader').style.display = 'none';
+
+    // Enable the tour button now that Cesium has fully loaded
+    const tourBtn = document.getElementById('sim-tour-btn');
+    if (tourBtn) {
+      tourBtn.disabled = false;
+      tourBtn.style.cssText = 'padding: 6px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 8px;';
+      tourBtn.innerText = '🎓 Guided Tour';
+      tourBtn.title = '';
+    }
 
   } catch (e) {
     console.error(e);
@@ -260,6 +269,23 @@ function ifIdx(idx) {
   if (idx === 3) return 'stage-36';
 }
 
+// ── Instant time-jump: clicking a stage legend item teleports the clock ──
+function jumpToStage(tPlusHours) {
+  if (!viewer) return;
+  const start = viewer.clock.startTime;
+  const target = Cesium.JulianDate.addHours(start, tPlusHours, new Cesium.JulianDate());
+  viewer.clock.currentTime = target.clone();
+  // Pause so the user can inspect that exact moment
+  viewer.clock.shouldAnimate = false;
+  // Flash the clicked stage item
+  document.querySelectorAll('.stage-item').forEach(el => el.classList.remove('stage-active'));
+  const stageMap = {0: 'stage-0', 6: 'stage-6', 18: 'stage-18', 36: 'stage-36'};
+  const el = document.getElementById(stageMap[tPlusHours]);
+  if (el) el.classList.add('stage-active');
+  // Auto-resume after 2s so the simulation can continue
+  setTimeout(() => { if (viewer) viewer.clock.shouldAnimate = true; }, 2000);
+}
+
 function checkInundation(lat, lng, ds, entity, habId) {
   if (!ds.entities.values || ds.entities.values.length === 0) return;
 
@@ -291,7 +317,7 @@ function checkInundation(lat, lng, ds, entity, habId) {
     li.style.color = "var(--danger)";
     ul.appendChild(li);
 
-    fetch('/advisory/' + habId).then(r => r.json()).then(res => {
+    fetch('http://127.0.0.1:8000/advisory/' + habId).then(r => r.json()).then(res => {
       const site = res?.advisory?.relocation_plan?.recommended_site;
       
       let approved = true;

@@ -11,6 +11,8 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 let currentHabitations = [];
 let mapMarkers = {}; // hab.id -> L.circleMarker
 let safeZoneMarkers = [];
+let towerMarkers = [];
+let commsLayerActive = false;
 
 // Colors for zones
 const ZONE_COLORS = {
@@ -40,6 +42,12 @@ async function initDashboard() {
       raw_flood_score: f.properties.flood_score,
       raw_landslide_score: f.properties.landslide_score,
       vulnerability: f.properties.sc_st_percent,
+      women_pct: f.properties.women_percent || 49,
+      children_pct: f.properties.children_percent || 29,
+      elderly_pct: f.properties.elderly_percent || 8,
+      landless: f.properties.landless_pct,
+      literacy: f.properties.literacy_rate_pct,
+      hospital: f.properties.nearest_hospital_km,
       lat: f.geometry.coordinates[1],
       lng: f.geometry.coordinates[0]
     }));
@@ -47,7 +55,10 @@ async function initDashboard() {
     // 2. Fetch Safe Zones (just for visualization)
     await fetchSafeZones();
     
-    // 3. Render everything
+    // 3. Fetch Towers (Comms Layer)
+    await fetchTowers();
+    
+    // 4. Render everything
     renderHabitations();
     updateSidebarCounts();
     
@@ -75,17 +86,64 @@ async function fetchSafeZones() {
     data.features.forEach(sz => {
       const marker = L.circleMarker([sz.geometry.coordinates[1], sz.geometry.coordinates[0]], {
         radius: 8,
-        fillColor: '#22c55e',
+        fillColor: '#3b82f6', // Blue for Relief Camps
         color: '#ffffff',
         weight: 2,
         fillOpacity: 0.9,
       }).addTo(map);
       
-      marker.bindPopup(`<strong>★ Safe Zone</strong><br>${sz.properties.name}<br>Capacity: ${sz.properties.capacity}`);
+      marker.bindPopup(`<strong>🏕️ Relief Camp</strong><br>${sz.properties.name}<br>Capacity: ${sz.properties.capacity}`);
       safeZoneMarkers.push(marker);
     });
   } catch(err) {
     console.error("Could not load safe zones:", err);
+  }
+}
+
+async function fetchTowers() {
+  try {
+    const res = await fetch('http://127.0.0.1:8000/towers/');
+    if (!res.ok) return;
+    const data = await res.json();
+    
+    data.features.forEach(tower => {
+      const isAtRisk = tower.properties.status === 'at_risk';
+      const color = isAtRisk ? '#f97316' : '#94a3b8';
+      
+      const marker = L.circleMarker([tower.geometry.coordinates[1], tower.geometry.coordinates[0]], {
+        radius: 6,
+        fillColor: color,
+        color: '#ffffff',
+        weight: 2,
+        fillOpacity: 0.9,
+      });
+      
+      if (isAtRisk) {
+        marker.getElement()?.classList.add('marker-pulse-ORANGE');
+      }
+      
+      marker.bindPopup(`<strong>🗼 Cell Tower</strong><br>${tower.properties.name}<br>Status: ${isAtRisk ? '⚠️ AT RISK' : '✅ Operational'}`);
+      towerMarkers.push({ marker, isAtRisk });
+    });
+    
+    document.getElementById('layer-comms')?.addEventListener('click', toggleCommsLayer);
+  } catch(err) {
+    console.error("Could not load towers:", err);
+  }
+}
+
+function toggleCommsLayer() {
+  commsLayerActive = !commsLayerActive;
+  const btn = document.getElementById('layer-comms');
+  
+  if (commsLayerActive) {
+    btn.style.background = 'var(--orange)';
+    btn.style.color = 'black';
+    towerMarkers.forEach(t => t.marker.addTo(map));
+  } else {
+    btn.style.background = 'rgba(15,23,42,0.9)';
+    btn.style.color = 'white';
+    towerMarkers.forEach(t => map.removeLayer(t.marker));
   }
 }
 
@@ -141,9 +199,14 @@ function renderHabitations() {
       <div class="hab-info">
         <h4>${getIconForType(hab.type)} ${hab.name}</h4>
         <p>${hab.type.replace('_', ' ')} · Pop: ${hab.population}</p>
-        <p style="font-size:11px; color:var(--red); font-weight:600; margin-top:2px;">
-          ⚠ Vuln: ${hab.vulnerability}% SC/ST
-        </p>
+        <div style="font-size:10px; color:var(--text-dim); margin-top:4px; line-height: 1.4;">
+          <span style="color:var(--orange)">⚠ Social Vulnerability Drivers:</span><br>
+          SC/ST: ${hab.vulnerability}% | Landless: ${hab.landless}%<br>
+          <hr style="border-color:#333; margin:5px 0;">
+          <b style="color:var(--text-bright)">Demographics:</b><br>
+          Women: ${hab.women_pct}% | Children: ${hab.children_pct}% | Elderly: ${hab.elderly_pct}%<br>
+          Literacy: ${hab.literacy}% | Hospital: ${hab.hospital}km
+        </div>
       </div>
       <div class="zone-badge ${hab.zone}">${hab.zone}</div>
     `;

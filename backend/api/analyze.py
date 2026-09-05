@@ -22,6 +22,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analyze", tags=["COP Pipeline"])
 
 
+@router.get("/cop")
+async def get_cop():
+    from core.analysis_state import get_last_cop
+    from core.cop_builder import build_cop_from_demo
+    cop = get_last_cop()
+    if not cop:
+        cop = build_cop_from_demo()
+    return JSONResponse(content=cop)
+
 @router.post("/")
 async def analyze_area(
     post_image: UploadFile = File(...),

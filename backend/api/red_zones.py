@@ -29,10 +29,16 @@ def get_red_zones():
         if not cop:
             cop = build_cop_from_demo()
 
-        features = [
-            f for f in cop.get("features", [])
-            if f.get("properties", {}).get("layer_type") == "red_zone"
-        ]
+        features = []
+        for f in cop.get("features", []):
+            if f.get("properties", {}).get("layer_type") == "red_zone":
+                # Inject alias for mobile app compatibility
+                props = f.get("properties", {})
+                if "combined_score" in props and "risk_score" not in props:
+                    props["risk_score"] = props["combined_score"]
+                f["properties"] = props
+                features.append(f)
+
         return {
             "type": "FeatureCollection",
             "count": len(features),

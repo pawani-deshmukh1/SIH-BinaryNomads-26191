@@ -15,6 +15,9 @@
   <!-- Intro.js CSS -->
   <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css" />
   <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
+
+  <!-- Shared tour engine: speakText, injectVoiceToggle, _voiceEnabled -->
+  <script src="js/tutorial.js"></script>
   
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -256,6 +259,9 @@
           <div class="data-row"><span>Population</span><span>${currentHab.population.toLocaleString()}</span></div>
           <div class="data-row"><span>Households</span><span>${currentHab.households}</span></div>
           <div class="data-row"><span>Vulnerability</span><span>${advData.advisory?.habitation?.vulnerability_sc_st_pct || 0}% SC/ST</span></div>
+          <div class="data-row"><span>Women</span><span>${advData.advisory?.habitation?.women_percent || 49}%</span></div>
+          <div class="data-row"><span>Children</span><span>${advData.advisory?.habitation?.children_percent || 29}%</span></div>
+          <div class="data-row"><span>Elderly</span><span>${advData.advisory?.habitation?.elderly_percent || 8}%</span></div>
         `;
 
         document.getElementById('risk-card').innerHTML = `
@@ -276,7 +282,7 @@
           
           // Draw Safe Zone
           L.circleMarker([site.lat, site.lng], {
-            radius: 8, color: '#fff', weight: 2, fillColor: '#10b981', fillOpacity: 1
+            radius: 8, color: '#fff', weight: 2, fillColor: '#3b82f6', fillOpacity: 1
           }).bindPopup(`<b>Approved Safe Zone: ${site.name}</b>`).addTo(map);
           
           // Fetch dynamic hazard-aware route
@@ -429,91 +435,120 @@
     }
 
     // --- COP TUTORIAL ---
-    let currentUtterance = null;
-    function speakText(htmlText) {
-      if (!window.speechSynthesis) return;
-      window.speechSynthesis.cancel();
-      
-      const textToSpeak = htmlText
-        .replace(/<br\s*[\/]?>/gi, '. ')
-        .replace(/<[^>]*>?/gm, '')
-        .replace(/\s+/g, ' ');
-        
-      currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
-      
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(v => v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Microsoft Mark')) || voices.find(v => v.lang.startsWith('en'));
-      
-      if (preferredVoice) currentUtterance.voice = preferredVoice;
-      currentUtterance.rate = 0.85; // Slower pacing
-      
-      // Fix for Chrome bug where speak() right after cancel() is ignored
-      setTimeout(() => {
-        window.speechSynthesis.speak(currentUtterance);
-      }, 150);
-    }
+    // speakText, injectVoiceToggle, _voiceEnabled are all from tutorial.js (loaded in <head>)
 
     function startCopTutorial() {
+      // Make sure we start on the overview tab before the tour begins
+      switchTab('tab-overview');
+
       const intro = introJs();
       intro.setOptions({
         showProgress: true,
         showBullets: false,
+        exitOnOverlayClick: false,
+        disableInteraction: true,
+        prevLabel: '← Back',
+        nextLabel: 'Next →',
+        doneLabel: 'Finish Tour',
         steps: [
+          // ── Step 0: Welcome to COP ────────────────────────────────
           {
-            intro: "<b>Advanced Analysis (COP)</b><br><br>This is the Common Operating Picture. We dynamically generate this view for the specific community that needs immediate evacuation. Let's see how we assess Carrying Capacity."
+            intro: `<b>Common Operating Picture (COP) 🛰️</b><br><br>
+              This page is auto-generated for a specific at-risk habitation. It fuses terrain analysis, live ML risk scores, and mathematical optimization into a single operational view for the District Collector.<br><br>
+              Let's walk through each layer of the intelligence.`
           },
+
+          // ── Step 1: Map (always visible, safe to reference) ───────
+          {
+            element: document.querySelector('#map'),
+            intro: `<b>The Geospatial Context Layer 🗺️</b><br><br>
+              The map shows the habitation's geography — flood plains, river segments, and the computed evacuation route in real time.<br><br>
+              <span style="color:#22c55e">Green lines</span> = safe passable roads. <span style="color:#a16207">Brown dashed</span> = kutcha (unpaved) routes. <span style="color:#ef4444">Red lines</span> = flood-blocked segments <b>automatically removed</b> from the routing graph.`,
+            position: 'right'
+          },
+
+          // ── Step 2: Baseline tab (overview tab is active = visible) ─
           {
             element: document.querySelector('#tab-overview'),
-            intro: "<b>Baseline Reality</b><br><br>We pull the exact demographics and live ML risk scores. Importantly, we check the environmental carrying capacity using <b>Terrain Ruggedness (TRI)</b> and <b>Topographic Wetness (TWI)</b> to ensure the ground is stable and drains properly.",
+            intro: `<b>Baseline Intelligence: Demographics + Terrain 📊</b><br><br>
+              This panel shows the exact socio-demographic profile of the community — population, households, and SC/ST vulnerability percentage.<br><br>
+              Terrain features: <b>Elevation, Slope, Aspect, TRI</b> (Terrain Ruggedness Index), and <b>TWI</b> (Topographic Wetness Index) — the raw signals the XGBoost model used to compute the baseline risk score.`,
             position: 'left'
           },
+
+          // ── Step 3: Switch to RELOCATION — no element ref (hidden) ─
+          // Tab is switched in onbeforechange. Tooltip floats center.
           {
-            element: document.querySelector('.tabs > .tab:nth-child(2)'),
-            intro: "<b>Relocation Engine</b><br><br>Click the RELOCATION tab to see how we assign safe zones.",
-            position: 'left'
+            intro: `<b>Carrying Capacity & Safe Zone Assignment ✅</b><br><br>
+              We've now switched to the <b>Relocation tab</b> — the mathematical core of PS26191.<br><br>
+              Every candidate safe zone was filtered against <b>UNHCR Sphere Humanitarian Standards</b>:<br>
+              ✅ Min <b>3.5 m²</b> per evacuee &nbsp;|&nbsp; ✅ Slope <b>&lt;8°</b> &nbsp;|&nbsp; ✅ Distance <b>&lt;150 km</b> &nbsp;|&nbsp; ✅ Capacity exceeds population<br><br>
+              The <b>Hungarian Algorithm</b> (O(n³)) then picks the optimal assignment from the passing sites.`
           },
+
+          // ── Step 4: Rejected sites — no element ref (tab may vary) ─
           {
-            element: document.querySelector('#tab-relocation'),
-            intro: "<b>Sphere Standard Matching</b><br><br>Our backend mathematically filters all surrounding safe zones against UNHCR Sphere Standards (e.g. 3.5m² area per person, <8° slope, <150km distance). It assigns the absolute safest approved site.",
-            position: 'left'
+            intro: `<b>Explainable AI: Why Sites Were Rejected 🚫</b><br><br>
+              Every rejected safe zone has a logged, auditable reason — for example:<br><br>
+              <i>"Too far from habitation (176km &gt; 150km)"</i><br>
+              <i>"Insufficient capacity (412 persons &lt; 521 needed)"</i><br>
+              <i>"Terrain too steep (Slope: 10° &gt; 8°)"</i><br><br>
+              This proves our AI follows hard rules — not guesses. It is fully defensible to regulators.`
           },
+
+          // ── Step 5: Switch to SIMULATOR — no element ref (hidden) ──
           {
-            element: document.querySelector('#rejected-safe-zones'),
-            intro: "<b>Why were these rejected?</b><br><br>We also log exactly why other sites were rejected, proving the AI is making decisions based on math and humanitarian standards, not just guessing.",
-            position: 'left'
+            intro: `<b>Extreme Weather Scenario Simulator 🌊</b><br><br>
+              We've now switched to the <b>Simulator tab</b>. This module lets you inject a catastrophic weather multiplier to model a once-in-a-decade flood or landslide event.<br><br>
+              The system recomputes the inundation perimeter using <b>Manning's Equation</b> applied to live GloFAS discharge volumes and redraws the map in real time.`
           },
+
+          // ── Step 6: 3D Sim CTA — no element ref ──────────────────
           {
-            element: document.querySelector('.tabs > .tab:nth-child(3)'),
-            intro: "<b>Extreme Weather Simulation</b><br><br>Now click the SIMULATOR tab.",
-            position: 'left'
+            intro: `<b>In-Browser 3D Simulation 🌐</b><br><br>
+              Click <b>"View 3D Simulation"</b> in the top header bar to launch the <b>Cesium Ion 3D globe</b> — a bathtub-model flood visualization showing water rising over the real terrain topology of Assam in real time, with no GPU infrastructure required.`
           },
+
+          // ── Step 7: Final CTA ─────────────────────────────────────
           {
-            element: document.querySelector('#tab-simulator'),
-            intro: "<b>Trigger Simulation</b><br><br>By clicking the button here, we inject a massive mathematical multiplier into the AI model, simulating what happens when the flood or landslide peaks. The system will dynamically draw the 2D disaster path right on the map!",
-            position: 'left'
+            intro: `<b>🎓 Tour Complete!</b><br><br>
+              You've now seen the full DISHA pipeline:<br><br>
+              <b>Terrain ML → Live Weather → Risk Fusion → Sphere Capacity Check → Optimal Assignment → 3D Simulation → PDF Mandate</b><br><br>
+              Click <b>"📥 Download Relocation Order PDF"</b> to see the final, print-ready government evacuation mandate generated from all of this intelligence.`
           }
         ]
       });
-      
+
+      // ── Auto-switch tabs at the right steps ─────────────────────
+      intro.onbeforechange(function() {
+        const step = intro._currentStep;
+        if (step === 3 || step === 4) {
+          switchTab('tab-relocation');
+        } else if (step === 5 || step === 6) {
+          switchTab('tab-simulator');
+        } else if (step === 1 || step === 2) {
+          switchTab('tab-overview');
+        }
+      });
+
+      // ── Speak each step + inject voice toggle ─────────────────────
       intro.onafterchange(function() {
         setTimeout(() => {
+          if (typeof injectVoiceToggle === 'function') injectVoiceToggle();
           const tooltip = document.querySelector('.introjs-tooltiptext');
-          if (tooltip) {
-            speakText(tooltip.innerHTML);
-          }
+          if (tooltip) speakText(tooltip.innerHTML);
         }, 300);
       });
 
       intro.onexit(function() {
         if (window.speechSynthesis) window.speechSynthesis.cancel();
+        // Restore to overview on close
+        switchTab('tab-overview');
       });
 
       intro.start();
-      
-      // Speak the first step immediately
-      if (intro._options.steps[0] && intro._options.steps[0].intro) {
-        speakText(intro._options.steps[0].intro);
-      }
+      // Speak step 0 immediately
+      if (intro._options.steps[0]) speakText(intro._options.steps[0].intro);
     }
 
     // Check for auto-start

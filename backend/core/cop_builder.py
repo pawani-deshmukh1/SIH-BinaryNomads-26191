@@ -323,9 +323,28 @@ def build_cop_from_demo() -> dict:
             return json.load(f)
     # Fallback: generate from static data
     logger.warning("[COP] demo_result.json missing — generating from static demo data")
+    
+    # Create a mock Red Zone polygon spanning the habitations in Assam for visual context
+    mock_red_zone = {
+        "type": "Feature",
+        "properties": {
+            "layer_type": "red_zone",
+            "risk_score": 0.85,
+            "color_tier": "red",
+            "primary_hazard": "flood",
+            "last_updated": datetime.now(timezone.utc).isoformat()
+        },
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+                [92.5, 26.2], [92.8, 26.2], [92.9, 26.4], [92.5, 26.4], [92.5, 26.2]
+            ]]
+        }
+    }
+    
     return build_cop(
         damage_features=[],
-        flood_features=[],
+        flood_features=[mock_red_zone],
         landslide_features=[],
         building_damage_features=[],
         model_confidences={

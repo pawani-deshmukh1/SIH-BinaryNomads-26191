@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DISHA — Logistics & Safe Zone Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { padding: 20px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .sz-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .sz-header {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--green);
+      margin-bottom: 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 8px;
+    }
+    .sz-metrics {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+    }
+    .metric-box {
+      text-align: center;
+      background: rgba(0,0,0,0.3);
+      padding: 8px;
+      border-radius: 6px;
+      flex: 1;
+      margin: 0 4px;
+    }
+    .metric-val {
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+    }
+    .metric-lbl {
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      margin-top: 16px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <header style="margin-bottom: 20px;">
+    <div class="brand">
+      <div class="pulse-status"></div>
+      DISHA 
+      <span class="flow-title">Sphere Standards Logistics Monitor</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn" style="padding: 6px 12px; background: rgba(255,255,255,0.1); color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 12px; font-weight: 600;" onclick="window.location.href='index.html'">🔙 Back to Main EWS</button>
+      🕐 <span id="last-sync">Just now</span>
+    </div>
+  </header>
+
+  <div class="grid" id="sz-grid">
+    <div style="color:var(--text-dim); width: 100%; text-align: center;">Loading safe zone logistics...</div>
+  </div>
+
+  <script src="js/safe_zones.js"></script>
+</body>
+</html>

@@ -1,5 +1,46 @@
 
 ================================================================================
+File: analyze_apk.py
+================================================================================
+
+import zipfile
+import re
+
+apk_path = 'app-release.apk'
+try:
+    with zipfile.ZipFile(apk_path, 'r') as apk:
+        print("Files in APK:", len(apk.namelist()))
+        dex_files = [f for f in apk.namelist() if f.endswith('.dex')]
+        print("DEX files:", dex_files)
+        
+        urls = set()
+        for dex in dex_files:
+            data = apk.read(dex)
+            found = re.findall(b'https?://[^\s\"\'<>]+', data)
+            for u in found:
+                urls.add(u.decode('utf-8', errors='ignore'))
+                
+        print("\nInteresting URLs found in code:")
+        for u in sorted(urls):
+            u_lower = u.lower()
+            if '127.0.0.1' in u_lower or '10.0.2.2' in u_lower or 'localhost' in u_lower or 'disha' in u_lower:
+                print("-->", u)
+            elif 'google' not in u_lower and 'android' not in u_lower and 'w3.org' not in u_lower and 'apache' not in u_lower and 'github' not in u_lower:
+                if len(u) < 100:
+                    print("   ", u)
+                
+        manifest = apk.read('AndroidManifest.xml')
+        strings = re.findall(b'[a-zA-Z0-9_.-]{6,}', manifest)
+        print("\nInteresting Manifest strings:")
+        for s in set(strings):
+            s_dec = s.decode('utf-8', errors='ignore')
+            if 'permission' in s_dec.lower() or 'disha' in s_dec.lower() or 'activity' in s_dec.lower():
+                print(s_dec)
+
+except Exception as e:
+    print("Error:", e)
+
+================================================================================
 File: extract_data.py
 ================================================================================
 
@@ -181,6 +222,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
+from dotenv import load_dotenv
+
+load_dotenv() # Load variables from .env if present
 
 app = FastAPI(
     title="DISHA Backend API",
@@ -200,6 +244,13 @@ app.add_middleware(
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+@app.get("/api/config")
+def get_config():
+    # Load from env; provide a dummy token as fallback so it doesn't crash if unset
+    return {
+        "CESIUM_ION_TOKEN": os.environ.get("CESIUM_TOKEN", "YOUR_CESIUM_TOKEN_HERE")
+    }
 
 from api import settings_api, damage, flood, landslide, red_zones, relocation, routes, towers, ground_situation, evac_zones, feedback, analyze, inundation, live_risk, susceptibility, advisory, simulation
 
@@ -754,42 +805,39 @@ def get_evac_zones():
     """
     Returns ranked relocation candidate sites with capacity and suitability.
     """
-    # Stub for Phase 4
     try:
+        from core.optimization import evaluate_safe_zones
+        import json
+        import os
+        
+        safe_zones_path = os.path.join(os.path.dirname(__file__), "..", "fixtures", "safe_zones_assam.json")
+        with open(safe_zones_path, 'r') as f:
+            safe_zones = json.load(f)
+            
+        evaluated = evaluate_safe_zones(safe_zones)
+        
+        features = []
+        for sz in evaluated:
+            features.append({
+                "type": "Feature",
+                "properties": {
+                    "id": sz["id"],
+                    "name": sz["name"],
+                    "recommendation_score": sz.get("suitability_score", 0.8),
+                    "capacity_persons": sz.get("capacity_persons", 1000),
+                    "suitability_score": sz.get("suitability_score", 0.8),
+                    "district": sz.get("district", "Unknown"),
+                    "last_updated": datetime.now(timezone.utc).isoformat()
+                },
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [sz["lng"], sz["lat"]]
+                }
+            })
+            
         return {
             "type": "FeatureCollection",
-            "features": [
-                {
-                    "type": "Feature",
-                    "properties": {
-                        "id": "EZ-001",
-                        "name": "Nagaon Govt School Ground",
-                        "recommendation_score": 0.88,
-                        "capacity_persons": 1200,
-                        "suitability_score": 0.9,
-                        "last_updated": datetime.now(timezone.utc).isoformat()
-                    },
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [92.65, 26.35]
-                    }
-                },
-                {
-                    "type": "Feature",
-                    "properties": {
-                        "id": "EZ-002",
-                        "name": "District Stadium",
-                        "recommendation_score": 0.74,
-                        "capacity_persons": 3500,
-                        "suitability_score": 0.7,
-                        "last_updated": datetime.now(timezone.utc).isoformat()
-                    },
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [92.68, 26.34]
-                    }
-                }
-            ]
+            "features": features
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -814,11 +862,42 @@ def submit_feedback(req: FeedbackRequest):
     """
     Accepts feedback (correct/incorrect) on model outputs or risk fusion scores.
     """
-    # Stub for Phase 4
     try:
-        # In a real system, this would write to an operator_feedback DB table
-        print(f"[Feedback] {req.endpoint} marked {req.verdict} at {req.timestamp}")
-        return {"status": "success", "message": "Feedback recorded."}
+        import sqlite3
+        import os
+        
+        db_path = os.path.join(os.path.dirname(__file__), "..", "db", "feedback.db")
+        
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        
+        # Connect and ensure table exists
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS operator_feedback (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                entity_type     TEXT NOT NULL,
+                entity_id       TEXT NOT NULL,
+                feedback_type   TEXT NOT NULL,
+                corrected_value TEXT,
+                operator_id     TEXT DEFAULT 'operator',
+                created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Insert feedback
+        cursor.execute('''
+            INSERT INTO operator_feedback (entity_type, entity_id, feedback_type, corrected_value, created_at)
+            VALUES (?, ?, ?, ?, ?)
+        ''', ("endpoint", req.endpoint, req.verdict, "N/A", req.timestamp))
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"[Feedback] {req.endpoint} marked {req.verdict} at {req.timestamp} (Saved to SQLite)")
+        return {"status": "success", "message": "Feedback recorded in database."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -874,24 +953,43 @@ def get_ground_situation():
     """
     F11: Synthesizes ALL layers into a single GeoJSON FeatureCollection for the operational picture.
     """
-    # Stub for Phase 4
     try:
+        import json
+        import os
+        from datetime import datetime, timezone
+        from core.analysis_state import get_latest_hab_assignments
+        
+        base_dir = os.path.join(os.path.dirname(__file__), "..", "fixtures")
+        with open(os.path.join(base_dir, "habitations_assam.json")) as f:
+            habs = json.load(f)
+        with open(os.path.join(base_dir, "safe_zones_assam.json")) as f:
+            zones = json.load(f)
+            
+        assignments = get_latest_hab_assignments() or {}
+        
+        total_habs = len(habs)
+        red_zones = len(assignments)
+        if red_zones == 0:
+            red_zones = sum(1 for h in habs if h.get('terrain', {}).get('elevation', 999) < 100)
+            
+        total_capacity = sum(z.get('capacity_persons', 1000) for z in zones)
+        
         return {
             "type": "FeatureCollection",
             "features": [],
             "summary": {
-                "total_habitations": 15,
-                "immediate_relocation": 4,
-                "short_term_relocation": 6,
-                "medium_term_relocation": 5,
-                "red_zones_count": 3,
+                "total_habitations": total_habs,
+                "immediate_relocation": red_zones,
+                "short_term_relocation": int(red_zones * 1.5),
+                "medium_term_relocation": int(red_zones * 2),
+                "red_zones_count": red_zones,
                 "towers_potentially_offline": 2,
-                "sites_available": 6,
-                "total_capacity_remaining": 8200,
-                "analysis_timestamp": "2026-08-26T16:00:00Z"
+                "sites_available": len(zones),
+                "total_capacity_remaining": total_capacity,
+                "analysis_timestamp": datetime.now(timezone.utc).isoformat()
             },
             "score_type": "ground_situation_snapshot",
-            "last_updated": "2026-08-26T16:00:00Z"
+            "last_updated": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -5883,6 +5981,9 @@ File: dashboard\cop.html
   <!-- Intro.js CSS -->
   <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css" />
   <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
+
+  <!-- Shared tour engine: speakText, injectVoiceToggle, _voiceEnabled -->
+  <script src="js/tutorial.js"></script>
   
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -6297,91 +6398,120 @@ File: dashboard\cop.html
     }
 
     // --- COP TUTORIAL ---
-    let currentUtterance = null;
-    function speakText(htmlText) {
-      if (!window.speechSynthesis) return;
-      window.speechSynthesis.cancel();
-      
-      const textToSpeak = htmlText
-        .replace(/<br\s*[\/]?>/gi, '. ')
-        .replace(/<[^>]*>?/gm, '')
-        .replace(/\s+/g, ' ');
-        
-      currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
-      
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(v => v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Microsoft Mark')) || voices.find(v => v.lang.startsWith('en'));
-      
-      if (preferredVoice) currentUtterance.voice = preferredVoice;
-      currentUtterance.rate = 0.85; // Slower pacing
-      
-      // Fix for Chrome bug where speak() right after cancel() is ignored
-      setTimeout(() => {
-        window.speechSynthesis.speak(currentUtterance);
-      }, 150);
-    }
+    // speakText, injectVoiceToggle, _voiceEnabled are all from tutorial.js (loaded in <head>)
 
     function startCopTutorial() {
+      // Make sure we start on the overview tab before the tour begins
+      switchTab('tab-overview');
+
       const intro = introJs();
       intro.setOptions({
         showProgress: true,
         showBullets: false,
+        exitOnOverlayClick: false,
+        disableInteraction: true,
+        prevLabel: '← Back',
+        nextLabel: 'Next →',
+        doneLabel: 'Finish Tour',
         steps: [
+          // ── Step 0: Welcome to COP ────────────────────────────────
           {
-            intro: "<b>Advanced Analysis (COP)</b><br><br>This is the Common Operating Picture. We dynamically generate this view for the specific community that needs immediate evacuation. Let's see how we assess Carrying Capacity."
+            intro: `<b>Common Operating Picture (COP) 🛰️</b><br><br>
+              This page is auto-generated for a specific at-risk habitation. It fuses terrain analysis, live ML risk scores, and mathematical optimization into a single operational view for the District Collector.<br><br>
+              Let's walk through each layer of the intelligence.`
           },
+
+          // ── Step 1: Map (always visible, safe to reference) ───────
+          {
+            element: document.querySelector('#map'),
+            intro: `<b>The Geospatial Context Layer 🗺️</b><br><br>
+              The map shows the habitation's geography — flood plains, river segments, and the computed evacuation route in real time.<br><br>
+              <span style="color:#22c55e">Green lines</span> = safe passable roads. <span style="color:#a16207">Brown dashed</span> = kutcha (unpaved) routes. <span style="color:#ef4444">Red lines</span> = flood-blocked segments <b>automatically removed</b> from the routing graph.`,
+            position: 'right'
+          },
+
+          // ── Step 2: Baseline tab (overview tab is active = visible) ─
           {
             element: document.querySelector('#tab-overview'),
-            intro: "<b>Baseline Reality</b><br><br>We pull the exact demographics and live ML risk scores. Importantly, we check the environmental carrying capacity using <b>Terrain Ruggedness (TRI)</b> and <b>Topographic Wetness (TWI)</b> to ensure the ground is stable and drains properly.",
+            intro: `<b>Baseline Intelligence: Demographics + Terrain 📊</b><br><br>
+              This panel shows the exact socio-demographic profile of the community — population, households, and SC/ST vulnerability percentage.<br><br>
+              Terrain features: <b>Elevation, Slope, Aspect, TRI</b> (Terrain Ruggedness Index), and <b>TWI</b> (Topographic Wetness Index) — the raw signals the XGBoost model used to compute the baseline risk score.`,
             position: 'left'
           },
+
+          // ── Step 3: Switch to RELOCATION — no element ref (hidden) ─
+          // Tab is switched in onbeforechange. Tooltip floats center.
           {
-            element: document.querySelector('.tabs > .tab:nth-child(2)'),
-            intro: "<b>Relocation Engine</b><br><br>Click the RELOCATION tab to see how we assign safe zones.",
-            position: 'left'
+            intro: `<b>Carrying Capacity & Safe Zone Assignment ✅</b><br><br>
+              We've now switched to the <b>Relocation tab</b> — the mathematical core of PS26191.<br><br>
+              Every candidate safe zone was filtered against <b>UNHCR Sphere Humanitarian Standards</b>:<br>
+              ✅ Min <b>3.5 m²</b> per evacuee &nbsp;|&nbsp; ✅ Slope <b>&lt;8°</b> &nbsp;|&nbsp; ✅ Distance <b>&lt;150 km</b> &nbsp;|&nbsp; ✅ Capacity exceeds population<br><br>
+              The <b>Hungarian Algorithm</b> (O(n³)) then picks the optimal assignment from the passing sites.`
           },
+
+          // ── Step 4: Rejected sites — no element ref (tab may vary) ─
           {
-            element: document.querySelector('#tab-relocation'),
-            intro: "<b>Sphere Standard Matching</b><br><br>Our backend mathematically filters all surrounding safe zones against UNHCR Sphere Standards (e.g. 3.5m² area per person, <8° slope, <150km distance). It assigns the absolute safest approved site.",
-            position: 'left'
+            intro: `<b>Explainable AI: Why Sites Were Rejected 🚫</b><br><br>
+              Every rejected safe zone has a logged, auditable reason — for example:<br><br>
+              <i>"Too far from habitation (176km &gt; 150km)"</i><br>
+              <i>"Insufficient capacity (412 persons &lt; 521 needed)"</i><br>
+              <i>"Terrain too steep (Slope: 10° &gt; 8°)"</i><br><br>
+              This proves our AI follows hard rules — not guesses. It is fully defensible to regulators.`
           },
+
+          // ── Step 5: Switch to SIMULATOR — no element ref (hidden) ──
           {
-            element: document.querySelector('#rejected-safe-zones'),
-            intro: "<b>Why were these rejected?</b><br><br>We also log exactly why other sites were rejected, proving the AI is making decisions based on math and humanitarian standards, not just guessing.",
-            position: 'left'
+            intro: `<b>Extreme Weather Scenario Simulator 🌊</b><br><br>
+              We've now switched to the <b>Simulator tab</b>. This module lets you inject a catastrophic weather multiplier to model a once-in-a-decade flood or landslide event.<br><br>
+              The system recomputes the inundation perimeter using <b>Manning's Equation</b> applied to live GloFAS discharge volumes and redraws the map in real time.`
           },
+
+          // ── Step 6: 3D Sim CTA — no element ref ──────────────────
           {
-            element: document.querySelector('.tabs > .tab:nth-child(3)'),
-            intro: "<b>Extreme Weather Simulation</b><br><br>Now click the SIMULATOR tab.",
-            position: 'left'
+            intro: `<b>In-Browser 3D Simulation 🌐</b><br><br>
+              Click <b>"View 3D Simulation"</b> in the top header bar to launch the <b>Cesium Ion 3D globe</b> — a bathtub-model flood visualization showing water rising over the real terrain topology of Assam in real time, with no GPU infrastructure required.`
           },
+
+          // ── Step 7: Final CTA ─────────────────────────────────────
           {
-            element: document.querySelector('#tab-simulator'),
-            intro: "<b>Trigger Simulation</b><br><br>By clicking the button here, we inject a massive mathematical multiplier into the AI model, simulating what happens when the flood or landslide peaks. The system will dynamically draw the 2D disaster path right on the map!",
-            position: 'left'
+            intro: `<b>🎓 Tour Complete!</b><br><br>
+              You've now seen the full DISHA pipeline:<br><br>
+              <b>Terrain ML → Live Weather → Risk Fusion → Sphere Capacity Check → Optimal Assignment → 3D Simulation → PDF Mandate</b><br><br>
+              Click <b>"📥 Download Relocation Order PDF"</b> to see the final, print-ready government evacuation mandate generated from all of this intelligence.`
           }
         ]
       });
-      
+
+      // ── Auto-switch tabs at the right steps ─────────────────────
+      intro.onbeforechange(function() {
+        const step = intro._currentStep;
+        if (step === 3 || step === 4) {
+          switchTab('tab-relocation');
+        } else if (step === 5 || step === 6) {
+          switchTab('tab-simulator');
+        } else if (step === 1 || step === 2) {
+          switchTab('tab-overview');
+        }
+      });
+
+      // ── Speak each step + inject voice toggle ─────────────────────
       intro.onafterchange(function() {
         setTimeout(() => {
+          if (typeof injectVoiceToggle === 'function') injectVoiceToggle();
           const tooltip = document.querySelector('.introjs-tooltiptext');
-          if (tooltip) {
-            speakText(tooltip.innerHTML);
-          }
+          if (tooltip) speakText(tooltip.innerHTML);
         }, 300);
       });
 
       intro.onexit(function() {
         if (window.speechSynthesis) window.speechSynthesis.cancel();
+        // Restore to overview on close
+        switchTab('tab-overview');
       });
 
       intro.start();
-      
-      // Speak the first step immediately
-      if (intro._options.steps[0] && intro._options.steps[0].intro) {
-        speakText(intro._options.steps[0].intro);
-      }
+      // Speak step 0 immediately
+      if (intro._options.steps[0]) speakText(intro._options.steps[0].intro);
     }
 
     // Check for auto-start
@@ -6541,6 +6671,353 @@ File: dashboard\index.html
 </html>
 
 ================================================================================
+File: dashboard\pdf_template.html
+================================================================================
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Official Relocation Order - DISHA</title>
+  <style>
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      margin: 0;
+      padding: 40px;
+      color: #000;
+      background: #fff;
+      line-height: 1.5;
+    }
+    
+    .header {
+      text-align: center;
+      border-bottom: 2px solid #000;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .header h2 {
+      margin: 5px 0 0;
+      font-size: 16px;
+      font-weight: normal;
+    }
+    
+    .header p {
+      margin: 5px 0 0;
+      font-size: 14px;
+      font-style: italic;
+    }
+    
+    .meta-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .order-title {
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      text-decoration: underline;
+      margin-bottom: 30px;
+      text-transform: uppercase;
+    }
+    
+    .section-title {
+      font-size: 16px;
+      font-weight: bold;
+      background: #f0f0f0;
+      padding: 5px 10px;
+      margin: 20px 0 10px;
+      border: 1px solid #ccc;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    
+    th, td {
+      border: 1px solid #000;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    
+    th {
+      background: #f9f9f9;
+      font-weight: bold;
+      width: 30%;
+    }
+    
+    .sphere-table th {
+      width: auto;
+    }
+    
+    .footer {
+      margin-top: 60px;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .signature {
+      text-align: center;
+      width: 250px;
+    }
+    
+    .signature-line {
+      border-top: 1px solid #000;
+      margin-top: 60px;
+      padding-top: 5px;
+      font-weight: bold;
+    }
+    
+    .stamp {
+      color: #d32f2f;
+      border: 3px solid #d32f2f;
+      display: inline-block;
+      padding: 5px 10px;
+      font-size: 18px;
+      font-weight: bold;
+      text-transform: uppercase;
+      transform: rotate(-5deg);
+      opacity: 0.8;
+      margin-bottom: 20px;
+    }
+    
+    .hide-on-print {
+      display: block;
+      margin: 0 auto 20px;
+      padding: 10px 20px;
+      background: #1e40af;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    
+    @media print {
+      .hide-on-print {
+        display: none !important;
+      }
+      body {
+        padding: 0;
+      }
+    }
+    
+    #loading {
+      text-align: center;
+      font-size: 20px;
+      margin-top: 100px;
+    }
+    
+    #content {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <button class="hide-on-print" onclick="window.print()">🖨️ Print to PDF</button>
+
+  <div id="loading">Generating Official Order...</div>
+
+  <div id="content">
+    <div class="header">
+      <h1>MINISTRY OF HOME AFFAIRS</h1>
+      <h2>National Disaster Management Authority (NDMA)</h2>
+      <p>Automated Relocation Directive - DISHA System (PS26191)</p>
+    </div>
+    
+    <div class="meta-info">
+      <div><strong>Order No:</strong> NDMA/DISHA/<span id="order-no"></span></div>
+      <div><strong>Date:</strong> <span id="current-date"></span></div>
+    </div>
+    
+    <div style="text-align: center;">
+      <div class="stamp" id="urgency-stamp">IMMEDIATE EVACUATION</div>
+    </div>
+    
+    <div class="order-title">MANDATORY RELOCATION ADVISORY</div>
+    
+    <p>Pursuant to the Disaster Management Act, 2005, and based on the combinatorial optimization and risk fusion analysis performed by the DISHA intelligence platform, an immediate evacuation is ordered for the following habitation due to critical imminent hazard.</p>
+    
+    <div class="section-title">1. HABITATION DETAILS (ORIGIN)</div>
+    <table>
+      <tr>
+        <th>Habitation Name</th>
+        <td id="hab-name" style="font-weight: bold; text-transform: uppercase;"></td>
+      </tr>
+      <tr>
+        <th>Community Type</th>
+        <td id="hab-type"></td>
+      </tr>
+      <tr>
+        <th>Total Population</th>
+        <td id="hab-pop"></td>
+      </tr>
+      <tr>
+        <th>Vulnerable Demographic (SC/ST)</th>
+        <td id="hab-vuln"></td>
+      </tr>
+      <tr>
+        <th>Primary Hazard Trigger</th>
+        <td id="hab-trigger" style="color: #d32f2f; font-weight: bold;"></td>
+      </tr>
+    </table>
+    
+    <div class="section-title">2. DESIGNATED SAFE ZONE (DESTINATION)</div>
+    <table>
+      <tr>
+        <th>Safe Zone Name</th>
+        <td id="sz-name" style="font-weight: bold;"></td>
+      </tr>
+      <tr>
+        <th>Total Capacity</th>
+        <td id="sz-capacity"></td>
+      </tr>
+      <tr>
+        <th>Evacuation Distance</th>
+        <td id="sz-distance"></td>
+      </tr>
+      <tr>
+        <th>Terrain Safety Score</th>
+        <td id="sz-safety"></td>
+      </tr>
+    </table>
+    
+    <div class="section-title">3. SPHERE STANDARD RESOURCE ALLOCATION</div>
+    <p style="font-size: 13px; margin-top: 0;">Logistics officers are directed to immediately mobilize the following pre-positioned resources to the designated safe zone prior to civilian arrival, strictly adhering to Sphere Humanitarian Minimum Standards.</p>
+    
+    <table class="sphere-table">
+      <tr>
+        <th>Resource Type</th>
+        <th>Standard Formula</th>
+        <th>Required Quantity</th>
+      </tr>
+      <tr>
+        <td><strong>Shelter Tents (50-person)</strong></td>
+        <td>Total Population / 50</td>
+        <td id="res-tents" style="font-weight: bold;"></td>
+      </tr>
+      <tr>
+        <td><strong>Potable Water (Litres/Day)</strong></td>
+        <td>15 Litres per capita per day</td>
+        <td id="res-water" style="font-weight: bold;"></td>
+      </tr>
+      <tr>
+        <td><strong>Food Rations (Daily)</strong></td>
+        <td>1 Ration pack per capita</td>
+        <td id="res-food" style="font-weight: bold;"></td>
+      </tr>
+      <tr>
+        <td><strong>Emergency Medical Kits</strong></td>
+        <td>1 Kit per 50 people</td>
+        <td id="res-med" style="font-weight: bold;"></td>
+      </tr>
+    </table>
+    
+    <p style="margin-top: 30px; font-size: 14px;"><strong>Routing Instructions:</strong> Evacuation convoys must adhere to the dynamically pruned route generated by the DISHA OSRM fallback engine. All historically flooded segments have been computationally blocked. Do not deviate from the digital manifest.</p>
+    
+    <div class="footer">
+      <div class="signature">
+        <div class="signature-line">Local Magistrate / District Collector</div>
+        <div style="font-size: 12px; margin-top: 5px;">(Authorized Signature & Seal)</div>
+      </div>
+      
+      <div class="signature">
+        <div class="signature-line">DISHA Automated System</div>
+        <div style="font-size: 12px; margin-top: 5px;">Generated by AI Decision Engine</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const habId = urlParams.get('hab_id');
+      
+      if (!habId) {
+        document.getElementById('loading').innerText = "Error: No Habitation ID provided.";
+        return;
+      }
+      
+      document.getElementById('order-no').innerText = `2026-${habId.split('_').pop()}-${Math.floor(Math.random() * 9000) + 1000}`;
+      
+      const now = new Date();
+      document.getElementById('current-date').innerText = now.toLocaleDateString('en-IN', {
+        year: 'numeric', month: 'long', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+      
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/advisory/${habId}`);
+        const data = await res.json();
+        
+        if (data.status === 'success') {
+          const adv = data.advisory;
+          const hab = adv.habitation;
+          const plan = adv.relocation_plan;
+          const site = plan.recommended_site;
+          const resources = plan.resources_required;
+          
+          document.getElementById('hab-name').innerText = hab.name;
+          document.getElementById('hab-type').innerText = hab.type.replace('_', ' ').toUpperCase();
+          document.getElementById('hab-pop').innerText = `${hab.population} Civilians`;
+          document.getElementById('hab-vuln').innerText = `${hab.vulnerability_sc_st_pct}%`;
+          
+          if (adv.trigger.live_weather && adv.trigger.live_weather.forecast_72h_mm !== undefined) {
+             document.getElementById('hab-trigger').innerText = `${adv.trigger.reason} (${adv.trigger.live_weather.forecast_72h_mm.toFixed(1)}mm forecast)`;
+             document.getElementById('urgency-stamp').innerText = "CRITICAL: " + adv.urgency;
+          } else {
+             document.getElementById('hab-trigger').innerText = "Historical Terrain Risk Threshold Exceeded";
+             document.getElementById('urgency-stamp').innerText = "PRECAUTIONARY: " + adv.urgency;
+             document.getElementById('urgency-stamp').style.color = "#ed6c02";
+             document.getElementById('urgency-stamp').style.borderColor = "#ed6c02";
+          }
+          
+          document.getElementById('sz-name').innerText = site.name;
+          document.getElementById('sz-capacity').innerText = `${site.capacity} Persons (Sphere Compliant)`;
+          document.getElementById('sz-distance').innerText = `${site.distance_km} km (${site.access_mode.toUpperCase()})`;
+          document.getElementById('sz-safety').innerText = `${site.hazard_safety_score ? (site.hazard_safety_score * 100).toFixed(0) : 95}%`;
+          
+          document.getElementById('res-tents').innerText = resources.tents_50_person;
+          document.getElementById('res-water').innerText = `${resources.total_water_litres.toLocaleString()} L`;
+          document.getElementById('res-food').innerText = resources.food_rations_daily.toLocaleString();
+          document.getElementById('res-med').innerText = Math.ceil(hab.population / 50);
+          
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('content').style.display = 'block';
+          
+          // Auto trigger print dialog after a brief delay for rendering
+          setTimeout(() => {
+            window.print();
+          }, 1000);
+          
+        } else {
+          document.getElementById('loading').innerText = "Error: " + (data.message || "Could not generate advisory.");
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('loading').innerText = "Connection error. Ensure backend is running.";
+      }
+    });
+  </script>
+</body>
+</html>
+
+================================================================================
 File: dashboard\simulation.html
 ================================================================================
 
@@ -6572,6 +7049,7 @@ File: dashboard\simulation.html
       DISHA <span style="font-size:12px;color:var(--accent);">| 3D TACTICAL SIMULATION</span>
     </div>
     <div class="actions">
+      <button id="sim-tour-btn" onclick="startSimTutorial()" disabled style="padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.4); border-radius: 4px; cursor: not-allowed; font-size: 12px; margin-right: 8px;" title="Wait for map to load...">🎓 Loading...</button>
       <a href="javascript:history.back()" class="btn-outline">← Back to COP</a>
     </div>
   </header>
@@ -6612,12 +7090,12 @@ File: dashboard\simulation.html
 
       <!-- Stage Legend -->
       <div class="panel-section">
-        <h3>Simulation Stages</h3>
-        <div class="stage-legend">
-          <div class="stage-item" id="stage-0"><span class="color-box stage-0-color"></span> T+0h (Base)</div>
-          <div class="stage-item" id="stage-6"><span class="color-box stage-6-color"></span> T+6h</div>
-          <div class="stage-item" id="stage-18"><span class="color-box stage-18-color"></span> T+18h</div>
-          <div class="stage-item" id="stage-36"><span class="color-box stage-36-color"></span> T+36h (Peak)</div>
+        <h3>Simulation Stages <span style="font-size:10px; color: var(--text-dim); font-weight:400">(click to jump)</span></h3>
+        <div class="stage-legend" id="stage-legend">
+          <div class="stage-item" id="stage-0"  onclick="jumpToStage(0)"  title="Jump to T+0h" style="cursor:pointer"><span class="color-box stage-0-color"></span> ⏱ T+0h (Base)</div>
+          <div class="stage-item" id="stage-6"  onclick="jumpToStage(6)"  title="Jump to T+6h" style="cursor:pointer"><span class="color-box stage-6-color"></span> ⏱ T+6h</div>
+          <div class="stage-item" id="stage-18" onclick="jumpToStage(18)" title="Jump to T+18h" style="cursor:pointer"><span class="color-box stage-18-color"></span> ⏱ T+18h</div>
+          <div class="stage-item" id="stage-36" onclick="jumpToStage(36)" title="Jump to T+36h (Peak)" style="cursor:pointer"><span class="color-box stage-36-color"></span> ⏱ T+36h (Peak)</div>
         </div>
       </div>
 
@@ -6641,8 +7119,89 @@ File: dashboard\simulation.html
   <!-- CesiumJS Core (Loaded last to not block rendering) -->
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Cesium.js"></script>
 
+  <!-- Intro.js for guided tour -->
+  <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
+  <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
+
   <!-- Simulation Controller -->
-  <script src="js/simulation_3d.js?v=13"></script>
+  <script src="js/simulation_3d.js?v=14"></script>
+
+  <!-- Shared tour engine (speakText, injectVoiceToggle) -->
+  <script src="js/tutorial.js"></script>
+
+  <script>
+    function startSimTutorial() {
+      const intro = introJs();
+      intro.setOptions({
+        showProgress: true,
+        showBullets: false,
+        exitOnOverlayClick: false,
+        disableInteraction: true,
+        prevLabel: '← Back',
+        nextLabel: 'Next →',
+        doneLabel: 'Finish Tour',
+        steps: [
+          {
+            intro: `<b>3D Tactical Simulation 🌊</b><br><br>
+              This is DISHA's real-time <b>Bathtub Flood & Landslide Growth Simulation</b> powered by Cesium Ion 3D terrain.<br><br>
+              It models how a disaster physically expands across the terrain over 36 hours using <b>Manning's Equation</b> applied to live GloFAS river discharge volumes.`
+          },
+          {
+            element: document.getElementById('cesiumContainer'),
+            intro: `<b>3D Cesium Terrain Globe 🌏</b><br><br>
+              The globe uses real-world satellite elevation data (NASA SRTM via Cesium Ion) — actual terrain topology of Assam, not a flat map.<br><br>
+              <span style="color:#22c55e">● Green dot</span> = habitation epicenter.<br>
+              <span style="color:#60a5fa">● Blue polygons</span> = flood inundation stages growing over time.<br>
+              <span style="color:#f97316">● Orange cone</span> = landslide debris flow accumulation.`,
+            position: 'left'
+          },
+          {
+            element: document.getElementById('stage-legend'),
+            intro: `<b>Clickable Time-Jump Controls ⏱️</b><br><br>
+              Each stage is <b>directly clickable</b>. Clicking <b>T+6h</b>, <b>T+18h</b>, or <b>T+36h (Peak)</b> instantly teleports the simulation clock to that exact moment — no need to wait for the animation to play through.<br><br>
+              The simulation auto-pauses for 2 seconds so you can inspect the flood extent at that snapshot, then resumes automatically.`,
+            position: 'left'
+          },
+          {
+            element: document.getElementById('sim-advisory-log'),
+            intro: `<b>Live Advisory Trigger Log 🚨</b><br><br>
+              As the flood water level crosses the habitation's coordinates (computed using Turf.js point-in-polygon), this log fires a <b>real-time advisory trigger</b>.<br><br>
+              The system then calls the <b>Relocation Advisory API</b>, fetches the optimal safe zone assignment, and presents a <b>Human-in-the-Loop confirmation</b> if overflow re-routing is needed.`,
+            position: 'left'
+          },
+          {
+            element: document.querySelector('.panel-section:first-child'),
+            intro: `<b>Live Weather Context Panel ☁️</b><br><br>
+              The top panel shows the <b>live weather readings</b> for this habitation pulled from OpenWeather API:<br><br>
+              • Current rainfall intensity (mm/hr)<br>
+              • 72-hour forecast total (mm)<br>
+              • Trigger Status: CLEAR / ESCALATING / CRITICAL<br>
+              • Risk Multiplier applied to the baseline terrain score`,
+            position: 'left'
+          },
+          {
+            intro: `<b>🎓 Simulation Tour Complete!</b><br><br>
+              You've just seen how DISHA transforms raw terrain + weather data into a <b>physics-informed, time-stepped disaster visualization</b> — running entirely in-browser with no GPU infrastructure.<br><br>
+              When the habitation is breached, the system auto-generates the evacuation route (flood-pruned via OSMnx) and draws it in 3D on the globe.`
+          }
+        ]
+      });
+
+      intro.onafterchange(function() {
+        setTimeout(() => {
+          if (typeof injectVoiceToggle === 'function') injectVoiceToggle();
+          const tooltip = document.querySelector('.introjs-tooltiptext');
+          if (tooltip && typeof speakText === 'function') speakText(tooltip.innerHTML);
+        }, 300);
+      });
+
+      intro.onexit(function() {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+      });
+
+      intro.start();
+    }
+  </script>
 
 </body>
 
@@ -7645,7 +8204,7 @@ function renderAdvisoryContent(adv) {
     <button class="btn" style="width:100%; margin-top:24px; padding:12px; font-size:14px; background:var(--accent); color:white; border:none; border-radius:6px; cursor:pointer;" onclick="window.open('cop.html?hab_id=${hab.id}', '_blank')">
       🔍 Advanced Analysis (COP) & Simulation
     </button>
-    <button class="btn btn-primary" style="width:100%; margin-top:12px; padding:12px; font-size:14px;" onclick="alert('PDF Generation simulated.')">
+    <button class="btn btn-primary" style="width:100%; margin-top:12px; padding:12px; font-size:14px;" onclick="window.open('pdf_template.html?hab_id=${hab.id}', '_blank')">
       📥 Download Relocation Order PDF
     </button>
   `;
@@ -8075,7 +8634,7 @@ async function saveSettings() {
 File: dashboard\js\simulation_3d.js
 ================================================================================
 
-Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6InFZa05DNzhtTElkZVpBTVUiLCJqdGkiOiI0NWM2NTc2Ny1lYTJkLTRkMmEtYjY3Yy0wMmY5Njc0YWQ3MjUiLCJpZCI6NDc5OTcyLCJzdWIiOiJBc2h1dG9zaE0iLCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoiQXNodXRvc2hNX2RlZmF1bHQiLCJpYXQiOjE3ODg0NTEwODF9.N8rv3vb1F0QVa3iJEpU1cf4EoXMoIPem8LeHAbVITnI';
+// Cesium token will be fetched from the backend config
 
 let viewer;
 let simulationData;
@@ -8092,6 +8651,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
+    document.getElementById('sim-loader-text').innerText = "Fetching Secure Config...";
+    const configRes = await fetch('http://127.0.0.1:8000/api/config');
+    const config = await configRes.json();
+    Cesium.Ion.defaultAccessToken = config.CESIUM_ION_TOKEN;
+
     document.getElementById('sim-loader-text').innerText = "Running Bathtub Simulation Engine...";
 
     const res = await fetch(`http://127.0.0.1:8000/simulation/${habId}`);
@@ -8115,6 +8679,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initCesiumViewer(simulationData);
 
     document.getElementById('sim-loader').style.display = 'none';
+
+    // Enable the tour button now that Cesium has fully loaded
+    const tourBtn = document.getElementById('sim-tour-btn');
+    if (tourBtn) {
+      tourBtn.disabled = false;
+      tourBtn.style.cssText = 'padding: 6px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 8px;';
+      tourBtn.innerText = '🎓 Guided Tour';
+      tourBtn.title = '';
+    }
 
   } catch (e) {
     console.error(e);
@@ -8332,6 +8905,23 @@ function ifIdx(idx) {
   if (idx === 3) return 'stage-36';
 }
 
+// ── Instant time-jump: clicking a stage legend item teleports the clock ──
+function jumpToStage(tPlusHours) {
+  if (!viewer) return;
+  const start = viewer.clock.startTime;
+  const target = Cesium.JulianDate.addHours(start, tPlusHours, new Cesium.JulianDate());
+  viewer.clock.currentTime = target.clone();
+  // Pause so the user can inspect that exact moment
+  viewer.clock.shouldAnimate = false;
+  // Flash the clicked stage item
+  document.querySelectorAll('.stage-item').forEach(el => el.classList.remove('stage-active'));
+  const stageMap = {0: 'stage-0', 6: 'stage-6', 18: 'stage-18', 36: 'stage-36'};
+  const el = document.getElementById(stageMap[tPlusHours]);
+  if (el) el.classList.add('stage-active');
+  // Auto-resume after 2s so the simulation can continue
+  setTimeout(() => { if (viewer) viewer.clock.shouldAnimate = true; }, 2000);
+}
+
 function checkInundation(lat, lng, ds, entity, habId) {
   if (!ds.entities.values || ds.entities.values.length === 0) return;
 
@@ -8443,32 +9033,48 @@ function checkInundation(lat, lng, ds, entity, habId) {
 File: dashboard\js\tutorial.js
 ================================================================================
 
-let currentUtterance = null;
+// ───────────────────────────────────────────────────────────
+// DISHA Guided Tour Engine — tutorial.js
+// Voice toggle: press the 🔇 button in the tour to mute TTS
+// without muting system audio (so team leader can voiceover).
+// ───────────────────────────────────────────────────────────
+
+let _voiceEnabled = true;
+
+function toggleVoice() {
+  _voiceEnabled = !_voiceEnabled;
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  const btn = document.getElementById('disha-voice-toggle');
+  if (btn) btn.innerText = _voiceEnabled ? '🔊 Voice On' : '🔇 Voice Off';
+}
+
+// Injects the voice toggle button into the intro.js tooltip bar
+function injectVoiceToggle() {
+  if (document.getElementById('disha-voice-toggle')) return; // already injected
+  const bar = document.querySelector('.introjs-tooltipbuttons');
+  if (!bar) return;
+  const btn = document.createElement('button');
+  btn.id = 'disha-voice-toggle';
+  btn.className = 'introjs-button';
+  btn.style.cssText = 'margin-right: auto; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.3); font-size: 12px;';
+  btn.innerText = _voiceEnabled ? '🔊 Voice On' : '🔇 Voice Off';
+  btn.onclick = (e) => { e.stopPropagation(); toggleVoice(); };
+  bar.prepend(btn);
+}
 
 function speakText(htmlText) {
-  if (!window.speechSynthesis) return;
+  if (!_voiceEnabled || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  
-  const textToSpeak = htmlText
-    .replace(/<br\s*[\/]?>/gi, '. ') // Add pauses for line breaks
-    .replace(/<[^>]*>?/gm, '')       // Remove other HTML tags
-    .replace(/\s+/g, ' ');           // Clean up spaces
-    
-  currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
-  
+  const text = htmlText
+    .replace(/<br\s*[\/]?>/gi, '. ')
+    .replace(/<[^>]*>?/gm, '')
+    .replace(/\s+/g, ' ');
+  const utt = new SpeechSynthesisUtterance(text);
   const voices = window.speechSynthesis.getVoices();
-  const preferredVoice = voices.find(v => v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Microsoft Mark')) || voices.find(v => v.lang.startsWith('en'));
-  
-  if (preferredVoice) {
-    currentUtterance.voice = preferredVoice;
-  }
-  
-  currentUtterance.rate = 0.85; // Slower, more deliberate pacing
-  
-  // Fix for Chrome bug where speak() right after cancel() is ignored
-  setTimeout(() => {
-    window.speechSynthesis.speak(currentUtterance);
-  }, 150);
+  const voice = voices.find(v => v.name.includes('Google') || v.name.includes('Microsoft Mark') || v.name.includes('Natural')) || voices.find(v => v.lang.startsWith('en'));
+  if (voice) utt.voice = voice;
+  utt.rate = 0.88;
+  setTimeout(() => window.speechSynthesis.speak(utt), 150);
 }
 
 function startMainTutorial() {
@@ -8478,44 +9084,114 @@ function startMainTutorial() {
     showProgress: true,
     showBullets: false,
     exitOnOverlayClick: false,
+    disableInteraction: true,   // BLOCK clicks on the target element by default
     tooltipClass: 'custom-intro-tooltip',
+    prevLabel: '← Back',
+    nextLabel: 'Next →',
+    doneLabel: 'Finish Tour',
     steps: [
+      // ── Step 0: Welcome ─────────────────────────────────────
       {
-        intro: "<b>Welcome to DISHA</b><br><br>Let's take a quick tour of how our AI predicts disasters and manages carrying capacity. This will explain the logic behind the scenes."
+        intro: `<b>Welcome to DISHA 🌊</b><br><br>
+          DISHA is an AI-powered <b>Disaster Intelligence & Hazard Assessment</b> platform built for the Ministry of Home Affairs.<br><br>
+          In the next 60 seconds, you will see how we turn raw terrain and weather data into life-saving evacuation decisions in real time.<br><br>
+          Let's begin.`
       },
+
+      // ── Step 1: The Map ──────────────────────────────────────
       {
         element: document.querySelector('#map'),
-        intro: "<b>The Global View</b><br><br>This map plots all vulnerable habitations. Our XGBoost model (trained on NASA catalogs & HydroRIVERS) analyzes the terrain (slope, ruggedness, drainage) of every single dot to predict baseline Flood and Landslide risks.",
+        intro: `<b>The Habitation Intelligence Map 🗺️</b><br><br>
+          Every dot on this map is a real vulnerable settlement in Assam — <b>chars, tribal communities, riverbank villages</b>.<br><br>
+          Our backend pre-processes each one using <b>NASA SRTM terrain data</b> (elevation, slope, Topographic Wetness Index) to assign a baseline flood and landslide susceptibility score.`,
         position: 'right'
       },
+
+      // ── Step 2: Risk Status Grid ─────────────────────────────
       {
         element: document.querySelector('.status-grid'),
-        intro: "<b>Risk Overview</b><br><br>Habitations are sorted into zones based on their AI risk score.<br><br><span style='color: #ef4444'>RED:</span> >70% Risk<br><span style='color: #f97316'>ORANGE:</span> 45-70% Risk<br><span style='color: #eab308'>YELLOW:</span> 25-45% Risk",
+        intro: `<b>Automated Risk Tiers ⚠️</b><br><br>
+          Our <b>XGBoost ML model</b> classifies every habitation into a risk tier:<br><br>
+          <span style='color:#ef4444; font-weight:700'>● RED</span> — Critical. Risk score > 70%. Immediate evacuation required.<br>
+          <span style='color:#f97316; font-weight:700'>● ORANGE</span> — High risk. 45–70%. Active monitoring.<br>
+          <span style='color:#eab308; font-weight:700'>● YELLOW</span> — Moderate. 25–45%. Pre-positioned resources needed.<br><br>
+          These scores update dynamically as live weather data comes in.`,
         position: 'left'
       },
+
+      // ── Step 3: Weather Trigger ──────────────────────────────
       {
-        element: document.querySelector('.weather-trigger'),
-        intro: "<b>Live Weather Trigger (Layer B)</b><br><br>We pull live 72-hour rainfall forecasts from Open-Meteo. If rainfall exceeds standard thresholds, it generates a 'Risk Multiplier' which dynamically escalates baseline terrain scores. This is our autonomous early warning trigger.",
+        element: document.querySelector('.weather-trigger') || document.querySelector('.sidebar'),
+        intro: `<b>Layer B: Live Weather Trigger ☁️</b><br><br>
+          We continuously pull <b>72-hour rainfall forecasts</b> from OpenWeather API and river discharge rates from <b>GloFAS</b>.<br><br>
+          If rainfall exceeds <b>20mm/hr</b> or the 72-hour spike is significant, the system applies a <b>dynamic risk multiplier</b> (based on Zhu et al. 2023) — automatically escalating a YELLOW zone to RED without any human input.<br><br>
+          This is our autonomous early-warning engine.`,
         position: 'left'
       },
+
+      // ── Step 4: Habitation Sidebar ───────────────────────────
       {
-        element: document.querySelector('#hab-list'),
-        intro: "<b>Demography & Vulnerability</b><br><br>The sidebar lists all communities prioritized by their Risk Zone AND their social Vulnerability (SC/ST percentage). The AI always prioritizes the most vulnerable populations first.",
+        element: document.querySelector('#hab-list') || document.querySelector('.sidebar'),
+        intro: `<b>Vulnerability-Weighted Prioritization 🛡️</b><br><br>
+          Habitations are not just ranked by risk score. We layer in <b>social vulnerability</b> — specifically the percentage of SC/ST population — computed using the <b>Analytical Hierarchy Process (Saaty 1980)</b>.<br><br>
+          This ensures the most <b>socially vulnerable communities</b> are always prioritized for evacuation first, even if their raw terrain score is similar to a neighbouring settlement.`,
         position: 'left'
       },
+
+      // ── Step 5: Auto-open advisory AND describe it in same step ──
+      // The panel is opened in onbeforechange BEFORE the tooltip renders.
+      // We point the tooltip at the sidebar so it appears near the open panel.
       {
-        intro: "<b>Triggering the COP</b><br><br>Now, try clicking on any of the habitations (dots) in the sidebar or map. It will slide open an advisory panel. From there, click <b>'Advanced Analysis (COP) & Simulation'</b> to see the deep dive for that specific community!"
+        element: document.querySelector('.sidebar'),
+        intro: `<b>Live Relocation Advisory 📋</b><br><br>
+          The system has automatically opened the Advisory Panel for the first Red Zone habitation.<br><br>
+          This panel is the output of our <b>Carrying Capacity Engine</b> — it runs the <b>Hungarian Algorithm</b> — an O(n³) optimizer — to assign habitations to safe zones without exceeding maximum capacity.<br><br>
+          It tells you:<br>
+          ✅ The best Sphere-compliant safe zone<br>
+          🚫 Why every other site was rejected<br>
+          📦 Exact tents, water, and ration packs required`,
+        position: 'left'
+      },
+
+      // ── Step 7: Finish & COP CTA ────────────────────────────
+      {
+        intro: `<b>🎓 That's the DISHA Intelligence Layer!</b><br><br>
+          You've just seen AI move from raw satellite data → terrain risk → live weather escalation → mathematically optimized evacuation plan.<br><br>
+          Click <b>"Advanced Analysis (COP) & Simulation"</b> inside the advisory panel to open the 3D Cesium flood simulation and deep-dive analysis for any habitation.`
       }
     ]
   });
 
+  // ── Pre-fire openAdvisory on step 4 (while user reads Vulnerability step)
+  // This gives the backend ~2-3 seconds to respond before step 5 renders.
+  let _advisoryFired = false;
+  intro.onbeforechange(function() {
+    const stepIndex = intro._currentStep;
+
+    // Fire on step 4 (Vulnerability) — panel loads in background during that step
+    if (stepIndex === 4 && !_advisoryFired) {
+      _advisoryFired = true;
+      let targetHabId = null;
+      if (typeof currentHabitations !== 'undefined' && currentHabitations.length > 0) {
+        const redHab = currentHabitations.find(h => h.zone === 'RED') || currentHabitations[0];
+        targetHabId = redHab.id;
+      } else {
+        const firstCard = document.querySelector('.hab-card');
+        if (firstCard) firstCard.click();
+      }
+      if (targetHabId && typeof openAdvisory === 'function') {
+        openAdvisory(targetHabId);
+      }
+    }
+  });
+
+  // ── Speak each step + inject voice toggle ───────────────────
   intro.onafterchange(function() {
     setTimeout(() => {
+      injectVoiceToggle();
       const tooltip = document.querySelector('.introjs-tooltiptext');
-      if (tooltip) {
-        speakText(tooltip.innerHTML);
-      }
-    }, 300); // Wait for popup to render
+      if (tooltip) speakText(tooltip.innerHTML);
+    }, 300);
   });
 
   intro.onexit(function() {
@@ -8523,11 +9199,9 @@ function startMainTutorial() {
   });
 
   intro.start();
-  
-  // Speak the first step immediately
-  if (intro._options.steps[0] && intro._options.steps[0].intro) {
-    speakText(intro._options.steps[0].intro);
-  }
+  // Speak step 0 immediately
+  const step0 = intro._options.steps[0];
+  if (step0) speakText(step0.intro);
 }
 
 ================================================================================

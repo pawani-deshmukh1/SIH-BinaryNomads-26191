@@ -1,285 +1,4554 @@
 {
   "type": "FeatureCollection",
   "summary": {
-    "red_zones_count": 4,
-    "red_zones_high_risk": 2,
-    "buildings_assessed": 23,
-    "buildings_destroyed": 7,
-    "buildings_minor_damage": 9,
-    "flood_zones_count": 2,
-    "landslide_zones_count": 1,
-    "evac_sites_available": 3,
-    "towers_at_risk": 2,
-    "pipeline_duration_ms": 1847,
+    "red_zones_count": 20,
+    "buildings_destroyed": 30,
+    "buildings_minor_damage": 31,
     "demo_mode": true,
-    "region": "Nagaon, Assam — Aug 2026 Flood Event",
-    "last_updated": "2026-08-27T05:30:00Z"
-  },
-  "model_confidence": {
-    "damage":    {"score": 0.88, "score_type": "model_confidence", "last_updated": "2026-08-27T05:30:00Z"},
-    "flood":     {"score": 0.93, "score_type": "model_confidence", "last_updated": "2026-08-27T05:30:00Z"},
-    "landslide": {"score": 0.77, "score_type": "model_confidence", "last_updated": "2026-08-27T05:30:00Z"}
+    "last_updated": "2026-09-04T21:10:15.845223+00:00"
   },
   "features": [
     {
       "type": "Feature",
       "properties": {
-        "layer_type": "building_damage", "osm_id": "way/101001", "damage_level": "destroyed",
-        "confidence": 0.94, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.641, 26.336], [92.642, 26.336], [92.642, 26.337], [92.641, 26.337], [92.641, 26.336]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/101002", "damage_level": "destroyed",
-        "confidence": 0.91, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.643, 26.336], [92.644, 26.336], [92.644, 26.337], [92.643, 26.337], [92.643, 26.336]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/101003", "damage_level": "destroyed",
-        "confidence": 0.89, "building_type": "school", "name": "Govt Primary School", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.645, 26.337], [92.647, 26.337], [92.647, 26.338], [92.645, 26.338], [92.645, 26.337]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/101004", "damage_level": "destroyed",
-        "confidence": 0.86, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.638, 26.339], [92.639, 26.339], [92.639, 26.340], [92.638, 26.340], [92.638, 26.339]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/101005", "damage_level": "destroyed",
-        "confidence": 0.82, "building_type": "shop", "name": "Local Market Stall", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.639, 26.340], [92.640, 26.340], [92.640, 26.341], [92.639, 26.341], [92.639, 26.340]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/101006", "damage_level": "destroyed",
-        "confidence": 0.79, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.641, 26.341], [92.642, 26.341], [92.642, 26.342], [92.641, 26.342], [92.641, 26.341]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/101007", "damage_level": "destroyed",
-        "confidence": 0.76, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.636, 26.334], [92.637, 26.334], [92.637, 26.335], [92.636, 26.335], [92.636, 26.334]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/102001", "damage_level": "minor_damage",
-        "confidence": 0.73, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.648, 26.335], [92.649, 26.335], [92.649, 26.336], [92.648, 26.336], [92.648, 26.335]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/102002", "damage_level": "minor_damage",
-        "confidence": 0.71, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.649, 26.335], [92.650, 26.335], [92.650, 26.336], [92.649, 26.336], [92.649, 26.335]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/102003", "damage_level": "minor_damage",
-        "confidence": 0.68, "building_type": "warehouse", "name": "", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.651, 26.336], [92.653, 26.336], [92.653, 26.337], [92.651, 26.337], [92.651, 26.336]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/102004", "damage_level": "minor_damage",
-        "confidence": 0.65, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.633, 26.342], [92.634, 26.342], [92.634, 26.343], [92.633, 26.343], [92.633, 26.342]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/102005", "damage_level": "minor_damage",
-        "confidence": 0.62, "building_type": "clinic", "name": "PHC Nagaon Sub-Centre", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.635, 26.343], [92.637, 26.343], [92.637, 26.344], [92.635, 26.344], [92.635, 26.343]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/102006", "damage_level": "minor_damage",
-        "confidence": 0.61, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.660, 26.332], [92.661, 26.332], [92.661, 26.333], [92.660, 26.333], [92.660, 26.332]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/102007", "damage_level": "minor_damage",
-        "confidence": 0.59, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.661, 26.332], [92.662, 26.332], [92.662, 26.333], [92.661, 26.333], [92.661, 26.332]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/102008", "damage_level": "minor_damage",
-        "confidence": 0.57, "building_type": "temple", "name": "Shiv Temple", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.655, 26.338], [92.656, 26.338], [92.656, 26.339], [92.655, 26.339], [92.655, 26.338]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "building_damage", "osm_id": "way/102009", "damage_level": "minor_damage",
-        "confidence": 0.55, "building_type": "residential", "name": "", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.658, 26.345], [92.659, 26.345], [92.659, 26.346], [92.658, 26.346], [92.658, 26.345]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "flood_zone", "label": "flooded",
-        "confidence": 0.93, "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.630, 26.330], [92.650, 26.330], [92.655, 26.335], [92.650, 26.345], [92.635, 26.348], [92.625, 26.340], [92.630, 26.330]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "flood_zone", "label": "flooded",
-        "confidence": 0.89, "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.660, 26.326], [92.672, 26.326], [92.675, 26.332], [92.668, 26.337], [92.658, 26.334], [92.655, 26.328], [92.660, 26.326]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "landslide_zone", "label": "landslide_hazard",
-        "confidence": 0.77, "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.664, 26.348], [92.670, 26.346], [92.673, 26.352], [92.668, 26.356], [92.661, 26.353], [92.664, 26.348]]]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "red_zone", "primary_hazard": "structural_damage",
-        "risk_score": 0.91, "color_tier": "red",
-        "contributing_factors": {"damage": {"weight": 0.5, "value": 0.91}, "flood": {"weight": 0.25, "value": 0.70}, "landslide": {"weight": 0.25, "value": 0.10}},
+        "layer_type": "evac_site",
+        "id": "EZ-A01",
+        "name": "Nagaon Govt School",
+        "recommendation_score": 0.91,
+        "capacity_persons": 1200,
+        "status": "available",
         "last_updated": "2026-08-27T05:30:00Z"
       },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.637, 26.334], [92.648, 26.334], [92.650, 26.342], [92.642, 26.345], [92.634, 26.342], [92.637, 26.334]]]}
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.685,
+          26.355
+        ]
+      }
     },
     {
       "type": "Feature",
       "properties": {
-        "layer_type": "red_zone", "primary_hazard": "flood",
-        "risk_score": 0.83, "color_tier": "red",
-        "contributing_factors": {"damage": {"weight": 0.5, "value": 0.30}, "flood": {"weight": 0.25, "value": 0.93}, "landslide": {"weight": 0.25, "value": 0.0}},
+        "layer_type": "evac_site",
+        "id": "EZ-A02",
+        "name": "Nagaon District Stadium",
+        "recommendation_score": 0.79,
+        "capacity_persons": 3500,
+        "status": "partial",
         "last_updated": "2026-08-27T05:30:00Z"
       },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.628, 26.328], [92.655, 26.328], [92.658, 26.347], [92.632, 26.350], [92.624, 26.338], [92.628, 26.328]]]}
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.671,
+          26.342
+        ]
+      }
     },
     {
       "type": "Feature",
       "properties": {
-        "layer_type": "red_zone", "primary_hazard": "flood",
-        "risk_score": 0.54, "color_tier": "orange",
-        "contributing_factors": {"damage": {"weight": 0.5, "value": 0.10}, "flood": {"weight": 0.25, "value": 0.89}, "landslide": {"weight": 0.25, "value": 0.0}},
+        "layer_type": "evac_site",
+        "id": "EZ-A03",
+        "name": "Rupahi Relief Ground",
+        "recommendation_score": 0.65,
+        "capacity_persons": 600,
+        "status": "available",
         "last_updated": "2026-08-27T05:30:00Z"
       },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.658, 26.324], [92.676, 26.324], [92.678, 26.338], [92.665, 26.340], [92.655, 26.332], [92.658, 26.324]]]}
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.655,
+          26.362
+        ]
+      }
     },
     {
       "type": "Feature",
       "properties": {
-        "layer_type": "red_zone", "primary_hazard": "landslide",
-        "risk_score": 0.48, "color_tier": "orange",
-        "contributing_factors": {"damage": {"weight": 0.5, "value": 0.10}, "flood": {"weight": 0.25, "value": 0.0}, "landslide": {"weight": 0.25, "value": 0.77}},
+        "layer_type": "evac_route",
+        "id": "RT-01",
+        "from_zone": "RZ-01",
+        "to_site": "EZ-A01",
+        "route_suitability_score": 0.88,
+        "hazard_zones_avoided": 2,
+        "added_distance_km": 0.4,
         "last_updated": "2026-08-27T05:30:00Z"
       },
-      "geometry": {"type": "Polygon", "coordinates": [[[92.662, 26.346], [92.672, 26.344], [92.675, 26.354], [92.666, 26.358], [92.659, 26.355], [92.662, 26.346]]]}
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            92.645,
+            26.34
+          ],
+          [
+            92.652,
+            26.344
+          ],
+          [
+            92.661,
+            26.35
+          ],
+          [
+            92.672,
+            26.353
+          ],
+          [
+            92.685,
+            26.355
+          ]
+        ]
+      }
     },
     {
       "type": "Feature",
       "properties": {
-        "layer_type": "evac_site", "id": "EZ-A01", "name": "Nagaon Govt School",
-        "recommendation_score": 0.91, "capacity_persons": 1200, "status": "available", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Point", "coordinates": [92.685, 26.355]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "evac_site", "id": "EZ-A02", "name": "Nagaon District Stadium",
-        "recommendation_score": 0.79, "capacity_persons": 3500, "status": "partial", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Point", "coordinates": [92.671, 26.342]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "evac_site", "id": "EZ-A03", "name": "Rupahi Relief Ground",
-        "recommendation_score": 0.65, "capacity_persons": 600, "status": "available", "last_updated": "2026-08-27T05:30:00Z"
-      },
-      "geometry": {"type": "Point", "coordinates": [92.655, 26.362]}
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "layer_type": "evac_route", "id": "RT-01",
-        "from_zone": "RZ-01", "to_site": "EZ-A01",
-        "route_suitability_score": 0.88, "hazard_zones_avoided": 2, "added_distance_km": 0.4,
+        "layer_type": "evac_route",
+        "id": "RT-02",
+        "from_zone": "RZ-02",
+        "to_site": "EZ-A02",
+        "route_suitability_score": 0.75,
+        "hazard_zones_avoided": 1,
+        "added_distance_km": 0.2,
         "last_updated": "2026-08-27T05:30:00Z"
       },
-      "geometry": {"type": "LineString", "coordinates": [[92.645, 26.340], [92.652, 26.344], [92.661, 26.350], [92.672, 26.353], [92.685, 26.355]]}
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            92.637,
+            26.345
+          ],
+          [
+            92.644,
+            26.346
+          ],
+          [
+            92.656,
+            26.344
+          ],
+          [
+            92.664,
+            26.343
+          ],
+          [
+            92.671,
+            26.342
+          ]
+        ]
+      }
     },
     {
       "type": "Feature",
       "properties": {
-        "layer_type": "evac_route", "id": "RT-02",
-        "from_zone": "RZ-02", "to_site": "EZ-A02",
-        "route_suitability_score": 0.75, "hazard_zones_avoided": 1, "added_distance_km": 0.2,
+        "layer_type": "tower",
+        "id": "TW-A01",
+        "operator": "Airtel",
+        "status": "at_risk",
         "last_updated": "2026-08-27T05:30:00Z"
       },
-      "geometry": {"type": "LineString", "coordinates": [[92.637, 26.345], [92.644, 26.346], [92.656, 26.344], [92.664, 26.343], [92.671, 26.342]]}
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.636,
+          26.338
+        ]
+      }
     },
     {
       "type": "Feature",
       "properties": {
-        "layer_type": "tower", "id": "TW-A01", "operator": "Airtel",
-        "status": "at_risk", "last_updated": "2026-08-27T05:30:00Z"
+        "layer_type": "tower",
+        "id": "TW-A02",
+        "operator": "Jio",
+        "status": "operational",
+        "last_updated": "2026-08-27T05:30:00Z"
       },
-      "geometry": {"type": "Point", "coordinates": [92.636, 26.338]}
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.689,
+          26.341
+        ]
+      }
     },
     {
       "type": "Feature",
       "properties": {
-        "layer_type": "tower", "id": "TW-A02", "operator": "Jio",
-        "status": "operational", "last_updated": "2026-08-27T05:30:00Z"
+        "layer_type": "tower",
+        "id": "TW-A03",
+        "operator": "BSNL",
+        "status": "at_risk",
+        "last_updated": "2026-08-27T05:30:00Z"
       },
-      "geometry": {"type": "Point", "coordinates": [92.689, 26.341]}
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.648,
+          26.354
+        ]
+      }
     },
     {
       "type": "Feature",
       "properties": {
-        "layer_type": "tower", "id": "TW-A03", "operator": "BSNL",
-        "status": "at_risk", "last_updated": "2026-08-27T05:30:00Z"
+        "layer_type": "red_zone",
+        "primary_hazard": "flood",
+        "risk_score": 0.66,
+        "color_tier": "orange",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.3562475167041759
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.6628240927476112
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.0
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
       },
-      "geometry": {"type": "Point", "coordinates": [92.648, 26.354]}
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.4405,
+              26.2831
+            ],
+            [
+              92.43,
+              26.3048
+            ],
+            [
+              92.4065,
+              26.3102
+            ],
+            [
+              92.3877,
+              26.2952
+            ],
+            [
+              92.3877,
+              26.271
+            ],
+            [
+              92.4065,
+              26.256
+            ],
+            [
+              92.43,
+              26.2614
+            ],
+            [
+              92.4405,
+              26.2831
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "flood_zone",
+        "label": "flooded",
+        "confidence": 0.92,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.4298,
+              26.2924
+            ],
+            [
+              92.4132,
+              26.3025
+            ],
+            [
+              92.3961,
+              26.2932
+            ],
+            [
+              92.3956,
+              26.2738
+            ],
+            [
+              92.4122,
+              26.2637
+            ],
+            [
+              92.4293,
+              26.273
+            ],
+            [
+              92.4298,
+              26.2924
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_131244",
+        "damage_level": "minor_damage",
+        "confidence": 0.68,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.4055,
+              26.2816
+            ],
+            [
+              92.4047,
+              26.2824
+            ],
+            [
+              92.4039,
+              26.2816
+            ],
+            [
+              92.4047,
+              26.2808
+            ],
+            [
+              92.4055,
+              26.2816
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_850800",
+        "damage_level": "destroyed",
+        "confidence": 0.68,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.4155,
+              26.2843
+            ],
+            [
+              92.4147,
+              26.2851
+            ],
+            [
+              92.4139,
+              26.2843
+            ],
+            [
+              92.4147,
+              26.2835
+            ],
+            [
+              92.4155,
+              26.2843
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_895667",
+        "damage_level": "minor_damage",
+        "confidence": 0.84,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.4092,
+              26.2903
+            ],
+            [
+              92.4084,
+              26.2911
+            ],
+            [
+              92.4076,
+              26.2903
+            ],
+            [
+              92.4084,
+              26.2895
+            ],
+            [
+              92.4092,
+              26.2903
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_900581",
+        "damage_level": "destroyed",
+        "confidence": 0.64,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.4092,
+              26.2776
+            ],
+            [
+              92.4084,
+              26.2784
+            ],
+            [
+              92.4076,
+              26.2776
+            ],
+            [
+              92.4084,
+              26.2768
+            ],
+            [
+              92.4092,
+              26.2776
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "flood",
+        "risk_score": 0.93,
+        "color_tier": "red",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.764989791292066
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.6567586080244361
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.0
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              90.9851,
+              26.3412
+            ],
+            [
+              90.9788,
+              26.3544
+            ],
+            [
+              90.9644,
+              26.3577
+            ],
+            [
+              90.9529,
+              26.3485
+            ],
+            [
+              90.9529,
+              26.3339
+            ],
+            [
+              90.9644,
+              26.3247
+            ],
+            [
+              90.9788,
+              26.328
+            ],
+            [
+              90.9851,
+              26.3412
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "flood_zone",
+        "label": "flooded",
+        "confidence": 0.78,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              90.9786,
+              26.3469
+            ],
+            [
+              90.9685,
+              26.3531
+            ],
+            [
+              90.9581,
+              26.3474
+            ],
+            [
+              90.9578,
+              26.3355
+            ],
+            [
+              90.9679,
+              26.3293
+            ],
+            [
+              90.9783,
+              26.335
+            ],
+            [
+              90.9786,
+              26.3469
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_759176",
+        "damage_level": "destroyed",
+        "confidence": 0.8,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              90.964,
+              26.3387
+            ],
+            [
+              90.9632,
+              26.3395
+            ],
+            [
+              90.9624,
+              26.3387
+            ],
+            [
+              90.9632,
+              26.3379
+            ],
+            [
+              90.964,
+              26.3387
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_910620",
+        "damage_level": "destroyed",
+        "confidence": 0.94,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              90.9639,
+              26.3431
+            ],
+            [
+              90.9631,
+              26.3439
+            ],
+            [
+              90.9623,
+              26.3431
+            ],
+            [
+              90.9631,
+              26.3423
+            ],
+            [
+              90.9639,
+              26.3431
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_575435",
+        "damage_level": "destroyed",
+        "confidence": 0.66,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              90.9733,
+              26.3398
+            ],
+            [
+              90.9725,
+              26.3406
+            ],
+            [
+              90.9717,
+              26.3398
+            ],
+            [
+              90.9725,
+              26.339
+            ],
+            [
+              90.9733,
+              26.3398
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "flood",
+        "risk_score": 0.74,
+        "color_tier": "red",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.6536247696726154
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.5482179051002893
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.0
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              90.0033,
+              26.1256
+            ],
+            [
+              89.99,
+              26.1439
+            ],
+            [
+              89.9686,
+              26.1369
+            ],
+            [
+              89.9686,
+              26.1143
+            ],
+            [
+              89.99,
+              26.1073
+            ],
+            [
+              90.0033,
+              26.1256
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "flood_zone",
+        "label": "flooded",
+        "confidence": 0.87,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              89.9959,
+              26.132
+            ],
+            [
+              89.9844,
+              26.139
+            ],
+            [
+              89.9726,
+              26.1326
+            ],
+            [
+              89.9723,
+              26.1192
+            ],
+            [
+              89.9838,
+              26.1122
+            ],
+            [
+              89.9956,
+              26.1186
+            ],
+            [
+              89.9959,
+              26.132
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_771088",
+        "damage_level": "minor_damage",
+        "confidence": 0.84,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              89.9804,
+              26.124
+            ],
+            [
+              89.9796,
+              26.1248
+            ],
+            [
+              89.9788,
+              26.124
+            ],
+            [
+              89.9796,
+              26.1232
+            ],
+            [
+              89.9804,
+              26.124
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_430776",
+        "damage_level": "destroyed",
+        "confidence": 0.69,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              89.9813,
+              26.1193
+            ],
+            [
+              89.9805,
+              26.1201
+            ],
+            [
+              89.9797,
+              26.1193
+            ],
+            [
+              89.9805,
+              26.1185
+            ],
+            [
+              89.9813,
+              26.1193
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "landslide",
+        "risk_score": 0.84,
+        "color_tier": "red",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.3488385808378984
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.0
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.4493081335430496
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.4645,
+              25.8491
+            ],
+            [
+              93.4519,
+              25.8751
+            ],
+            [
+              93.4238,
+              25.8815
+            ],
+            [
+              93.4012,
+              25.8635
+            ],
+            [
+              93.4012,
+              25.8347
+            ],
+            [
+              93.4238,
+              25.8167
+            ],
+            [
+              93.4519,
+              25.8231
+            ],
+            [
+              93.4645,
+              25.8491
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "landslide_zone",
+        "label": "landslide_hazard",
+        "confidence": 0.86,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.4516,
+              25.8603
+            ],
+            [
+              93.42,
+              25.8695
+            ],
+            [
+              93.4108,
+              25.8379
+            ],
+            [
+              93.4424,
+              25.8287
+            ],
+            [
+              93.4516,
+              25.8603
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_665158",
+        "damage_level": "destroyed",
+        "confidence": 0.86,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.4236,
+              25.8548
+            ],
+            [
+              93.4228,
+              25.8556
+            ],
+            [
+              93.422,
+              25.8548
+            ],
+            [
+              93.4228,
+              25.854
+            ],
+            [
+              93.4236,
+              25.8548
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_329974",
+        "damage_level": "minor_damage",
+        "confidence": 0.78,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.4413,
+              25.8468
+            ],
+            [
+              93.4405,
+              25.8476
+            ],
+            [
+              93.4397,
+              25.8468
+            ],
+            [
+              93.4405,
+              25.846
+            ],
+            [
+              93.4413,
+              25.8468
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_260265",
+        "damage_level": "minor_damage",
+        "confidence": 0.88,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.438,
+              25.8575
+            ],
+            [
+              93.4372,
+              25.8583
+            ],
+            [
+              93.4364,
+              25.8575
+            ],
+            [
+              93.4372,
+              25.8567
+            ],
+            [
+              93.438,
+              25.8575
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "landslide",
+        "risk_score": 0.78,
+        "color_tier": "red",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.5276349214492742
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.0
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.22627270798363186
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.0523,
+              25.1681
+            ],
+            [
+              93.0422,
+              25.1892
+            ],
+            [
+              93.0194,
+              25.1944
+            ],
+            [
+              93.0011,
+              25.1798
+            ],
+            [
+              93.0011,
+              25.1564
+            ],
+            [
+              93.0194,
+              25.1418
+            ],
+            [
+              93.0422,
+              25.147
+            ],
+            [
+              93.0523,
+              25.1681
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "landslide_zone",
+        "label": "landslide_hazard",
+        "confidence": 0.95,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.0419,
+              25.1771
+            ],
+            [
+              93.0164,
+              25.1846
+            ],
+            [
+              93.0089,
+              25.1591
+            ],
+            [
+              93.0344,
+              25.1516
+            ],
+            [
+              93.0419,
+              25.1771
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_663054",
+        "damage_level": "destroyed",
+        "confidence": 0.87,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.0296,
+              25.1608
+            ],
+            [
+              93.0288,
+              25.1616
+            ],
+            [
+              93.028,
+              25.1608
+            ],
+            [
+              93.0288,
+              25.16
+            ],
+            [
+              93.0296,
+              25.1608
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_575763",
+        "damage_level": "minor_damage",
+        "confidence": 0.93,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.0189,
+              25.1669
+            ],
+            [
+              93.0181,
+              25.1677
+            ],
+            [
+              93.0173,
+              25.1669
+            ],
+            [
+              93.0181,
+              25.1661
+            ],
+            [
+              93.0189,
+              25.1669
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "landslide",
+        "risk_score": 0.82,
+        "color_tier": "orange",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.8388394875413743
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.0
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.7834667128530902
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.6094,
+              26.0124
+            ],
+            [
+              93.5992,
+              26.03
+            ],
+            [
+              93.579,
+              26.03
+            ],
+            [
+              93.5688,
+              26.0124
+            ],
+            [
+              93.579,
+              25.9948
+            ],
+            [
+              93.5992,
+              25.9948
+            ],
+            [
+              93.6094,
+              26.0124
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "landslide_zone",
+        "label": "landslide_hazard",
+        "confidence": 0.94,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.6016,
+              26.0192
+            ],
+            [
+              93.5823,
+              26.0249
+            ],
+            [
+              93.5766,
+              26.0056
+            ],
+            [
+              93.5959,
+              25.9999
+            ],
+            [
+              93.6016,
+              26.0192
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_899550",
+        "damage_level": "minor_damage",
+        "confidence": 0.79,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.5914,
+              26.0075
+            ],
+            [
+              93.5906,
+              26.0083
+            ],
+            [
+              93.5898,
+              26.0075
+            ],
+            [
+              93.5906,
+              26.0067
+            ],
+            [
+              93.5914,
+              26.0075
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_612340",
+        "damage_level": "minor_damage",
+        "confidence": 0.64,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.5958,
+              26.0138
+            ],
+            [
+              93.595,
+              26.0146
+            ],
+            [
+              93.5942,
+              26.0138
+            ],
+            [
+              93.595,
+              26.013
+            ],
+            [
+              93.5958,
+              26.0138
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_422451",
+        "damage_level": "minor_damage",
+        "confidence": 0.62,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.5953,
+              26.0171
+            ],
+            [
+              93.5945,
+              26.0179
+            ],
+            [
+              93.5937,
+              26.0171
+            ],
+            [
+              93.5945,
+              26.0163
+            ],
+            [
+              93.5953,
+              26.0171
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_609597",
+        "damage_level": "minor_damage",
+        "confidence": 0.94,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.5962,
+              26.0065
+            ],
+            [
+              93.5954,
+              26.0073
+            ],
+            [
+              93.5946,
+              26.0065
+            ],
+            [
+              93.5954,
+              26.0057
+            ],
+            [
+              93.5962,
+              26.0065
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "flood",
+        "risk_score": 0.69,
+        "color_tier": "red",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.5848625154464607
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.2385509660460532
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.0
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.8134,
+              26.6412
+            ],
+            [
+              92.802,
+              26.6649
+            ],
+            [
+              92.7764,
+              26.6708
+            ],
+            [
+              92.7558,
+              26.6544
+            ],
+            [
+              92.7558,
+              26.628
+            ],
+            [
+              92.7764,
+              26.6116
+            ],
+            [
+              92.802,
+              26.6175
+            ],
+            [
+              92.8134,
+              26.6412
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "flood_zone",
+        "label": "flooded",
+        "confidence": 0.85,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.8017,
+              26.6514
+            ],
+            [
+              92.7836,
+              26.6624
+            ],
+            [
+              92.765,
+              26.6522
+            ],
+            [
+              92.7645,
+              26.631
+            ],
+            [
+              92.7826,
+              26.62
+            ],
+            [
+              92.8012,
+              26.6302
+            ],
+            [
+              92.8017,
+              26.6514
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_823378",
+        "damage_level": "minor_damage",
+        "confidence": 0.85,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.793,
+              26.6466
+            ],
+            [
+              92.7922,
+              26.6474
+            ],
+            [
+              92.7914,
+              26.6466
+            ],
+            [
+              92.7922,
+              26.6458
+            ],
+            [
+              92.793,
+              26.6466
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_559381",
+        "damage_level": "destroyed",
+        "confidence": 0.64,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.7944,
+              26.6444
+            ],
+            [
+              92.7936,
+              26.6452
+            ],
+            [
+              92.7928,
+              26.6444
+            ],
+            [
+              92.7936,
+              26.6436
+            ],
+            [
+              92.7944,
+              26.6444
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "landslide",
+        "risk_score": 0.66,
+        "color_tier": "red",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.6119080800872457
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.0
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.006471755086584186
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              95.3575,
+              27.2941
+            ],
+            [
+              95.3514,
+              27.3068
+            ],
+            [
+              95.3376,
+              27.31
+            ],
+            [
+              95.3265,
+              27.3012
+            ],
+            [
+              95.3265,
+              27.287
+            ],
+            [
+              95.3376,
+              27.2782
+            ],
+            [
+              95.3514,
+              27.2814
+            ],
+            [
+              95.3575,
+              27.2941
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "landslide_zone",
+        "label": "landslide_hazard",
+        "confidence": 0.9,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              95.3512,
+              27.2996
+            ],
+            [
+              95.3357,
+              27.3041
+            ],
+            [
+              95.3312,
+              27.2886
+            ],
+            [
+              95.3467,
+              27.2841
+            ],
+            [
+              95.3512,
+              27.2996
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_446479",
+        "damage_level": "minor_damage",
+        "confidence": 0.78,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              95.3371,
+              27.2888
+            ],
+            [
+              95.3363,
+              27.2896
+            ],
+            [
+              95.3355,
+              27.2888
+            ],
+            [
+              95.3363,
+              27.288
+            ],
+            [
+              95.3371,
+              27.2888
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_238739",
+        "damage_level": "destroyed",
+        "confidence": 0.69,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              95.3439,
+              27.2908
+            ],
+            [
+              95.3431,
+              27.2916
+            ],
+            [
+              95.3423,
+              27.2908
+            ],
+            [
+              95.3431,
+              27.29
+            ],
+            [
+              95.3439,
+              27.2908
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "flood",
+        "risk_score": 0.71,
+        "color_tier": "orange",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.5017358276844642
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.3812207607179287
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.0
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.5594,
+              26.4712
+            ],
+            [
+              91.5439,
+              26.4982
+            ],
+            [
+              91.5127,
+              26.4982
+            ],
+            [
+              91.4972,
+              26.4712
+            ],
+            [
+              91.5127,
+              26.4442
+            ],
+            [
+              91.5439,
+              26.4442
+            ],
+            [
+              91.5594,
+              26.4712
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "flood_zone",
+        "label": "flooded",
+        "confidence": 0.95,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.5474,
+              26.4817
+            ],
+            [
+              91.5288,
+              26.493
+            ],
+            [
+              91.5097,
+              26.4825
+            ],
+            [
+              91.5092,
+              26.4607
+            ],
+            [
+              91.5278,
+              26.4494
+            ],
+            [
+              91.5469,
+              26.4599
+            ],
+            [
+              91.5474,
+              26.4817
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_203198",
+        "damage_level": "minor_damage",
+        "confidence": 0.74,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.5329,
+              26.4818
+            ],
+            [
+              91.5321,
+              26.4826
+            ],
+            [
+              91.5313,
+              26.4818
+            ],
+            [
+              91.5321,
+              26.481
+            ],
+            [
+              91.5329,
+              26.4818
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_300896",
+        "damage_level": "minor_damage",
+        "confidence": 0.79,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.5357,
+              26.4627
+            ],
+            [
+              91.5349,
+              26.4635
+            ],
+            [
+              91.5341,
+              26.4627
+            ],
+            [
+              91.5349,
+              26.4619
+            ],
+            [
+              91.5357,
+              26.4627
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "flood",
+        "risk_score": 0.74,
+        "color_tier": "orange",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.8462859194932089
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.3988176705481113
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.0
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              90.5848,
+              26.0812
+            ],
+            [
+              90.576,
+              26.0995
+            ],
+            [
+              90.5562,
+              26.1041
+            ],
+            [
+              90.5403,
+              26.0914
+            ],
+            [
+              90.5403,
+              26.071
+            ],
+            [
+              90.5562,
+              26.0583
+            ],
+            [
+              90.576,
+              26.0629
+            ],
+            [
+              90.5848,
+              26.0812
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "flood_zone",
+        "label": "flooded",
+        "confidence": 0.77,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              90.5758,
+              26.0891
+            ],
+            [
+              90.5618,
+              26.0976
+            ],
+            [
+              90.5474,
+              26.0897
+            ],
+            [
+              90.547,
+              26.0733
+            ],
+            [
+              90.561,
+              26.0648
+            ],
+            [
+              90.5754,
+              26.0727
+            ],
+            [
+              90.5758,
+              26.0891
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_197793",
+        "damage_level": "minor_damage",
+        "confidence": 0.66,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              90.5704,
+              26.0867
+            ],
+            [
+              90.5696,
+              26.0875
+            ],
+            [
+              90.5688,
+              26.0867
+            ],
+            [
+              90.5696,
+              26.0859
+            ],
+            [
+              90.5704,
+              26.0867
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_161483",
+        "damage_level": "minor_damage",
+        "confidence": 0.73,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              90.5619,
+              26.0872
+            ],
+            [
+              90.5611,
+              26.088
+            ],
+            [
+              90.5603,
+              26.0872
+            ],
+            [
+              90.5611,
+              26.0864
+            ],
+            [
+              90.5619,
+              26.0872
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_577110",
+        "damage_level": "destroyed",
+        "confidence": 0.75,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              90.5583,
+              26.0859
+            ],
+            [
+              90.5575,
+              26.0867
+            ],
+            [
+              90.5567,
+              26.0859
+            ],
+            [
+              90.5575,
+              26.0851
+            ],
+            [
+              90.5583,
+              26.0859
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_853305",
+        "damage_level": "destroyed",
+        "confidence": 0.65,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              90.5703,
+              26.0821
+            ],
+            [
+              90.5695,
+              26.0829
+            ],
+            [
+              90.5687,
+              26.0821
+            ],
+            [
+              90.5695,
+              26.0813
+            ],
+            [
+              90.5703,
+              26.0821
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "flood",
+        "risk_score": 0.67,
+        "color_tier": "red",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.24267030003356108
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.28224432879275635
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.0
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.7006,
+              26.3471
+            ],
+            [
+              92.6872,
+              26.3655
+            ],
+            [
+              92.6655,
+              26.3585
+            ],
+            [
+              92.6655,
+              26.3357
+            ],
+            [
+              92.6872,
+              26.3287
+            ],
+            [
+              92.7006,
+              26.3471
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "flood_zone",
+        "label": "flooded",
+        "confidence": 0.88,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.6931,
+              26.3536
+            ],
+            [
+              92.6815,
+              26.3606
+            ],
+            [
+              92.6696,
+              26.3541
+            ],
+            [
+              92.6693,
+              26.3406
+            ],
+            [
+              92.6809,
+              26.3336
+            ],
+            [
+              92.6928,
+              26.3401
+            ],
+            [
+              92.6931,
+              26.3536
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_159642",
+        "damage_level": "minor_damage",
+        "confidence": 0.9,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.6877,
+              26.3475
+            ],
+            [
+              92.6869,
+              26.3483
+            ],
+            [
+              92.6861,
+              26.3475
+            ],
+            [
+              92.6869,
+              26.3467
+            ],
+            [
+              92.6877,
+              26.3475
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_346629",
+        "damage_level": "destroyed",
+        "confidence": 0.64,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.6833,
+              26.3495
+            ],
+            [
+              92.6825,
+              26.3503
+            ],
+            [
+              92.6817,
+              26.3495
+            ],
+            [
+              92.6825,
+              26.3487
+            ],
+            [
+              92.6833,
+              26.3495
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_749468",
+        "damage_level": "minor_damage",
+        "confidence": 0.75,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.6786,
+              26.3484
+            ],
+            [
+              92.6778,
+              26.3492
+            ],
+            [
+              92.677,
+              26.3484
+            ],
+            [
+              92.6778,
+              26.3476
+            ],
+            [
+              92.6786,
+              26.3484
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_373432",
+        "damage_level": "minor_damage",
+        "confidence": 0.83,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.6829,
+              26.3446
+            ],
+            [
+              92.6821,
+              26.3454
+            ],
+            [
+              92.6813,
+              26.3446
+            ],
+            [
+              92.6821,
+              26.3438
+            ],
+            [
+              92.6829,
+              26.3446
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "flood",
+        "risk_score": 0.78,
+        "color_tier": "red",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.40999795585913357
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.28455947664466863
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.0
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.681,
+              26.1534
+            ],
+            [
+              91.6673,
+              26.1722
+            ],
+            [
+              91.6452,
+              26.165
+            ],
+            [
+              91.6452,
+              26.1418
+            ],
+            [
+              91.6673,
+              26.1346
+            ],
+            [
+              91.681,
+              26.1534
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "flood_zone",
+        "label": "flooded",
+        "confidence": 0.75,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.6733,
+              26.16
+            ],
+            [
+              91.6615,
+              26.1672
+            ],
+            [
+              91.6494,
+              26.1606
+            ],
+            [
+              91.6491,
+              26.1468
+            ],
+            [
+              91.6609,
+              26.1396
+            ],
+            [
+              91.673,
+              26.1462
+            ],
+            [
+              91.6733,
+              26.16
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_176819",
+        "damage_level": "minor_damage",
+        "confidence": 0.78,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.6689,
+              26.1603
+            ],
+            [
+              91.6681,
+              26.1611
+            ],
+            [
+              91.6673,
+              26.1603
+            ],
+            [
+              91.6681,
+              26.1595
+            ],
+            [
+              91.6689,
+              26.1603
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_356150",
+        "damage_level": "destroyed",
+        "confidence": 0.7,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.668,
+              26.1587
+            ],
+            [
+              91.6672,
+              26.1595
+            ],
+            [
+              91.6664,
+              26.1587
+            ],
+            [
+              91.6672,
+              26.1579
+            ],
+            [
+              91.668,
+              26.1587
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_741390",
+        "damage_level": "minor_damage",
+        "confidence": 0.83,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.6666,
+              26.1562
+            ],
+            [
+              91.6658,
+              26.157
+            ],
+            [
+              91.665,
+              26.1562
+            ],
+            [
+              91.6658,
+              26.1554
+            ],
+            [
+              91.6666,
+              26.1562
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_240814",
+        "damage_level": "destroyed",
+        "confidence": 0.64,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.6592,
+              26.1557
+            ],
+            [
+              91.6584,
+              26.1565
+            ],
+            [
+              91.6576,
+              26.1557
+            ],
+            [
+              91.6584,
+              26.1549
+            ],
+            [
+              91.6592,
+              26.1557
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "landslide",
+        "risk_score": 0.7,
+        "color_tier": "orange",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.34744075836486016
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.0
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.3085922590139328
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              95.5979,
+              27.4531
+            ],
+            [
+              95.5867,
+              27.4764
+            ],
+            [
+              95.5615,
+              27.4822
+            ],
+            [
+              95.5412,
+              27.4661
+            ],
+            [
+              95.5412,
+              27.4401
+            ],
+            [
+              95.5615,
+              27.424
+            ],
+            [
+              95.5867,
+              27.4298
+            ],
+            [
+              95.5979,
+              27.4531
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "landslide_zone",
+        "label": "landslide_hazard",
+        "confidence": 0.9,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              95.5864,
+              27.4631
+            ],
+            [
+              95.5581,
+              27.4714
+            ],
+            [
+              95.5498,
+              27.4431
+            ],
+            [
+              95.5781,
+              27.4348
+            ],
+            [
+              95.5864,
+              27.4631
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_987204",
+        "damage_level": "minor_damage",
+        "confidence": 0.63,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              95.569,
+              27.4479
+            ],
+            [
+              95.5682,
+              27.4487
+            ],
+            [
+              95.5674,
+              27.4479
+            ],
+            [
+              95.5682,
+              27.4471
+            ],
+            [
+              95.569,
+              27.4479
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_449759",
+        "damage_level": "minor_damage",
+        "confidence": 0.82,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              95.5758,
+              27.4436
+            ],
+            [
+              95.575,
+              27.4444
+            ],
+            [
+              95.5742,
+              27.4436
+            ],
+            [
+              95.575,
+              27.4428
+            ],
+            [
+              95.5758,
+              27.4436
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_839945",
+        "damage_level": "destroyed",
+        "confidence": 0.8,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              95.5618,
+              27.4519
+            ],
+            [
+              95.561,
+              27.4527
+            ],
+            [
+              95.5602,
+              27.4519
+            ],
+            [
+              95.561,
+              27.4511
+            ],
+            [
+              95.5618,
+              27.4519
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "flood",
+        "risk_score": 0.94,
+        "color_tier": "red",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.5819132024438656
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.7511355178974151
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.0
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              94.4147,
+              27.0241
+            ],
+            [
+              94.4085,
+              27.037
+            ],
+            [
+              94.3945,
+              27.0402
+            ],
+            [
+              94.3833,
+              27.0313
+            ],
+            [
+              94.3833,
+              27.0169
+            ],
+            [
+              94.3945,
+              27.008
+            ],
+            [
+              94.4085,
+              27.0112
+            ],
+            [
+              94.4147,
+              27.0241
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "flood_zone",
+        "label": "flooded",
+        "confidence": 0.88,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              94.4083,
+              27.0296
+            ],
+            [
+              94.3985,
+              27.0357
+            ],
+            [
+              94.3883,
+              27.0301
+            ],
+            [
+              94.3881,
+              27.0186
+            ],
+            [
+              94.3979,
+              27.0125
+            ],
+            [
+              94.4081,
+              27.0181
+            ],
+            [
+              94.4083,
+              27.0296
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_934794",
+        "damage_level": "minor_damage",
+        "confidence": 0.91,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              94.3947,
+              27.0219
+            ],
+            [
+              94.3939,
+              27.0227
+            ],
+            [
+              94.3931,
+              27.0219
+            ],
+            [
+              94.3939,
+              27.0211
+            ],
+            [
+              94.3947,
+              27.0219
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_470858",
+        "damage_level": "destroyed",
+        "confidence": 0.94,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              94.4011,
+              27.026
+            ],
+            [
+              94.4003,
+              27.0268
+            ],
+            [
+              94.3995,
+              27.026
+            ],
+            [
+              94.4003,
+              27.0252
+            ],
+            [
+              94.4011,
+              27.026
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_270395",
+        "damage_level": "minor_damage",
+        "confidence": 0.91,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              94.395,
+              27.0291
+            ],
+            [
+              94.3942,
+              27.0299
+            ],
+            [
+              94.3934,
+              27.0291
+            ],
+            [
+              94.3942,
+              27.0283
+            ],
+            [
+              94.395,
+              27.0291
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "landslide",
+        "risk_score": 0.96,
+        "color_tier": "red",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.48819921658608756
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.0
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.6029164163593771
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.9527,
+              24.7812
+            ],
+            [
+              92.9457,
+              24.7957
+            ],
+            [
+              92.93,
+              24.7993
+            ],
+            [
+              92.9174,
+              24.7893
+            ],
+            [
+              92.9174,
+              24.7731
+            ],
+            [
+              92.93,
+              24.7631
+            ],
+            [
+              92.9457,
+              24.7667
+            ],
+            [
+              92.9527,
+              24.7812
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "landslide_zone",
+        "label": "landslide_hazard",
+        "confidence": 0.94,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.9455,
+              24.7874
+            ],
+            [
+              92.9279,
+              24.7926
+            ],
+            [
+              92.9227,
+              24.775
+            ],
+            [
+              92.9403,
+              24.7698
+            ],
+            [
+              92.9455,
+              24.7874
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_501124",
+        "damage_level": "minor_damage",
+        "confidence": 0.9,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.9305,
+              24.7838
+            ],
+            [
+              92.9297,
+              24.7846
+            ],
+            [
+              92.9289,
+              24.7838
+            ],
+            [
+              92.9297,
+              24.783
+            ],
+            [
+              92.9305,
+              24.7838
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_466643",
+        "damage_level": "destroyed",
+        "confidence": 0.89,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.931,
+              24.7866
+            ],
+            [
+              92.9302,
+              24.7874
+            ],
+            [
+              92.9294,
+              24.7866
+            ],
+            [
+              92.9302,
+              24.7858
+            ],
+            [
+              92.931,
+              24.7866
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_517821",
+        "damage_level": "destroyed",
+        "confidence": 0.7,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.9313,
+              24.7833
+            ],
+            [
+              92.9305,
+              24.7841
+            ],
+            [
+              92.9297,
+              24.7833
+            ],
+            [
+              92.9305,
+              24.7825
+            ],
+            [
+              92.9313,
+              24.7833
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "flood",
+        "risk_score": 0.74,
+        "color_tier": "red",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.4797748690520426
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.8830347184784342
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.0
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.2185,
+              26.5712
+            ],
+            [
+              93.2056,
+              26.598
+            ],
+            [
+              93.1766,
+              26.6047
+            ],
+            [
+              93.1533,
+              26.5861
+            ],
+            [
+              93.1533,
+              26.5563
+            ],
+            [
+              93.1766,
+              26.5377
+            ],
+            [
+              93.2056,
+              26.5444
+            ],
+            [
+              93.2185,
+              26.5712
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "flood_zone",
+        "label": "flooded",
+        "confidence": 0.83,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.2053,
+              26.5827
+            ],
+            [
+              93.1848,
+              26.5952
+            ],
+            [
+              93.1637,
+              26.5837
+            ],
+            [
+              93.1631,
+              26.5597
+            ],
+            [
+              93.1836,
+              26.5472
+            ],
+            [
+              93.2047,
+              26.5587
+            ],
+            [
+              93.2053,
+              26.5827
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_287241",
+        "damage_level": "destroyed",
+        "confidence": 0.61,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.1758,
+              26.5825
+            ],
+            [
+              93.175,
+              26.5833
+            ],
+            [
+              93.1742,
+              26.5825
+            ],
+            [
+              93.175,
+              26.5817
+            ],
+            [
+              93.1758,
+              26.5825
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_428914",
+        "damage_level": "destroyed",
+        "confidence": 0.81,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.1834,
+              26.5767
+            ],
+            [
+              93.1826,
+              26.5775
+            ],
+            [
+              93.1818,
+              26.5767
+            ],
+            [
+              93.1826,
+              26.5759
+            ],
+            [
+              93.1834,
+              26.5767
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "landslide",
+        "risk_score": 0.95,
+        "color_tier": "orange",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.23107057359926178
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.0
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.39245176390947506
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.0685,
+              26.8241
+            ],
+            [
+              93.062,
+              26.8376
+            ],
+            [
+              93.0473,
+              26.841
+            ],
+            [
+              93.0356,
+              26.8316
+            ],
+            [
+              93.0356,
+              26.8166
+            ],
+            [
+              93.0473,
+              26.8072
+            ],
+            [
+              93.062,
+              26.8106
+            ],
+            [
+              93.0685,
+              26.8241
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "landslide_zone",
+        "label": "landslide_hazard",
+        "confidence": 0.96,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.0618,
+              26.8299
+            ],
+            [
+              93.0454,
+              26.8347
+            ],
+            [
+              93.0406,
+              26.8183
+            ],
+            [
+              93.057,
+              26.8135
+            ],
+            [
+              93.0618,
+              26.8299
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_872840",
+        "damage_level": "minor_damage",
+        "confidence": 0.73,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.0543,
+              26.8294
+            ],
+            [
+              93.0535,
+              26.8302
+            ],
+            [
+              93.0527,
+              26.8294
+            ],
+            [
+              93.0535,
+              26.8286
+            ],
+            [
+              93.0543,
+              26.8294
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_753425",
+        "damage_level": "destroyed",
+        "confidence": 0.83,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.0574,
+              26.8292
+            ],
+            [
+              93.0566,
+              26.83
+            ],
+            [
+              93.0558,
+              26.8292
+            ],
+            [
+              93.0566,
+              26.8284
+            ],
+            [
+              93.0574,
+              26.8292
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_424308",
+        "damage_level": "destroyed",
+        "confidence": 0.71,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.0547,
+              26.8217
+            ],
+            [
+              93.0539,
+              26.8225
+            ],
+            [
+              93.0531,
+              26.8217
+            ],
+            [
+              93.0539,
+              26.8209
+            ],
+            [
+              93.0547,
+              26.8217
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_540869",
+        "damage_level": "destroyed",
+        "confidence": 0.84,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              93.0495,
+              26.8196
+            ],
+            [
+              93.0487,
+              26.8204
+            ],
+            [
+              93.0479,
+              26.8196
+            ],
+            [
+              93.0487,
+              26.8188
+            ],
+            [
+              93.0495,
+              26.8196
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "flood",
+        "risk_score": 0.75,
+        "color_tier": "red",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.20028415778810127
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.25822234518203446
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.0
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.4556,
+              26.4512
+            ],
+            [
+              91.442,
+              26.4749
+            ],
+            [
+              91.4146,
+              26.4749
+            ],
+            [
+              91.401,
+              26.4512
+            ],
+            [
+              91.4146,
+              26.4275
+            ],
+            [
+              91.442,
+              26.4275
+            ],
+            [
+              91.4556,
+              26.4512
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "flood_zone",
+        "label": "flooded",
+        "confidence": 0.93,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.4451,
+              26.4604
+            ],
+            [
+              91.4288,
+              26.4703
+            ],
+            [
+              91.412,
+              26.4611
+            ],
+            [
+              91.4115,
+              26.442
+            ],
+            [
+              91.4278,
+              26.4321
+            ],
+            [
+              91.4446,
+              26.4413
+            ],
+            [
+              91.4451,
+              26.4604
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_563638",
+        "damage_level": "minor_damage",
+        "confidence": 0.78,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.4321,
+              26.4505
+            ],
+            [
+              91.4313,
+              26.4513
+            ],
+            [
+              91.4305,
+              26.4505
+            ],
+            [
+              91.4313,
+              26.4497
+            ],
+            [
+              91.4321,
+              26.4505
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_640490",
+        "damage_level": "destroyed",
+        "confidence": 0.63,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.4228,
+              26.4433
+            ],
+            [
+              91.422,
+              26.4441
+            ],
+            [
+              91.4212,
+              26.4433
+            ],
+            [
+              91.422,
+              26.4425
+            ],
+            [
+              91.4228,
+              26.4433
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_308802",
+        "damage_level": "minor_damage",
+        "confidence": 0.61,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.4324,
+              26.4459
+            ],
+            [
+              91.4316,
+              26.4467
+            ],
+            [
+              91.4308,
+              26.4459
+            ],
+            [
+              91.4316,
+              26.4451
+            ],
+            [
+              91.4324,
+              26.4459
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_905819",
+        "damage_level": "minor_damage",
+        "confidence": 0.76,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              91.4384,
+              26.4533
+            ],
+            [
+              91.4376,
+              26.4541
+            ],
+            [
+              91.4368,
+              26.4533
+            ],
+            [
+              91.4376,
+              26.4525
+            ],
+            [
+              91.4384,
+              26.4533
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "flood",
+        "risk_score": 0.89,
+        "color_tier": "red",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.47975700401357635
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.13281421058216838
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.0
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              94.1947,
+              26.9512
+            ],
+            [
+              94.1847,
+              26.9719
+            ],
+            [
+              94.1623,
+              26.977
+            ],
+            [
+              94.1443,
+              26.9627
+            ],
+            [
+              94.1443,
+              26.9397
+            ],
+            [
+              94.1623,
+              26.9254
+            ],
+            [
+              94.1847,
+              26.9305
+            ],
+            [
+              94.1947,
+              26.9512
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "flood_zone",
+        "label": "flooded",
+        "confidence": 0.75,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              94.1845,
+              26.9601
+            ],
+            [
+              94.1686,
+              26.9698
+            ],
+            [
+              94.1524,
+              26.9609
+            ],
+            [
+              94.1519,
+              26.9423
+            ],
+            [
+              94.1678,
+              26.9326
+            ],
+            [
+              94.184,
+              26.9415
+            ],
+            [
+              94.1845,
+              26.9601
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_943170",
+        "damage_level": "destroyed",
+        "confidence": 0.62,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              94.1742,
+              26.946
+            ],
+            [
+              94.1734,
+              26.9468
+            ],
+            [
+              94.1726,
+              26.946
+            ],
+            [
+              94.1734,
+              26.9452
+            ],
+            [
+              94.1742,
+              26.946
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_239816",
+        "damage_level": "destroyed",
+        "confidence": 0.83,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              94.1767,
+              26.9442
+            ],
+            [
+              94.1759,
+              26.945
+            ],
+            [
+              94.1751,
+              26.9442
+            ],
+            [
+              94.1759,
+              26.9434
+            ],
+            [
+              94.1767,
+              26.9442
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "red_zone",
+        "primary_hazard": "landslide",
+        "risk_score": 0.96,
+        "color_tier": "red",
+        "contributing_factors": {
+          "damage": {
+            "weight": 0.5,
+            "value": 0.628856625933234
+          },
+          "flood": {
+            "weight": 0.25,
+            "value": 0.0
+          },
+          "landslide": {
+            "weight": 0.25,
+            "value": 0.6473465651483704
+          }
+        },
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.641,
+              24.5812
+            ],
+            [
+              92.6309,
+              24.6022
+            ],
+            [
+              92.6081,
+              24.6074
+            ],
+            [
+              92.5899,
+              24.5929
+            ],
+            [
+              92.5899,
+              24.5695
+            ],
+            [
+              92.6081,
+              24.555
+            ],
+            [
+              92.6309,
+              24.5602
+            ],
+            [
+              92.641,
+              24.5812
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "landslide_zone",
+        "label": "landslide_hazard",
+        "confidence": 0.85,
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.6306,
+              24.5902
+            ],
+            [
+              92.6051,
+              24.5977
+            ],
+            [
+              92.5976,
+              24.5722
+            ],
+            [
+              92.6231,
+              24.5647
+            ],
+            [
+              92.6306,
+              24.5902
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_597732",
+        "damage_level": "destroyed",
+        "confidence": 0.69,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.6139,
+              24.5748
+            ],
+            [
+              92.6131,
+              24.5756
+            ],
+            [
+              92.6123,
+              24.5748
+            ],
+            [
+              92.6131,
+              24.574
+            ],
+            [
+              92.6139,
+              24.5748
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_915451",
+        "damage_level": "destroyed",
+        "confidence": 0.82,
+        "building_type": "shop",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.6213,
+              24.577
+            ],
+            [
+              92.6205,
+              24.5778
+            ],
+            [
+              92.6197,
+              24.577
+            ],
+            [
+              92.6205,
+              24.5762
+            ],
+            [
+              92.6213,
+              24.577
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_345884",
+        "damage_level": "destroyed",
+        "confidence": 0.72,
+        "building_type": "school",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.6138,
+              24.5852
+            ],
+            [
+              92.613,
+              24.586
+            ],
+            [
+              92.6122,
+              24.5852
+            ],
+            [
+              92.613,
+              24.5844
+            ],
+            [
+              92.6138,
+              24.5852
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layer_type": "building_damage",
+        "osm_id": "way/mock_501641",
+        "damage_level": "minor_damage",
+        "confidence": 0.85,
+        "building_type": "residential",
+        "last_updated": "2026-09-04T21:10:15.845223+00:00"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              92.607,
+              24.5746
+            ],
+            [
+              92.6062,
+              24.5754
+            ],
+            [
+              92.6054,
+              24.5746
+            ],
+            [
+              92.6062,
+              24.5738
+            ],
+            [
+              92.607,
+              24.5746
+            ]
+          ]
+        ]
+      }
     }
   ]
 }

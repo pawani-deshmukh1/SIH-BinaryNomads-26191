@@ -23,7 +23,10 @@
     "precip_annual_mm": 1720,
     "precip_daily_mm": 18.0,
     "vegetation_proxy": 0.3,
-    "hand_proxy_m": 1.2
+    "hand_proxy_m": 1.2,
+    "women_percent": 49.4,
+    "children_percent": 25.2,
+    "elderly_percent": 7.1
   },
   {
     "id": "HAB_BARPETA_CHAR_002",
@@ -49,7 +52,10 @@
     "precip_annual_mm": 1640,
     "precip_daily_mm": 22.0,
     "vegetation_proxy": 0.2,
-    "hand_proxy_m": 0.8
+    "hand_proxy_m": 0.8,
+    "women_percent": 48.2,
+    "children_percent": 30.2,
+    "elderly_percent": 8.7
   },
   {
     "id": "HAB_DHUBRI_CHAR_003",
@@ -75,7 +81,10 @@
     "precip_annual_mm": 1580,
     "precip_daily_mm": 20.5,
     "vegetation_proxy": 0.15,
-    "hand_proxy_m": 0.5
+    "hand_proxy_m": 0.5,
+    "women_percent": 50.2,
+    "children_percent": 25.6,
+    "elderly_percent": 7.7
   },
   {
     "id": "HAB_KARBI_TRIBAL_001",
@@ -102,7 +111,10 @@
     "precip_annual_mm": 2340,
     "precip_daily_mm": 45.0,
     "vegetation_proxy": 0.72,
-    "hand_proxy_m": 38.0
+    "hand_proxy_m": 38.0,
+    "women_percent": 47.6,
+    "children_percent": 26.5,
+    "elderly_percent": 8.0
   },
   {
     "id": "HAB_DIMA_TRIBAL_002",
@@ -129,7 +141,10 @@
     "precip_annual_mm": 2780,
     "precip_daily_mm": 52.0,
     "vegetation_proxy": 0.81,
-    "hand_proxy_m": 62.0
+    "hand_proxy_m": 62.0,
+    "women_percent": 47.6,
+    "children_percent": 26.4,
+    "elderly_percent": 8.6
   },
   {
     "id": "HAB_KARBI_TRIBAL_003",
@@ -156,7 +171,10 @@
     "precip_annual_mm": 2100,
     "precip_daily_mm": 38.0,
     "vegetation_proxy": 0.65,
-    "hand_proxy_m": 29.0
+    "hand_proxy_m": 29.0,
+    "women_percent": 49.1,
+    "children_percent": 26.5,
+    "elderly_percent": 8.4
   },
   {
     "id": "HAB_SONITPUR_TEAGARDEN_001",
@@ -183,7 +201,10 @@
     "precip_annual_mm": 1890,
     "precip_daily_mm": 28.0,
     "vegetation_proxy": 0.7,
-    "hand_proxy_m": 6.5
+    "hand_proxy_m": 6.5,
+    "women_percent": 49.9,
+    "children_percent": 25.0,
+    "elderly_percent": 9.2
   },
   {
     "id": "HAB_DIBRUGARH_TEAGARDEN_002",
@@ -210,7 +231,10 @@
     "precip_annual_mm": 2450,
     "precip_daily_mm": 35.0,
     "vegetation_proxy": 0.75,
-    "hand_proxy_m": 9.0
+    "hand_proxy_m": 9.0,
+    "women_percent": 49.6,
+    "children_percent": 27.4,
+    "elderly_percent": 6.6
   },
   {
     "id": "HAB_KAMRUP_RIVERBANK_001",
@@ -237,7 +261,10 @@
     "precip_annual_mm": 1750,
     "precip_daily_mm": 24.0,
     "vegetation_proxy": 0.35,
-    "hand_proxy_m": 2.8
+    "hand_proxy_m": 2.8,
+    "women_percent": 50.4,
+    "children_percent": 27.4,
+    "elderly_percent": 6.4
   },
   {
     "id": "HAB_GOALPARA_RIVERBANK_002",
@@ -264,11 +291,14 @@
     "precip_annual_mm": 1640,
     "precip_daily_mm": 21.0,
     "vegetation_proxy": 0.25,
-    "hand_proxy_m": 1.9
+    "hand_proxy_m": 1.9,
+    "women_percent": 47.8,
+    "children_percent": 30.9,
+    "elderly_percent": 8.4
   },
   {
     "id": "HAB_NAGAON_URBAN_001",
-    "name": "Nagaon Ward 7 — Haibargaon",
+    "name": "Nagaon Ward 7 \u00e2\u20ac\u201d Haibargaon",
     "type": "urban",
     "type_label": "Urban/Semi-Urban Settlement",
     "district": "Nagaon",
@@ -290,7 +320,10 @@
     "precip_annual_mm": 1820,
     "precip_daily_mm": 16.0,
     "vegetation_proxy": 0.2,
-    "hand_proxy_m": 5.5
+    "hand_proxy_m": 5.5,
+    "women_percent": 49.9,
+    "children_percent": 30.1,
+    "elderly_percent": 8.1
   },
   {
     "id": "HAB_GUWAHATI_URBAN_002",
@@ -316,7 +349,10 @@
     "precip_annual_mm": 1680,
     "precip_daily_mm": 14.0,
     "vegetation_proxy": 0.15,
-    "hand_proxy_m": 4.2
+    "hand_proxy_m": 4.2,
+    "women_percent": 50.4,
+    "children_percent": 27.6,
+    "elderly_percent": 8.2
   },
   {
     "id": "HAB_TINSUKIA_URBAN_003",
@@ -342,7 +378,10 @@
     "precip_annual_mm": 2380,
     "precip_daily_mm": 30.0,
     "vegetation_proxy": 0.4,
-    "hand_proxy_m": 11.0
+    "hand_proxy_m": 11.0,
+    "women_percent": 50.0,
+    "children_percent": 29.3,
+    "elderly_percent": 9.4
   },
   {
     "id": "HAB_LAKHIMPUR_RURAL_001",
@@ -368,7 +407,10 @@
     "precip_annual_mm": 2210,
     "precip_daily_mm": 32.0,
     "vegetation_proxy": 0.55,
-    "hand_proxy_m": 7.2
+    "hand_proxy_m": 7.2,
+    "women_percent": 49.2,
+    "children_percent": 29.9,
+    "elderly_percent": 6.2
   },
   {
     "id": "HAB_CACHAR_RURAL_002",
@@ -395,7 +437,10 @@
     "precip_annual_mm": 2640,
     "precip_daily_mm": 42.0,
     "vegetation_proxy": 0.62,
-    "hand_proxy_m": 14.0
+    "hand_proxy_m": 14.0,
+    "women_percent": 48.2,
+    "children_percent": 27.0,
+    "elderly_percent": 6.3
   },
   {
     "id": "HAB_GOLAGHAT_FOREST_001",
@@ -422,7 +467,10 @@
     "precip_annual_mm": 1960,
     "precip_daily_mm": 28.0,
     "vegetation_proxy": 0.82,
-    "hand_proxy_m": 8.6
+    "hand_proxy_m": 8.6,
+    "women_percent": 48.2,
+    "children_percent": 25.7,
+    "elderly_percent": 7.1
   },
   {
     "id": "HAB_BISWANATH_FOREST_002",
@@ -449,7 +497,10 @@
     "precip_annual_mm": 2080,
     "precip_daily_mm": 36.0,
     "vegetation_proxy": 0.88,
-    "hand_proxy_m": 18.0
+    "hand_proxy_m": 18.0,
+    "women_percent": 49.4,
+    "children_percent": 27.6,
+    "elderly_percent": 7.5
   },
   {
     "id": "HAB_NALBARI_RURAL_003",
@@ -475,11 +526,14 @@
     "precip_annual_mm": 1720,
     "precip_daily_mm": 19.0,
     "vegetation_proxy": 0.38,
-    "hand_proxy_m": 2.4
+    "hand_proxy_m": 2.4,
+    "women_percent": 48.1,
+    "children_percent": 26.9,
+    "elderly_percent": 9.7
   },
   {
     "id": "HAB_MAJULI_CHAR_004",
-    "name": "Majuli Island Village — Kamalabari",
+    "name": "Majuli Island Village \u00e2\u20ac\u201d Kamalabari",
     "type": "char",
     "type_label": "River Island Community",
     "district": "Majuli",
@@ -501,7 +555,10 @@
     "precip_annual_mm": 2160,
     "precip_daily_mm": 26.0,
     "vegetation_proxy": 0.4,
-    "hand_proxy_m": 1.5
+    "hand_proxy_m": 1.5,
+    "women_percent": 49.4,
+    "children_percent": 29.3,
+    "elderly_percent": 6.7
   },
   {
     "id": "HAB_HAILAKANDI_RURAL_004",
@@ -528,6 +585,9 @@
     "precip_annual_mm": 2840,
     "precip_daily_mm": 48.0,
     "vegetation_proxy": 0.69,
-    "hand_proxy_m": 22.0
+    "hand_proxy_m": 22.0,
+    "women_percent": 49.7,
+    "children_percent": 26.1,
+    "elderly_percent": 7.5
   }
 ]

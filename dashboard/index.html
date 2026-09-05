@@ -23,10 +23,16 @@
       <span class="flow-title">Pre-Disaster Early Warning System</span>
     </div>
     <div class="header-actions">
-      <div class="time-sync">
-        <button class="btn" style="padding: 6px 12px; background: rgba(255,255,255,0.1); color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 12px; font-weight: 600; font-size: 13px;" onclick="openSettingsModal()">⚙️ Settings</button>
-        <button class="btn" style="padding: 6px 12px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 12px; font-weight: 600; font-size: 13px;" onclick="startMainTutorial()">🎓 Guided Tour</button>
-        🕐 <span id="last-sync">Just now</span>
+      <div class="time-sync" style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 10px; color: var(--text-dim); background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);" title="Data provided by various sources">
+          DATA: NASA SRTM · CHIRPS · IMD Open-Meteo · HydroRIVERS · ESA WorldCover
+        </span>
+        <button class="btn" style="padding: 6px 12px; background: rgba(255,255,255,0.1); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;" onclick="openSettingsModal()">⚙️ Settings</button>
+        <button class="btn" style="padding: 6px 12px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;" onclick="startMainTutorial()">🎓 Guided Tour</button>
+        <a href="field_ops.html" target="_blank" style="text-decoration: none;">
+          <button class="btn" style="padding: 6px 12px; background: #eab308; color: black; border: none; border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 13px;">🚨 Field Ops</button>
+        </a>
+        <span>🕐 <span id="last-sync">Just now</span></span>
       </div>
     </div>
   </header>
@@ -34,7 +40,12 @@
   <div class="main-area">
     
     <!-- LEAFLET MAP -->
-    <div id="map"></div>
+    <div id="map" style="position: relative;">
+      <!-- Map Layers -->
+      <div style="position: absolute; top: 12px; left: 60px; z-index: 1000; display: flex; gap: 8px;">
+        <button id="layer-comms" class="btn" style="background: rgba(15,23,42,0.9); border: 1px solid var(--border); color: white; padding: 6px 12px; font-size: 11px; border-radius: 20px; cursor: pointer;">🗼 COMMS RISK</button>
+      </div>
+    </div>
 
     <!-- MAIN SIDEBAR (Always visible) -->
     <div class="sidebar" id="main-sidebar">
@@ -130,11 +141,11 @@
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
-  <script src="js/settings.js"></script>
-  <script src="js/weather.js"></script>
-  <script src="js/advisory.js"></script>
-  <script src="js/radar_sweep.js"></script>
-  <script src="js/map.js"></script>
-  <script src="js/tutorial.js"></script>
+  <script src="js/settings.js?v=2"></script>
+  <script src="js/weather.js?v=2"></script>
+  <script src="js/advisory.js?v=2"></script>
+  <script src="js/radar_sweep.js?v=2"></script>
+  <script src="js/map.js?v=2"></script>
+  <script src="js/tutorial.js?v=2"></script>
 </body>
 </html>

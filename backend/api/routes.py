@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from typing import Optional
 import logging
 import os
+import json
 
 ox.settings.use_cache = True
 ox.settings.cache_folder = os.path.join(os.path.dirname(__file__), "..", "osmnx_cache")
@@ -24,6 +25,26 @@ ox.settings.overpass_endpoint = "https://overpass.kumi.systems/api/interpreter"
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/route", tags=["Infrastructure"])
+
+CACHE_FILE = os.path.join(os.path.dirname(__file__), "..", "fixtures", "route_cache.json")
+
+def load_route_cache():
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_route_cache(cache):
+    try:
+        with open(CACHE_FILE, 'w') as f:
+            json.dump(cache, f)
+    except Exception as e:
+        logger.error(f"Failed to save route cache: {e}")
+
+_route_cache = load_route_cache()
 
 # In-memory cache for OSRM fallback routes to guarantee 0ms load times during demo
 _osrm_cache = {}
@@ -122,6 +143,11 @@ def get_safe_route(
     Computes shortest path via OSMnx explicitly routing AROUND flood zones.
     Generates a 'safe kacha way' (unpaved path) if the origin is cut off from safe roads.
     """
+    cache_key = f"{origin_lon},{origin_lat}_{dest_lon},{dest_lat}"
+    if cache_key in _route_cache:
+        logger.info("Serving FULL route GeoJSON instantly from file-backed cache!")
+        return _route_cache[cache_key]
+
     try:
         buffer = 0.02
         min_lat = min(origin_lat, dest_lat) - buffer
@@ -273,7 +299,10 @@ def get_safe_route(
             },
         })
 
-        return {"type": "FeatureCollection", "features": features}
+        result = {"type": "FeatureCollection", "features": features}
+        _route_cache[cache_key] = result
+        save_route_cache(_route_cache)
+        return result
 
     except Exception as e:
         logger.error(f"OSMnx Routing failed (API rate limit/timeout): {e}")
@@ -326,10 +355,13 @@ def get_safe_route(
                 }
             }
             
-            return {
+            result = {
                 "type": "FeatureCollection",
                 "features": [kacha_way, paved_safe]
             }
+            _route_cache[cache_key] = result
+            save_route_cache(_route_cache)
+            return result
                 
         except Exception as osrm_e:
             logger.error(f"OSRM Fallback also failed: {osrm_e}")

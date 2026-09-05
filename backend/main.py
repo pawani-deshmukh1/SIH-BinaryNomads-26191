@@ -32,7 +32,7 @@ def get_config():
         "CESIUM_ION_TOKEN": os.environ.get("CESIUM_TOKEN", "YOUR_CESIUM_TOKEN_HERE")
     }
 
-from api import settings_api, damage, flood, landslide, red_zones, relocation, routes, towers, ground_situation, evac_zones, feedback, analyze, inundation, live_risk, susceptibility, advisory, simulation
+from api import settings_api, damage, flood, landslide, red_zones, relocation, routes, towers, ground_situation, evac_zones, feedback, analyze, inundation, live_risk, susceptibility, advisory, simulation, alerts, simulation_2d, mobile_assessment, dispatch, field_reports, safe_zone_state
 
 app.include_router(settings_api.router)
 app.include_router(damage.router)
@@ -51,7 +51,13 @@ app.include_router(live_risk.router)
 app.include_router(susceptibility.router)
 app.include_router(advisory.router)
 app.include_router(simulation.router)
-
+app.include_router(alerts.router)
+app.include_router(simulation_2d.router)
+app.include_router(mobile_assessment.flood_router)
+app.include_router(mobile_assessment.landslide_router)
+app.include_router(dispatch.router, prefix="/dispatch", tags=["Field Ops"])
+app.include_router(field_reports.router, prefix="/field-reports", tags=["Field Ops"])
+app.include_router(safe_zone_state.router, prefix="/safe-zone-state", tags=["Field Ops"])
 # Serve the dashboard as static files at /app/
 # Open http://127.0.0.1:8000/app/simulation.html?hab_id=...
 DASHBOARD_DIR = os.path.join(os.path.dirname(__file__), "..", "dashboard")

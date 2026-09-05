@@ -26,6 +26,7 @@
       DISHA <span style="font-size:12px;color:var(--accent);">| 3D TACTICAL SIMULATION</span>
     </div>
     <div class="actions">
+      <button id="sim-tour-btn" onclick="startSimTutorial()" disabled style="padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.4); border-radius: 4px; cursor: not-allowed; font-size: 12px; margin-right: 8px;" title="Wait for map to load...">🎓 Loading...</button>
       <a href="javascript:history.back()" class="btn-outline">← Back to COP</a>
     </div>
   </header>
@@ -66,12 +67,12 @@
 
       <!-- Stage Legend -->
       <div class="panel-section">
-        <h3>Simulation Stages</h3>
-        <div class="stage-legend">
-          <div class="stage-item" id="stage-0"><span class="color-box stage-0-color"></span> T+0h (Base)</div>
-          <div class="stage-item" id="stage-6"><span class="color-box stage-6-color"></span> T+6h</div>
-          <div class="stage-item" id="stage-18"><span class="color-box stage-18-color"></span> T+18h</div>
-          <div class="stage-item" id="stage-36"><span class="color-box stage-36-color"></span> T+36h (Peak)</div>
+        <h3>Simulation Stages <span style="font-size:10px; color: var(--text-dim); font-weight:400">(click to jump)</span></h3>
+        <div class="stage-legend" id="stage-legend">
+          <div class="stage-item" id="stage-0"  onclick="jumpToStage(0)"  title="Jump to T+0h" style="cursor:pointer"><span class="color-box stage-0-color"></span> ⏱ T+0h (Base)</div>
+          <div class="stage-item" id="stage-6"  onclick="jumpToStage(6)"  title="Jump to T+6h" style="cursor:pointer"><span class="color-box stage-6-color"></span> ⏱ T+6h</div>
+          <div class="stage-item" id="stage-18" onclick="jumpToStage(18)" title="Jump to T+18h" style="cursor:pointer"><span class="color-box stage-18-color"></span> ⏱ T+18h</div>
+          <div class="stage-item" id="stage-36" onclick="jumpToStage(36)" title="Jump to T+36h (Peak)" style="cursor:pointer"><span class="color-box stage-36-color"></span> ⏱ T+36h (Peak)</div>
         </div>
       </div>
 
@@ -95,8 +96,89 @@
   <!-- CesiumJS Core (Loaded last to not block rendering) -->
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Cesium.js"></script>
 
+  <!-- Intro.js for guided tour -->
+  <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
+  <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
+
   <!-- Simulation Controller -->
-  <script src="js/simulation_3d.js?v=13"></script>
+  <script src="js/simulation_3d.js?v=14"></script>
+
+  <!-- Shared tour engine (speakText, injectVoiceToggle) -->
+  <script src="js/tutorial.js"></script>
+
+  <script>
+    function startSimTutorial() {
+      const intro = introJs();
+      intro.setOptions({
+        showProgress: true,
+        showBullets: false,
+        exitOnOverlayClick: false,
+        disableInteraction: true,
+        prevLabel: '← Back',
+        nextLabel: 'Next →',
+        doneLabel: 'Finish Tour',
+        steps: [
+          {
+            intro: `<b>3D Tactical Simulation 🌊</b><br><br>
+              This is DISHA's real-time <b>Bathtub Flood & Landslide Growth Simulation</b> powered by Cesium Ion 3D terrain.<br><br>
+              It models how a disaster physically expands across the terrain over 36 hours using <b>Manning's Equation</b> applied to live GloFAS river discharge volumes.`
+          },
+          {
+            element: document.getElementById('cesiumContainer'),
+            intro: `<b>3D Cesium Terrain Globe 🌏</b><br><br>
+              The globe uses real-world satellite elevation data (NASA SRTM via Cesium Ion) — actual terrain topology of Assam, not a flat map.<br><br>
+              <span style="color:#22c55e">● Green dot</span> = habitation epicenter.<br>
+              <span style="color:#60a5fa">● Blue polygons</span> = flood inundation stages growing over time.<br>
+              <span style="color:#f97316">● Orange cone</span> = landslide debris flow accumulation.`,
+            position: 'left'
+          },
+          {
+            element: document.getElementById('stage-legend'),
+            intro: `<b>Clickable Time-Jump Controls ⏱️</b><br><br>
+              Each stage is <b>directly clickable</b>. Clicking <b>T+6h</b>, <b>T+18h</b>, or <b>T+36h (Peak)</b> instantly teleports the simulation clock to that exact moment — no need to wait for the animation to play through.<br><br>
+              The simulation auto-pauses for 2 seconds so you can inspect the flood extent at that snapshot, then resumes automatically.`,
+            position: 'left'
+          },
+          {
+            element: document.getElementById('sim-advisory-log'),
+            intro: `<b>Live Advisory Trigger Log 🚨</b><br><br>
+              As the flood water level crosses the habitation's coordinates (computed using Turf.js point-in-polygon), this log fires a <b>real-time advisory trigger</b>.<br><br>
+              The system then calls the <b>Relocation Advisory API</b>, fetches the optimal safe zone assignment, and presents a <b>Human-in-the-Loop confirmation</b> if overflow re-routing is needed.`,
+            position: 'left'
+          },
+          {
+            element: document.querySelector('.panel-section:first-child'),
+            intro: `<b>Live Weather Context Panel ☁️</b><br><br>
+              The top panel shows the <b>live weather readings</b> for this habitation pulled from OpenWeather API:<br><br>
+              • Current rainfall intensity (mm/hr)<br>
+              • 72-hour forecast total (mm)<br>
+              • Trigger Status: CLEAR / ESCALATING / CRITICAL<br>
+              • Risk Multiplier applied to the baseline terrain score`,
+            position: 'left'
+          },
+          {
+            intro: `<b>🎓 Simulation Tour Complete!</b><br><br>
+              You've just seen how DISHA transforms raw terrain + weather data into a <b>physics-informed, time-stepped disaster visualization</b> — running entirely in-browser with no GPU infrastructure.<br><br>
+              When the habitation is breached, the system auto-generates the evacuation route (flood-pruned via OSMnx) and draws it in 3D on the globe.`
+          }
+        ]
+      });
+
+      intro.onafterchange(function() {
+        setTimeout(() => {
+          if (typeof injectVoiceToggle === 'function') injectVoiceToggle();
+          const tooltip = document.querySelector('.introjs-tooltiptext');
+          if (tooltip && typeof speakText === 'function') speakText(tooltip.innerHTML);
+        }, 300);
+      });
+
+      intro.onexit(function() {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+      });
+
+      intro.start();
+    }
+  </script>
 
 </body>
 

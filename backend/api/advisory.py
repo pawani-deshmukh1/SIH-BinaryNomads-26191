@@ -166,7 +166,10 @@ async def generate_advisory(habitation_id: str, region: str = Query(default="ass
             "type": hab.get("type"),
             "population": pop,
             "households": hab.get("households", 0),
-            "vulnerability_sc_st_pct": hab.get("sc_st_percent", 0)
+            "vulnerability_sc_st_pct": hab.get("sc_st_percent", 0),
+            "women_percent": hab.get("women_percent", 49),
+            "children_percent": hab.get("children_percent", 29),
+            "elderly_percent": hab.get("elderly_percent", 8)
         },
         "trigger": {
             "reason": "Risk threshold exceeded",
