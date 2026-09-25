@@ -41,3 +41,4 @@ shap>=0.44.0
 python-dotenv==1.0.1
 
 groq==0.11.0
+Pillow>=10.0.0
