@@ -8,11 +8,21 @@
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   
-  <!-- Intro.js CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css" />
+  <!-- Leaflet Velocity (Wind Vectors) CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-velocity/dist/leaflet-velocity.min.css" />
+  
+  <!-- Leaflet MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+
   
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
+  <script src="js/config.js"></script>
 </head>
 <body>
 
@@ -24,13 +34,22 @@
     </div>
     <div class="header-actions">
       <div class="time-sync" style="display: flex; align-items: center; gap: 12px;">
-        <span style="font-size: 10px; color: var(--text-dim); background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);" title="Data provided by various sources">
-          DATA: NASA SRTM · CHIRPS · IMD Open-Meteo · HydroRIVERS · ESA WorldCover
+        <span style="font-size: 10px; color: var(--text-dim); background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);" title="NASA SRTM (30m Elevation) | CHIRPS (Precipitation) | IMD (Live Forecast) | HydroRIVERS (Network) | ESA WorldCover (Land Use)">
+          DATA: <a href="https://www2.jpl.nasa.gov/srtm/" target="_blank" style="color:var(--text-dim); text-decoration:underline;">NASA SRTM</a> · CHIRPS · IMD Open-Meteo · HydroRIVERS · ESA WorldCover
         </span>
         <button class="btn" style="padding: 6px 12px; background: rgba(255,255,255,0.1); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;" onclick="openSettingsModal()">⚙️ Settings</button>
         <button class="btn" style="padding: 6px 12px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;" onclick="startMainTutorial()">🎓 Guided Tour</button>
+        <a href="strategic.html" target="_blank" style="text-decoration: none;">
+          <button class="btn" style="padding: 6px 12px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 13px;">👁️ Layer 2 Strategy</button>
+        </a>
         <a href="field_ops.html" target="_blank" style="text-decoration: none;">
           <button class="btn" style="padding: 6px 12px; background: #eab308; color: black; border: none; border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 13px;">🚨 Field Ops</button>
+        </a>
+        <a href="layer3_review.html" target="_blank" style="text-decoration: none;">
+          <button class="btn" style="padding: 6px 12px; background: #ec4899; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 13px;">🛰️ Layer 3 Damage (ONNX)</button>
+        </a>
+        <a href="admin_integration.html" target="_blank" style="text-decoration: none;">
+          <button class="btn" style="padding: 6px 12px; background: #14b8a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 13px;">🔌 Integration</button>
         </a>
         <span>🕐 <span id="last-sync">Just now</span></span>
       </div>
@@ -44,51 +63,67 @@
       <!-- Map Layers -->
       <div style="position: absolute; top: 12px; left: 60px; z-index: 1000; display: flex; gap: 8px;">
         <button id="layer-comms" class="btn" style="background: rgba(15,23,42,0.9); border: 1px solid var(--border); color: white; padding: 6px 12px; font-size: 11px; border-radius: 20px; cursor: pointer;">🗼 COMMS RISK</button>
+        <button id="layer-nwdp" class="btn" style="background: rgba(14, 165, 233, 0.2); border: 1px solid #0ea5e9; color: #bae6fd; padding: 6px 12px; font-size: 11px; border-radius: 20px; cursor: pointer;">💧 NWDP Reservoirs</button>
+        <button id="layer-bhuvan" class="btn" style="background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #bbf7d0; padding: 6px 12px; font-size: 11px; border-radius: 20px; cursor: pointer;">🛰️ Bhuvan ISRO</button>
+        <button id="layer-b-btn" onclick="openLayerBModal()" class="btn" style="background: rgba(139, 92, 246, 0.2); border: 1px solid #8b5cf6; color: #ddd6fe; padding: 6px 12px; font-size: 11px; border-radius: 20px; cursor: pointer;">🌧️ Regional Rainfall Trigger</button>
+        <button id="btn-auto-score" class="btn" style="background: rgba(236, 72, 153, 0.2); border: 1px solid #ec4899; color: #fbcfe8; padding: 6px 12px; font-size: 11px; border-radius: 20px; cursor: pointer;">📍 Live Coord-Score</button>
       </div>
     </div>
 
-    <!-- MAIN SIDEBAR (Always visible) -->
-    <div class="sidebar" id="main-sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-title">Risk Overview</div>
-        <div class="status-grid">
-          <div class="status-card">
-            <div class="status-val red" id="count-red">0</div>
-            <div class="status-label">Evacuate</div>
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="main-sidebar" style="right: 20px; left: auto; top: 80px; bottom: 20px; width: 340px; background: rgba(20,20,25,0.95); padding: 0;">
+      
+      <!-- Alerts and Warnings -->
+      <div style="background: #4c1d95; padding: 12px 16px; font-weight: bold; font-size: 14px; border-top-left-radius: 8px; border-top-right-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <span>Alerts and Warnings</span>
+        <button onclick="document.getElementById('main-sidebar').style.display='none'" style="background:none; border:none; color:white; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 12px; color: #fca5a5; background: rgba(0,0,0,0.2);">
+        <strong>[IMD / CWC Bulletin]</strong> Cloudburst: High intensity rainfall predicted in Meghalaya & Assam recorded at <span id="alert-time">2026-09-13 04:34:56</span>
+      </div>
+
+      <!-- Value Added Products -->
+      <div style="padding: 16px;">
+        <div style="background: black; padding: 8px 12px; font-weight: bold; font-size: 14px; border-radius: 6px; text-align: center; margin-bottom: 12px;">
+          Value Added Products
+        </div>
+        
+        <div class="vap-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); cursor:pointer;">
+          <div>
+            <div style="font-size: 12px; color: #e2e8f0; margin-bottom: 4px;">Satellite Image showing Flood Inundation areas in parts of Assam State</div>
+            <div style="font-size: 10px; color: #94a3b8;">2026-09-12 &middot; <strong>Source: NRSC/ISRO Bhuvan</strong></div>
           </div>
-          <div class="status-card">
-            <div class="status-val orange" id="count-orange">0</div>
-            <div class="status-label">On Watch</div>
+          <i class="fa-solid fa-file-pdf text-slate-400 text-xl hover:text-white transition-colors"></i>
+        </div>
+        
+        <div class="vap-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); cursor:pointer;">
+          <div>
+            <div style="font-size: 12px; color: #e2e8f0; margin-bottom: 4px;">Sentinel-1 SAR Fusion showing Flood Extent in Guwahati Basin</div>
+            <div style="font-size: 10px; color: #94a3b8;">2026-09-12 &middot; <strong>Source: Copernicus EMS</strong></div>
           </div>
-          <div class="status-card">
-            <div class="status-val yellow" id="count-yellow">0</div>
-            <div class="status-label">Monitor</div>
-          </div>
+          <i class="fa-solid fa-file-pdf text-slate-400 text-xl hover:text-white transition-colors"></i>
         </div>
       </div>
 
-      <div class="weather-trigger">
-        <div class="weather-header">
-          <span>Layer B: Live Weather Trigger</span>
-          <span style="font-size: 11px;">Open-Meteo</span>
+      <!-- Original Risk Overview Metrics -->
+      <div style="padding: 16px;">
+        <h3 style="margin-top: 0; margin-bottom: 15px; color: var(--text-dim); font-size: 14px; letter-spacing: 1px;">RISK OVERVIEW</h3>
+        <div class="metrics" style="display: flex; gap: 10px; margin-bottom: 20px;">
+          <div class="metric-box" style="flex: 1; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--red); border-radius: 8px; padding: 10px; text-align: center;">
+            <div id="count-red" style="color: var(--red); font-size: 24px; font-weight: bold;">0</div>
+            <div style="color: var(--text-dim); font-size: 10px; text-transform: uppercase;">Evacuate</div>
+          </div>
+          <div class="metric-box" style="flex: 1; background: rgba(249, 115, 22, 0.1); border: 1px solid var(--orange); border-radius: 8px; padding: 10px; text-align: center;">
+            <div id="count-orange" style="color: var(--orange); font-size: 24px; font-weight: bold;">0</div>
+            <div style="color: var(--text-dim); font-size: 10px; text-transform: uppercase;">On Watch</div>
+          </div>
+          <div class="metric-box" style="flex: 1; background: rgba(234, 179, 8, 0.1); border: 1px solid var(--yellow); border-radius: 8px; padding: 10px; text-align: center;">
+            <div id="count-yellow" style="color: var(--yellow); font-size: 24px; font-weight: bold;">0</div>
+            <div style="color: var(--text-dim); font-size: 10px; text-transform: uppercase;">Monitor</div>
+          </div>
         </div>
-        <div class="weather-row">
-          <span>Current Rain:</span>
-          <span class="weather-val" id="weather-current">0.0 mm/hr</span>
-        </div>
-        <div class="weather-row">
-          <span>72h Forecast:</span>
-          <span class="weather-val" id="weather-forecast">0.0 mm</span>
-        </div>
-        <div class="weather-row">
-          <span>Risk Multiplier:</span>
-          <span class="weather-val" id="weather-mult">1.0x</span>
-        </div>
-      </div>
 
-      <div class="hab-list" id="hab-list">
-        <!-- Populated by map.js -->
-        <div style="text-align: center; color: var(--text-dim); margin-top: 20px;">Loading habitations...</div>
+        <div id="hab-list" style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: calc(100vh - 450px); padding-right: 5px;"></div>
       </div>
     </div>
 
@@ -140,12 +175,32 @@
 
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet MarkerCluster JS -->
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <!-- Leaflet Velocity JS -->
+  <script src="https://unpkg.com/leaflet-velocity/dist/leaflet-velocity.min.js"></script>
   <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
-  <script src="js/settings.js?v=2"></script>
-  <script src="js/weather.js?v=2"></script>
-  <script src="js/advisory.js?v=2"></script>
-  <script src="js/radar_sweep.js?v=2"></script>
-  <script src="js/map.js?v=2"></script>
-  <script src="js/tutorial.js?v=2"></script>
+  <!-- LAYER B MODAL -->
+  <div id="layer-b-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+    <div class="modal-content" style="background:var(--bg-card); border:1px solid var(--border); border-radius:8px; width:500px; max-width:90%; box-shadow:0 10px 30px rgba(0,0,0,0.8);">
+      <div style="padding:16px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02);">
+        <h3 style="margin:0;">Regional Rainfall Trigger</h3>
+        <button class="btn-close" onclick="closeLayerBModal()" style="background:none; border:none; color:var(--text-dim); font-size:24px; cursor:pointer;">&times;</button>
+      </div>
+      <div style="padding:24px; max-height: 60vh; overflow-y: auto;" id="layer-b-list">
+        <div style="text-align: center; color: var(--text-dim);">Loading regional telemetry...</div>
+      </div>
+      <div style="padding:16px 24px; border-top:1px solid var(--border); text-align:right; background:rgba(255,255,255,0.02);">
+        <button class="btn" style="background:rgba(255,255,255,0.1); width:auto; display:inline-block;" onclick="closeLayerBModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/settings.js?v=6"></script>
+  <script src="js/weather.js?v=6"></script>
+  <script src="js/advisory.js?v=6"></script>
+  <script src="js/radar_sweep.js?v=6"></script>
+  <script src="js/map.js?v=6"></script>
+  <script src="js/tour.js?v=1"></script>
 </body>
 </html>

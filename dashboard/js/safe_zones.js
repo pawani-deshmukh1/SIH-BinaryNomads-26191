@@ -4,7 +4,7 @@ let staticSafeZones = [];
 
 async function init() {
   // Load static capabilities once
-  const res = await fetch('http://127.0.0.1:8000/advisory/safe-zones');
+  const res = await fetch(window.API_BASE + '/advisory/safe-zones');
   const data = await res.json();
   staticSafeZones = data.features;
   
@@ -14,7 +14,7 @@ async function init() {
 
 async function fetchLiveState() {
   try {
-    const res = await fetch('http://127.0.0.1:8000/safe-zone-state/');
+    const res = await fetch(window.API_BASE + '/safe-zone-state/');
     const data = await res.json();
     renderGrid(data.safe_zones);
     document.getElementById('last-sync').innerText = new Date().toLocaleTimeString();

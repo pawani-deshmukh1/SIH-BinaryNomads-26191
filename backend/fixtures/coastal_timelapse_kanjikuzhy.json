@@ -1,0 +1,79 @@
+{
+  "hab_id": "KERALA_COASTAL_005",
+  "base_lat": 9.52,
+  "base_lon": 76.335,
+  "timelapse": [
+    {
+      "year": 2019,
+      "land_lost_m2": 0,
+      "geojson": {
+        "type": "Feature",
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[76.330, 9.530], [76.340, 9.530], [76.340, 9.510], [76.330, 9.510], [76.330, 9.530]]]
+        },
+        "properties": {"name": "Kanjikuzhy Landmass (2019)"}
+      }
+    },
+    {
+      "year": 2020,
+      "land_lost_m2": 15000,
+      "geojson": {
+        "type": "Feature",
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[76.331, 9.530], [76.340, 9.530], [76.340, 9.510], [76.331, 9.510], [76.331, 9.530]]]
+        },
+        "properties": {"name": "Kanjikuzhy Landmass (2020)"}
+      }
+    },
+    {
+      "year": 2021,
+      "land_lost_m2": 32000,
+      "geojson": {
+        "type": "Feature",
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[76.332, 9.530], [76.340, 9.530], [76.340, 9.510], [76.332, 9.510], [76.332, 9.530]]]
+        },
+        "properties": {"name": "Kanjikuzhy Landmass (2021)"}
+      }
+    },
+    {
+      "year": 2022,
+      "land_lost_m2": 45000,
+      "geojson": {
+        "type": "Feature",
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[76.333, 9.530], [76.340, 9.530], [76.340, 9.510], [76.333, 9.510], [76.333, 9.530]]]
+        },
+        "properties": {"name": "Kanjikuzhy Landmass (2022)"}
+      }
+    },
+    {
+      "year": 2023,
+      "land_lost_m2": 62000,
+      "geojson": {
+        "type": "Feature",
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[76.334, 9.530], [76.340, 9.530], [76.340, 9.510], [76.334, 9.510], [76.334, 9.530]]]
+        },
+        "properties": {"name": "Kanjikuzhy Landmass (2023)"}
+      }
+    },
+    {
+      "year": 2024,
+      "land_lost_m2": 78000,
+      "geojson": {
+        "type": "Feature",
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[76.335, 9.530], [76.340, 9.530], [76.340, 9.510], [76.335, 9.510], [76.335, 9.530]]]
+        },
+        "properties": {"name": "Kanjikuzhy Landmass (2024)"}
+      }
+    }
+  ]
+}

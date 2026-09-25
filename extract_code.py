@@ -1,8 +1,8 @@
 import os
 
 def extract_code(root_dir, output_file):
-    allowed_extensions = {'.py', '.html', '.js', '.css', '.sql'}
-    ignored_dirs = {'venv', '.venv', 'env', '.env', 'node_modules', '__pycache__', '.git', '.idea', '.vscode', '.gemini'}
+    allowed_extensions = {'.py', '.html', '.js', '.css', '.sql', '.dart'}
+    ignored_dirs = {'venv', '.venv', 'env', '.env', 'node_modules', '__pycache__', '.git', '.idea', '.vscode', '.gemini', 'build', '.dart_tool', 'android', 'ios', 'windows', 'macos', 'linux', 'web'}
 
     with open(output_file, 'w', encoding='utf-8') as out:
         for dirpath, dirnames, filenames in os.walk(root_dir):

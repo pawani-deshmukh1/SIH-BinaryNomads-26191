@@ -13,8 +13,9 @@ Also exposes:
   GET /susceptibility/zone-map     → returns a GeoJSON FeatureCollection 
                                      with zone_class for every habitation
 """
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Body
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ router = APIRouter(prefix="/susceptibility", tags=["Layer A — Static Susceptib
 async def score_point(
     lat: float = Query(..., description="Latitude"),
     lng: float = Query(..., description="Longitude"),
+    region: str = Query(default="assam", description="Region (e.g., 'assam' or 'kerala')"),
     elevation: float = Query(default=100.0, description="Elevation in meters (NASA SRTM)"),
     slope: float = Query(default=10.0, description="Slope in degrees"),
     aspect: float = Query(default=180.0, description="Aspect in degrees"),
@@ -55,7 +57,7 @@ async def score_point(
         "hand_proxy_m": hand_proxy_m,
     }
 
-    result = proactive_engine.score(features)
+    result = proactive_engine.score(features, region=region)
 
     return JSONResponse(content={
         "status": "success",
@@ -105,7 +107,7 @@ async def score_all_habitations(region: str = Query(default="assam")):
             "vegetation_proxy": hab.get("vegetation_proxy", 0.6),
             "hand_proxy_m":     hab.get("hand_proxy_m", 8.0),
         }
-        score = proactive_engine.score(terrain)
+        score = proactive_engine.score(terrain, region=region)
         scored.append({**hab, "layer_a": score})
 
     # Summary stats
@@ -169,7 +171,7 @@ async def get_zone_map(region: str = Query(default="assam")):
             "vegetation_proxy": hab.get("vegetation_proxy", 0.6),
             "hand_proxy_m":     hab.get("hand_proxy_m", 8.0),
         }
-        score = proactive_engine.score(terrain)
+        score = proactive_engine.score(terrain, region=region)
         zone = score["zone_class"]
 
         features.append({
@@ -211,3 +213,118 @@ async def get_zone_map(region: str = Query(default="assam")):
             }
         }
     })
+
+
+@router.get("/auto-score")
+async def auto_score_coordinate(
+    lat: float = Query(..., description="Latitude of any point on Earth"),
+    lng: float = Query(..., description="Longitude of any point on Earth"),
+    region: str = Query(default="assam", description="Model region: 'assam' or 'kerala'"),
+):
+    """
+    Score ANY coordinate automatically by fetching real terrain data.
+
+    Sources used:
+      - NASA SRTM 30m DEM → elevation, slope, aspect, TRI, TWI, HAND
+      - Open-Meteo API    → live + annual precipitation (CHIRPS-equivalent)
+      - Overpass API      → nearest waterway distance
+      - Regional heuristic → vegetation proxy (ESA WorldCover proxy)
+
+    No fixture required. Works for any habitation in India.
+    """
+    from core.terrain_fetcher import fetch_terrain_features
+    from core.proactive_engine import proactive_engine
+
+    # 1. Fetch real terrain from live sources
+    try:
+        features = await fetch_terrain_features(lat, lng)
+        data_source = "live"
+    except Exception as e:
+        logger.warning(f"[auto-score] Terrain fetch failed ({e}), using region defaults")
+        features = {
+            "elevation": 80.0, "slope": 10.0, "aspect": 180.0,
+            "tri": 4.0, "twi": 7.0, "hand_proxy_m": 8.0,
+            "dist_to_river_m": 3000.0, "precip_annual_mm": 1800.0,
+            "precip_daily_mm": 12.0, "vegetation_proxy": 0.6,
+        }
+        data_source = "regional_defaults"
+
+    # 2. Score with XGBoost
+    result = proactive_engine.score(features, region=region)
+
+    return JSONResponse(content={
+        "status": "success",
+        "coordinates": {"lat": lat, "lng": lng},
+        "data_source": data_source,
+        "terrain_features": features,
+        "risk_assessment": result,
+        "zone_class": result["zone_class"],
+        "flood_score": result["flood_score"],
+        "landslide_score": result["landslide_score"],
+        "combined_score": result["combined_score"],
+        "explanation": {
+            "flood": result.get("flood_explanation", {}),
+            "landslide": result.get("landslide_explanation", {}),
+        }
+    })
+
+class AddHabitationRequest(BaseModel):
+    name: str
+    lat: float
+    lng: float
+    population: int
+    households: int
+    sc_st_percent: int = 0
+    type: str = "rural"
+    type_label: str = "Rural Village"
+    district: str = "Custom"
+    block: str = "Custom"
+    road_accessible: bool = True
+    nearest_road_km: float = 1.0
+    women_percent: float = 50.0
+    children_percent: float = 25.0
+    elderly_percent: float = 10.0
+    # Include terrain features
+    elevation_m: float
+    slope_deg: float
+    aspect_deg: float
+    tri: float
+    twi: float
+    dist_to_river_m: float
+    precip_annual_mm: float
+    precip_daily_mm: float
+    vegetation_proxy: float
+    hand_proxy_m: float
+
+@router.post("/habitations/add")
+async def add_habitation(req: AddHabitationRequest, region: str = Query(default="assam")):
+    """
+    Save a dynamically monitored custom coordinate into the main habitation database.
+    This integrates it with Layer 2 relocation engine instantly.
+    """
+    import json
+    from pathlib import Path
+    
+    fixtures_dir = Path(__file__).resolve().parent.parent / "fixtures"
+    hab_path = fixtures_dir / f"habitations_{region}.json"
+
+    if not hab_path.exists():
+        return JSONResponse(status_code=404, content={"error": f"No habitation fixture for region '{region}'"})
+
+    with open(hab_path, "r", encoding="utf-8") as f:
+        habitations = json.load(f)
+
+    new_id = f"HAB_CUSTOM_{len(habitations) + 1:03d}"
+    
+    new_hab = req.dict()
+    new_hab["id"] = new_id
+    new_hab["historical_floods_10yr"] = 0
+    new_hab["historical_landslides_10yr"] = 0
+    
+    habitations.append(new_hab)
+
+    with open(hab_path, "w", encoding="utf-8") as f:
+        json.dump(habitations, f, indent=2)
+
+    return JSONResponse(content={"status": "success", "id": new_id, "message": f"Added {req.name} to monitoring grid"})
+

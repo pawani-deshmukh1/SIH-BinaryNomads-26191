@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 router = APIRouter(prefix="/ground-situation", tags=["Intelligence"])
 
 @router.get("/")
-def get_ground_situation():
+def get_ground_situation(region: str = Query("assam", description="Region to load habitations for (e.g., 'assam' or 'kerala')")):
     """
     F11: Synthesizes ALL layers into a single GeoJSON FeatureCollection for the operational picture.
     """
@@ -11,15 +11,22 @@ def get_ground_situation():
         import json
         import os
         from datetime import datetime, timezone
-        from core.analysis_state import get_latest_hab_assignments
+        from core.analysis_state import get_last_relocation
         
         base_dir = os.path.join(os.path.dirname(__file__), "..", "fixtures")
-        with open(os.path.join(base_dir, "habitations_assam.json")) as f:
+        hab_file = f"habitations_{region.lower()}.json"
+        with open(os.path.join(base_dir, hab_file)) as f:
             habs = json.load(f)
-        with open(os.path.join(base_dir, "safe_zones_assam.json")) as f:
+        
+        # Safe zones currently only exist for Assam, default to it for now if missing
+        safe_zones_file = f"safe_zones_{region.lower()}.json"
+        if not os.path.exists(os.path.join(base_dir, safe_zones_file)):
+            safe_zones_file = "safe_zones_assam.json"
+            
+        with open(os.path.join(base_dir, safe_zones_file)) as f:
             zones = json.load(f)
             
-        assignments = get_latest_hab_assignments() or {}
+        assignments = get_last_relocation() or {}
         
         total_habs = len(habs)
         red_zones = len(assignments)

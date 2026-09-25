@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DISHA - Guwahati Urban Flood Spatial Explainer</title>
+    
+    <!-- External Libs -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.3.0/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/maplibre-gl@3.3.0/dist/maplibre-gl.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    
+    <!-- Internal styles (Tailwind is used instead) -->
+    <link rel="icon" href="data:,">
+    <style>
+        body { margin: 0; padding: 0; background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        #sidebar { width: 400px; background-color: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); border-right: 1px solid #334155; display: flex; flex-direction: column; z-index: 50; }
+        #main-content { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+        #map { flex-grow: 1; z-index: 10; }
+        
+        .layer-toggle { padding: 12px 16px; border-bottom: 1px solid #334155; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
+        .layer-toggle:hover { background-color: #334155; }
+        .layer-toggle.active { border-left: 4px solid #3b82f6; background-color: rgba(59, 130, 246, 0.1); }
+        
+        /* Checkbox styling */
+        .custom-checkbox { width: 40px; height: 20px; background-color: #475569; rounded-full; position: relative; border-radius: 9999px; transition: background-color 0.2s; }
+        .custom-checkbox::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background-color: white; border-radius: 50%; transition: transform 0.2s; }
+        .active .custom-checkbox { background-color: #3b82f6; }
+        .active .custom-checkbox::after { transform: translateX(20px); }
+    </style>
+  <script src="js/config.js"></script>
+</head>
+<body>
+
+    <!-- Sidebar: Layer Controls -->
+    <div id="sidebar">
+        <div class="p-4 border-b border-slate-700">
+            <a href="strategic.html" class="text-xs text-slate-400 hover:text-white mb-2 inline-block"><i class="fa-solid fa-arrow-left mr-1"></i>Back to UFRI Deep-Dive</a>
+            <h1 class="text-xl font-bold tracking-wider text-indigo-400"><i class="fa-solid fa-cube mr-2"></i>SPATIAL EXPLAINER</h1>
+            <p class="text-xs text-slate-400 mt-1">Guwahati Forensic Flood Intelligence</p>
+            <button onclick="startGuwahatiTutorial()" class="mt-3 w-full py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded transition-colors">🎓 Guided Tour</button>
+        </div>
+
+        
+        <div id="layer-container" class="flex-grow overflow-y-auto custom-scrollbar">
+            
+            <div class="p-3 bg-slate-800 text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-700">
+                1. Structural Baseline Layer
+            </div>
+            <div class="layer-toggle" id="toggle-baseline" onclick="toggleLayer('baseline')">
+                <div>
+                    <div class="font-bold text-sm">Brahmaputra Danger Level <a href="#" title="Source: CWC Guwahati Gauge Station" class="ml-1 text-slate-500 hover:text-slate-300"><i class="fa-solid fa-circle-info text-[10px]"></i></a></div>
+                    <div class="text-[10px] text-slate-400 mt-1">DEM Elevations ≤ 49.68m</div>
+                </div>
+                <div class="custom-checkbox"></div>
+            </div>
+            <div class="layer-toggle" id="toggle-ward-risk" onclick="toggleLayer('ward-risk')">
+                <div>
+                    <div class="font-bold text-sm">Ward-Level Validation</div>
+                    <div class="text-[10px] text-slate-400 mt-1"><a href="https://doi.org/10.1016/j.scs.2021.103051" target="_blank" class="underline hover:text-blue-400" title="Link to official DOI publication">ResearchGate Academic Baseline</a></div>
+                </div>
+                <div class="custom-checkbox"></div>
+            </div>
+
+            <div class="p-3 bg-slate-800 text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-700">
+                2. Hazard & Aggravation
+            </div>
+            <div class="layer-toggle" id="toggle-subsidence" onclick="toggleLayer('subsidence')">
+                <div>
+                    <div class="font-bold text-sm">Groundwater Subsidence <a href="#" title="Source: ISRO InSAR Deformation Study 2024" class="ml-1 text-slate-500 hover:text-slate-300"><i class="fa-solid fa-circle-info text-[10px]"></i></a></div>
+                    <div class="text-[10px] text-slate-400 mt-1">Invisible Compounding Sink Zones</div>
+                </div>
+                <div class="custom-checkbox"></div>
+            </div>
+            <div class="layer-toggle" id="toggle-earth-cutting" onclick="toggleLayer('earth-cutting')">
+                <div>
+                    <div class="font-bold text-sm">Active Earth-Cutting</div>
+                    <div class="text-[10px] text-slate-400 mt-1">Sedimentation Sources Clogging Drains</div>
+                </div>
+                <div class="custom-checkbox"></div>
+            </div>
+
+            <div class="p-3 bg-slate-800 text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-700">
+                3. Infrastructure Deficits
+            </div>
+            <div class="layer-toggle" id="toggle-drainage" onclick="toggleLayer('drainage')">
+                <div class="flex-1">
+                    <div class="font-bold text-sm">Drainage System Split</div>
+                    <div class="text-xs text-slate-400">Total Sewage Absence</div>
+                </div>
+                <div class="toggle-switch"></div>
+            </div>
+            
+            <div class="layer-toggle" id="toggle-choke-points" onclick="toggleLayer('choke-points')">
+                <div class="flex-1">
+                    <div class="font-bold text-sm">Drainage Choke Points</div>
+                    <div class="text-xs text-slate-400">Computed Sediment Vulnerability</div>
+                </div>
+                <div class="toggle-switch"></div>
+            </div>
+
+            <div class="p-3 bg-slate-800 text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-700">
+                4. Validated Event Anchor
+            </div>
+            <div class="layer-toggle" id="toggle-sar" onclick="toggleLayer('sar')">
+                <div>
+                    <div class="font-bold text-sm">SAR Flood Extent <a href="#" title="Source: Copernicus Sentinel-1 / ESA" class="ml-1 text-slate-500 hover:text-slate-300"><i class="fa-solid fa-circle-info text-[10px]"></i></a></div>
+                    <div class="text-[10px] text-slate-400 mt-1">Historical Ground Truth Validation</div>
+                </div>
+                <div class="custom-checkbox"></div>
+            </div>
+
+            <div class="p-3 bg-slate-800 text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-700">
+                5. Field Verification (Human-in-Loop)
+            </div>
+            <div class="layer-toggle" id="toggle-drone" onclick="toggleLayer('drone')">
+                <div>
+                    <div class="font-bold text-sm text-cyan-400">Drone-LiDAR Priority Zones</div>
+                    <div class="text-[10px] text-slate-400 mt-1">Objectively derived DEM-resolution gaps</div>
+                </div>
+                <div class="custom-checkbox"></div>
+            </div>
+            <div class="layer-toggle" id="toggle-reports" onclick="toggleLayer('reports')">
+                <div>
+                    <div class="font-bold text-sm text-emerald-400">Crowdsourced Ground Truth</div>
+                    <div class="text-[10px] text-slate-400 mt-1">Self-healing field reports & mismatch flags</div>
+                </div>
+                <div class="custom-checkbox"></div>
+            </div>
+
+            <!-- CBRN Chemical Hazards -->
+            <div class="p-3 bg-slate-800 text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-700 cursor-pointer hover:bg-slate-700 transition" onclick="document.getElementById('cbrn-panel').classList.toggle('hidden')">
+                6. Compounding CBRN Hazards <i class="fa-solid fa-chevron-down float-right mt-1 text-[10px]"></i>
+            </div>
+            <div id="cbrn-panel" class="hidden bg-slate-900 border-b border-slate-700">
+                <div class="layer-toggle py-2 px-4" id="toggle-cbrn-iocl" onclick="toggleChemicalLeak('iocl')">
+                    <div>
+                        <div class="font-bold text-xs text-red-400"><i class="fa-solid fa-biohazard mr-1"></i> IOCL Refinery (Noonmati)</div>
+                        <div class="text-[9px] text-slate-400">LPG/Hydrocarbon Plume Risk</div>
+                    </div>
+                    <div class="custom-checkbox w-4 h-4 rounded-sm border border-slate-500"></div>
+                </div>
+                <div class="layer-toggle py-2 px-4" id="toggle-cbrn-kamrup" onclick="toggleChemicalLeak('kamrup')">
+                    <div>
+                        <div class="font-bold text-xs text-yellow-400"><i class="fa-solid fa-biohazard mr-1"></i> Kamrup Ind. Gases</div>
+                        <div class="text-[9px] text-slate-400">Acetylene/O2 Explosion Radius</div>
+                    </div>
+                    <div class="custom-checkbox w-4 h-4 rounded-sm border border-slate-500"></div>
+                </div>
+                <div class="layer-toggle py-2 px-4" id="toggle-cbrn-shiva" onclick="toggleChemicalLeak('shiva')">
+                    <div>
+                        <div class="font-bold text-xs text-orange-400"><i class="fa-solid fa-biohazard mr-1"></i> Shiva Chemicals (Beltola)</div>
+                        <div class="text-[9px] text-slate-400">Acid/Corrosive Runoff Plume</div>
+                    </div>
+                    <div class="custom-checkbox w-4 h-4 rounded-sm border border-slate-500"></div>
+                </div>
+                <div class="p-2 text-[9px] text-slate-500 italic text-center">
+                    Uses Pasquill-Gifford Gaussian dispersion synced to live wind data.
+                </div>
+            </div>
+
+            <!-- Scenario Simulator -->
+            <div class="p-3 bg-slate-800 text-xs font-bold text-slate-400 uppercase tracking-widest border-t border-b border-slate-700 mt-4 flex justify-between items-center">
+                <span><i class="fa-solid fa-sliders mr-2"></i> Compound Scenario Simulator</span>
+                <button onclick="syncLiveWeather()" id="live-weather-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] px-2 py-1 rounded transition-colors flex items-center">
+                    <i class="fa-solid fa-cloud-showers-heavy mr-1"></i> Sync Live
+                </button>
+            </div>
+            <div class="p-4 border-b border-slate-700">
+                <div class="mb-4">
+                    <label class="flex justify-between items-end text-xs text-slate-300 font-bold mb-1">
+                        <div>
+                            <span>Rainfall Intensity</span>
+                            <div class="text-[9px] text-slate-500 font-normal mt-0.5" id="live-rainfall-readout">Live: Fetching...</div>
+                        </div>
+                        <span id="rain-val" class="text-emerald-400">0 mm/hr</span>
+                    </label>
+                    <input type="range" id="rain-slider" min="0" max="150" value="0" class="w-full accent-emerald-500" onchange="updateScenario(); if (typeof refreshPlumes === 'function') refreshPlumes();" oninput="document.getElementById('rain-val').innerText = this.value + ' mm/hr'">
+                </div>
+                <div>
+                    <label class="flex justify-between text-xs text-slate-300 font-bold mb-1">
+                        <span>Brahmaputra Gauge Level</span>
+                        <span id="river-val" class="text-blue-400">48.0 m</span>
+                    </label>
+                    <input type="range" id="river-slider" min="47.0" max="52.0" step="0.1" value="48.0" class="w-full accent-blue-500" onchange="updateScenario()" oninput="document.getElementById('river-val').innerText = this.value + ' m'">
+                </div>
+                <div class="mt-4">
+                    <label class="flex justify-between text-xs text-slate-300 font-bold mb-1">
+                        <span>Upstream Dam Level (Umiam)</span>
+                        <span id="dam-val" class="text-indigo-400">80.0 %</span>
+                    </label>
+                    <input type="range" id="dam-slider" min="60.0" max="100.0" step="0.5" value="80.0" class="w-full accent-indigo-500" onchange="updateScenario()" oninput="document.getElementById('dam-val').innerText = this.value + ' %'">
+                </div>
+                <div class="mt-3 bg-slate-900 border border-amber-900/50 p-2 rounded text-[10px] text-amber-200/70 italic">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-1"></i>
+                    <a href="https://ndma.gov.in/sites/default/files/PDF/Guidelines/management_urban_flooding.pdf" target="_blank" class="underline hover:text-amber-400" title="NDMA Urban Flooding Guidelines">Simulation uses the Rational Method (Q=CiA)</a> and estimated Manning's capacity. Outputs indicate order-of-magnitude capacity deficits, not survey-grade hydraulic routing.
+                </div>
+            </div>
+
+            <!-- Historical Trend Graph -->
+            <div class="p-4 border-t border-slate-700">
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2"><i class="fa-solid fa-chart-line mr-2"></i>Historical Flood Severity Trend</div>
+                <div class="bg-slate-800 rounded-lg p-2 border border-slate-700">
+                    <canvas id="trendChart" width="100" height="60"></canvas>
+                </div>
+                <p class="text-[9px] text-slate-500 mt-2 italic text-center">Trend proxies based on IMD & ASDMA historical data for urban flash floods.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+        <!-- Map Container -->
+        <div id="map" class="absolute top-0 right-0 bottom-0 left-0 z-0"></div>
+        
+        <!-- Legend (Top Left) -->
+        <div id="map-legend" class="absolute top-4 left-4 w-64 bg-slate-900/90 border border-slate-700 rounded-lg shadow-2xl z-10 backdrop-blur-sm text-xs text-slate-300">
+            <div class="p-3 border-b border-slate-700 bg-slate-800/50 rounded-t-lg font-bold text-white tracking-wide">
+                <i class="fa-solid fa-list text-slate-400 mr-2"></i>MAP LEGEND
+            </div>
+            <div class="p-3 space-y-3">
+                <div>
+                    <div class="flex items-center mb-1">
+                        <div class="w-4 h-4 bg-red-600 rounded flex items-center justify-center text-[10px] text-white mr-2 border border-red-800">
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <span class="font-bold text-slate-200">NDRF Base (Azara)</span>
+                    </div>
+                    <div class="flex items-center ml-1">
+                        <div class="w-3 border-b-2 border-dashed border-amber-500 mr-2"></div>
+                        <span>Safe Dispatch Route</span>
+                    </div>
+                </div>
+                
+                <div class="border-t border-slate-700/50 pt-2 mt-2">
+                    <span class="font-bold text-slate-400 block mb-2 text-[10px] uppercase">Infrastructure Risk Level</span>
+                    <div class="flex items-center mb-1"><div class="w-3 h-3 bg-pink-500 rounded-sm mr-2 opacity-80"></div><span>Critical</span></div>
+                    <div class="flex items-center mb-1"><div class="w-3 h-3 bg-blue-500 rounded-sm mr-2 opacity-80"></div><span>High</span></div>
+                    <div class="flex items-center mb-1"><div class="w-3 h-3 bg-cyan-500 rounded-sm mr-2 opacity-80"></div><span>Moderate</span></div>
+                    <div class="flex items-center"><div class="w-3 h-3 bg-slate-700 rounded-sm mr-2 opacity-80"></div><span>Safe / Unaffected</span></div>
+                </div>
+                
+                <div class="border-t border-slate-700/50 pt-2 mt-2">
+                    <span class="font-bold text-slate-400 block mb-2 text-[10px] uppercase">Road Risk Level</span>
+                    <div class="flex items-center mb-1"><div class="w-3 border-b-2 border-white mr-2"></div><span>Critical</span></div>
+                    <div class="flex items-center mb-1"><div class="w-3 border-b-2 border-purple-500 mr-2"></div><span>High</span></div>
+                    <div class="flex items-center"><div class="w-3 border-b-2 border-green-400 mr-2"></div><span>Moderate</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Live Thermodynamic Engine HUD -->
+        <div id="thermo-hud" class="absolute bottom-20 left-4 w-64 bg-slate-900/90 border border-slate-700 rounded-lg shadow-2xl z-10 backdrop-blur-sm text-xs text-slate-300">
+            <div class="p-2 border-b border-slate-700 bg-slate-800/50 rounded-t-lg font-bold text-white tracking-wide flex justify-between items-center">
+                <span><i class="fa-solid fa-cloud-bolt text-amber-400 mr-2"></i>THERMODYNAMICS</span>
+                <span id="thermo-status" class="text-[9px] text-slate-500 uppercase flex items-center"><i class="fa-solid fa-circle text-red-500 mr-1 text-[6px]"></i>Offline</span>
+            </div>
+            <div class="p-3 space-y-2 font-mono text-[10px]" id="thermo-content">
+                <div class="flex justify-between"><span>Dew Pt Dep</span><span class="text-slate-500">--</span></div>
+                <div class="flex justify-between"><span>Moisture Flux</span><span class="text-slate-500">--</span></div>
+                <div class="flex justify-between"><span>Orographic Lift</span><span class="text-slate-500">--</span></div>
+                <div class="flex justify-between border-t border-slate-700 pt-2 mt-2 font-sans font-bold text-slate-200"><span>Cloudburst Imminent</span><span class="text-slate-500">--%</span></div>
+            </div>
+        </div>
+        
+        <!-- Right Intelligence Panel (The 5 Ws) -->
+        <div id="intelligence-panel" class="absolute top-4 right-4 bottom-4 w-96 bg-slate-900/95 border border-slate-700 rounded-lg shadow-2xl flex flex-col z-10 hidden backdrop-blur-sm">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50 rounded-t-lg">
+                <h2 class="font-bold text-white tracking-wide flex items-center">
+                    <i class="fa-solid fa-microscope text-indigo-400 mr-2"></i>
+                    FORENSIC ANALYSIS (5 Ws)
+                </h2>
+            </div>
+            <div id="intelligence-content" class="p-5 overflow-y-auto flex-1 space-y-6 text-sm text-slate-300">
+                <!-- Content dynamically injected here -->
+            </div>
+        </div>
+
+        <!-- Click Context Panel (Map Interactivity) -->
+        <div id="click-panel" class="hidden absolute top-4 left-[420px] w-80 bg-slate-900/90 backdrop-blur border border-slate-700 shadow-2xl rounded-lg z-10">
+            <!-- Content injected via JS -->
+        </div>
+
+        <!-- Floating Submit Report Button -->
+        <button onclick="openReportModal()" class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-full font-bold shadow-[0_0_15px_rgba(16,185,129,0.5)] border border-emerald-400 transition-colors flex items-center">
+            <i class="fa-solid fa-satellite-dish mr-2"></i> Submit Field Report
+        </button>
+
+        <!-- Report Intake Modal -->
+        <div id="report-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center">
+            <div class="bg-slate-900 border border-slate-700 rounded-lg shadow-2xl w-[400px] overflow-hidden">
+                <div class="p-4 border-b border-slate-700 bg-slate-800 flex justify-between items-center">
+                    <h3 class="font-bold text-emerald-400"><i class="fa-solid fa-map-pin mr-2"></i>New Ground Truth Report</h3>
+                    <button onclick="closeReportModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="p-5 space-y-4 text-sm text-slate-300">
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-2">Target Location: Center of Map</p>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Report Type</label>
+                        <select id="report-type" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white outline-none focus:border-emerald-500">
+                            <option value="construction">New Undocumented Construction</option>
+                            <option value="waterlogging">Severe Waterlogging (Not in DEM)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Observation Notes</label>
+                        <textarea id="report-desc" rows="3" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white outline-none focus:border-emerald-500" placeholder="E.g. Multi-story complex built on designated wetland..."></textarea>
+                    </div>
+                    <button onclick="submitFieldReport()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded transition-colors" id="btn-submit">
+                        Upload to Command
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/tour.js"></script>
+    <script src="js/guwahati_3d.js?v=4"></script>
+
+    
+    <!-- Make Spatial Context Panel Draggable -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const panel = document.getElementById('click-panel');
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            let xOffset = 0;
+            let yOffset = 0;
+
+            panel.addEventListener("mousedown", dragStart);
+            document.addEventListener("mouseup", dragEnd);
+            document.addEventListener("mousemove", drag);
+
+            function dragStart(e) {
+                // Exclude dragging when clicking buttons, links, or inputs
+                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) {
+                    return;
+                }
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
+                isDragging = true;
+                panel.style.cursor = 'grabbing';
+            }
+
+            function dragEnd(e) {
+                initialX = currentX;
+                initialY = currentY;
+                isDragging = false;
+                panel.style.cursor = 'grab';
+            }
+
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                    xOffset = currentX;
+                    yOffset = currentY;
+                    panel.style.transform = "translate3d(" + currentX + "px, " + currentY + "px, 0)";
+                }
+            }
+            
+            panel.style.cursor = 'grab';
+            
+            // Make intelligence panel draggable too for good measure
+            const intelPanel = document.getElementById('intelligence-panel');
+            let iIsDragging = false, iCurrentX, iCurrentY, iInitialX, iInitialY, iXOffset = 0, iYOffset = 0;
+            
+            intelPanel.querySelector('.p-4').addEventListener("mousedown", (e) => {
+                iInitialX = e.clientX - iXOffset;
+                iInitialY = e.clientY - iYOffset;
+                iIsDragging = true;
+                intelPanel.style.cursor = 'grabbing';
+            });
+            document.addEventListener("mouseup", () => {
+                iInitialX = iCurrentX; iInitialY = iCurrentY; iIsDragging = false;
+                intelPanel.style.cursor = 'default';
+            });
+            document.addEventListener("mousemove", (e) => {
+                if (iIsDragging) {
+                    e.preventDefault();
+                    iCurrentX = e.clientX - iInitialX;
+                    iCurrentY = e.clientY - iInitialY;
+                    iXOffset = iCurrentX; iYOffset = iCurrentY;
+                    intelPanel.style.transform = "translate3d(" + iCurrentX + "px, " + iCurrentY + "px, 0)";
+                }
+            });
+            intelPanel.querySelector('.p-4').style.cursor = 'grab';
+        });
+    </script>
+</body>
+</html>

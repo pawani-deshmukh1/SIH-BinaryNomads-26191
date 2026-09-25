@@ -246,6 +246,7 @@ def compute_inundation_scenarios(
             "geometry": geom,
             "properties": {
                 "layer_type": "flood_inundation",
+                "base_elevation_m": round(base_elev, 1),
                 "water_level_above_base_m": level,
                 "absolute_water_level_m": round(actual_level, 1),
                 "affected_area_km2": area_km2,

@@ -12,15 +12,17 @@ from fastapi.responses import JSONResponse
 from datetime import datetime, timezone
 import json
 from pathlib import Path # Trigger hot reload
-from core.carrying_capacity import evaluate_safe_zones, calculate_resources
+from core.carrying_capacity import evaluate_safe_zones, calculate_resources, find_host_community_habitations
 from core.hazard_trigger import get_live_weather_trigger
 from core.proactive_engine import proactive_engine
+from api.routes import get_reachable_route, get_safe_route, ReachableRouteRequest, SafeZoneCandidate
+from core.flood_inundation import compute_inundation_scenarios
 
 from functools import lru_cache
 
 router = APIRouter(prefix="/advisory", tags=["Relocation Advisory"])
 
-@lru_cache(maxsize=32)
+# Removed lru_cache to ensure fresh data loads and trigger uvicorn hot reload
 def load_json_fixture(filename: str):
     path = Path(__file__).resolve().parent.parent / "fixtures" / filename
     if not path.exists():
@@ -150,16 +152,104 @@ async def generate_advisory(habitation_id: str, region: str = Query(default="ass
                 "message": "NO VALID SAFE ZONES FOUND. All candidates failed hard filters.",
                 "rejected_sites": rejected_sites
             })
-        best_site = valid_candidates[0]
+        
+        # Check routing reachability
+        # Skip dynamic DEM flood simulation here to prevent massive loading delays
+        flood_geojson = None
+            
+        candidates_list = []
+        for c in valid_candidates:
+            candidates_list.append(SafeZoneCandidate(
+                id=c["id"], name=c["name"], lat=c["lat"], lng=c["lng"], access_mode=c.get("access_mode", "road")
+            ))
+            
+        routing_req = ReachableRouteRequest(
+            origin_lat=hab["lat"],
+            origin_lng=hab["lng"],
+            candidates=candidates_list,
+            flood_geojson=flood_geojson
+        )
+        
+        routing_decision = get_reachable_route(routing_req)
+        
+        if routing_decision["routing_decision"] == "ISOLATED_ALL":
+             return JSONResponse(status_code=404, content={
+                "status": "error",
+                "message": "NO VALID SAFE ZONES REACHABLE BY ANY MEANS.",
+                "rejected_sites": rejected_sites + routing_decision.get("rejected_zones", [])
+            })
+            
+        selected_id = routing_decision["selected_zone_id"]
+        best_site = next((c for c in valid_candidates if c["id"] == selected_id), valid_candidates[0])
         overflow_sites = []
+        rejected_sites.extend(routing_decision.get("rejected_zones", []))
+        
+        verified_route = routing_decision.get("route_geojson")
+        evac_mode = routing_decision.get("evacuation_mode", "road")
+        route_status = routing_decision.get("route_status", "CLEAR")
     
     # 5. Calculate Resource Needs
     resources = calculate_resources(pop)
+
+    # 6. Find nearby safe habitations as host community alternatives
+    #    Only shown if they are closer than the formal relief camp.
+    #    Search radius scales with how far the formal camp is:
+    #    up to half the camp's distance, capped at 60km.
+    formal_camp_dist = best_site.get("distance_km", 9999.0)
+    dynamic_radius = min(formal_camp_dist * 0.55, 60.0)  # search 55% of camp distance, max 60km
+    host_options = find_host_community_habitations(
+        habitations=habitations,
+        displaced_hab_id=habitation_id,
+        displaced_population=pop,
+        hab_lat=hab["lat"],
+        hab_lng=hab["lng"],
+        formal_camp_distance_km=formal_camp_dist,
+        max_radius_km=dynamic_radius,
+    )
+
+    # 7. Pre-compute road routes for host community options
+    #    Uses the same file-backed route_cache.json as formal camps.
+    #    First call downloads OSMnx/OSRM (slow, one-time). Subsequent calls are instant.
+    #    People split equally among available host communities for resource distribution.
+    num_hosts = len(host_options)
+    pop_per_host = (pop // num_hosts) if num_hosts > 0 else 0
+    pop_remainder = pop - (pop_per_host * num_hosts)  # first host gets any remainder
+
+    enriched_host_options = []
+    for i, h in enumerate(host_options):
+        try:
+            route = get_safe_route(
+                origin_lat=hab["lat"],
+                origin_lon=hab["lng"],
+                dest_lat=h["lat"],
+                dest_lon=h["lng"],
+                flood_geojson=None,  # no flood overlay for host routes
+            )
+        except Exception:
+            route = None
+
+        # Population split: divide evenly, first host gets remainder people
+        assigned_pop = pop_per_host + (pop_remainder if i == 0 else 0)
+        h_enriched = dict(h)
+        h_enriched["route_geojson"] = route
+        h_enriched["assigned_population"] = assigned_pop
+        h_enriched["note"] = (
+            f"Hosts {assigned_pop} of {pop} displaced people ({round(assigned_pop/pop*100)}%). "
+            + ("Full capacity available." if h["can_host_all"] else f"Partial shelter — max {h['host_capacity']} pax.")
+        )
+        enriched_host_options.append(h_enriched)
+
+    host_options = enriched_host_options
+    
+    # Calculate Lead Time
+    combined_score = risk_score_result.get("combined_score", 0.8)
+    lead_time_hrs = max(6, round((1.0 - combined_score) * 72))
     
     # 6. Generate structured advisory
     advisory = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "urgency": "CRITICAL",
+        "estimated_lead_time_hrs": lead_time_hrs,
         "habitation": {
             "id": hab["id"],
             "name": hab["name"],
@@ -183,14 +273,20 @@ async def generate_advisory(habitation_id: str, region: str = Query(default="ass
         },
         "relocation_plan": {
             "recommended_site": best_site,
+            "routing_decision": routing_decision.get("routing_decision", "REACHABLE") if 'routing_decision' in locals() else "REACHABLE",
+            "evacuation_mode": evac_mode if 'evac_mode' in locals() else best_site.get("access_mode", "road"),
+            "verified_route": verified_route if 'verified_route' in locals() else None,
+            "route_status": route_status if 'route_status' in locals() else "CLEAR",
+            "routing_rejected_zones": routing_decision.get("rejected_zones", []) if 'routing_decision' in locals() else [],
             "overflow_sites": overflow_sites, # Newly added for capacity load balancing
             "alternative_sites": valid_candidates[1:3] if not overflow_sites else [],
             "logistics": {
-                "evacuation_mode": best_site.get("access_mode", "ROAD"),
+                "evacuation_mode": evac_mode if 'evac_mode' in locals() else best_site.get("access_mode", "ROAD"),
                 "distance_km": best_site.get("distance_km", 0),
             },
             "resources_required": resources
         },
+        "host_community_options": host_options,
         "rejected_sites_log": rejected_sites
     }
     

@@ -169,12 +169,18 @@ class _FieldReportScreenState extends State<FieldReportScreen> {
     final rescued = int.tryParse(_rescuedController.text) ?? 0;
     
     try {
-      await ApiService.post('/field-reports/', {
+      final res = await ApiService.post('/field-reports/', {
         "team_id": teamId,
         "rescued_count": rescued,
         "notes": _notesController.text
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report submitted successfully!'), backgroundColor: Colors.green));
+      
+      if (res != null && res['status'] == 'queued') {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']), backgroundColor: Colors.orange));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report submitted successfully!'), backgroundColor: Colors.green));
+      }
+      
       _rescuedController.clear();
       _notesController.clear();
     } catch (e) {

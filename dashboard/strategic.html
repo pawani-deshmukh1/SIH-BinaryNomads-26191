@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DISHA - Strategic Relocation (Layer 2)</title>
+    
+    <!-- External Libs -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Internal styles -->
+    <link rel="stylesheet" href="css/theme.css" />
+
+    <style>
+        body { margin: 0; padding: 0; background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        #sidebar { width: 350px; background-color: #1e293b; border-right: 1px solid #334155; display: flex; flex-direction: column; z-index: 50; }
+        #main-content { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+        #map { flex-grow: 1; z-index: 10; }
+        #trend-panel { position: absolute; right: 20px; top: 20px; bottom: 20px; width: 400px; background-color: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); border: 1px solid #334155; border-radius: 0.5rem; z-index: 1000; display: none; flex-direction: column; padding: 1rem; overflow-y: auto;}
+        
+        .watchlist-item { padding: 1rem; border-bottom: 1px solid #334155; cursor: pointer; transition: all 0.2s; }
+        .watchlist-item:hover { background-color: #334155; }
+        .watchlist-item.active { border-left: 4px solid #3b82f6; background-color: #1e293b; }
+        
+        .badge-critical { background-color: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+        .badge-high { background-color: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; }
+        .badge-moderate { background-color: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
+
+        /* Top Nav */
+        #top-nav { height: 60px; background-color: #1e293b; border-bottom: 1px solid #334155; display: flex; align-items: center; padding: 0 1rem; justify-content: space-between; z-index: 50; }
+        
+        /* Dark map */
+        .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.9); }
+    </style>
+  <script src="js/config.js"></script>
+</head>
+<body>
+
+    <!-- Sidebar: Watchlist -->
+    <div id="sidebar">
+        <div class="p-4 border-b border-slate-700">
+            <h1 class="text-xl font-bold tracking-wider text-blue-400"><i class="fa-solid fa-layer-group mr-2"></i>LAYER 2</h1>
+            <p class="text-xs text-slate-400 mt-1 uppercase tracking-widest">Strategic Relocation Watchlist</p>
+        </div>
+        
+        <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800">
+            <span class="text-sm font-medium text-slate-300">Runway Horizon</span>
+            <select id="runway-filter" class="bg-slate-700 text-sm rounded border border-slate-600 px-2 py-1 text-white">
+                <option value="24">Under 2 Years</option>
+                <option value="48" selected>Under 4 Years</option>
+                <option value="99">All</option>
+            </select>
+        </div>
+
+        <div class="p-3 border-b border-slate-700 bg-slate-800">
+            <button id="btn-run-analysis" class="w-full bg-slate-700 hover:bg-slate-600 border border-slate-500 text-white text-sm font-medium py-2 px-3 rounded transition-colors flex justify-center items-center gap-2 mb-2">
+                <i class="fa-solid fa-satellite-dish"></i> <span>Run New Analysis (Sentinel-2)</span>
+            </button>
+            <button onclick="openGuwahatiDeepDive()" class="w-full bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 text-white text-sm font-bold py-2 px-3 rounded transition-colors flex justify-center items-center gap-2">
+                <i class="fa-solid fa-city"></i> <span>Guwahati Deep-Dive (UFRI)</span>
+            </button>
+            <div id="analysis-status" class="text-[10px] text-slate-400 mt-2 text-center hidden">
+                <i class="fa-solid fa-circle-notch fa-spin mr-1 text-blue-400"></i> <span id="analysis-status-text">Extracting Satellite Imagery...</span>
+            </div>
+        </div>
+
+        <div class="flex text-xs border-b border-slate-700">
+            <div class="flex-1 text-center py-2 cursor-pointer hover:bg-slate-700 active-tab font-semibold" onclick="filterWatchlist('ALL', this)">All</div>
+            <div class="flex-1 text-center py-2 cursor-pointer hover:bg-slate-700 text-slate-400" onclick="filterWatchlist('glof_expansion', this)">🏔️ GLOF</div>
+            <div class="flex-1 text-center py-2 cursor-pointer hover:bg-slate-700 text-slate-400" onclick="filterWatchlist('erosion', this)">🌊 Erosion</div>
+            <div class="flex-1 text-center py-2 cursor-pointer hover:bg-slate-700 text-slate-400" onclick="filterWatchlist('urban_flood_risk', this)">🏙️ Urban</div>
+            <div class="flex-1 text-center py-2 cursor-pointer hover:bg-slate-700 text-slate-400" onclick="filterWatchlist('subsidence', this)">⛰️ Subsidence</div>
+        </div>
+
+        <div id="watchlist-container" class="flex-grow overflow-y-auto custom-scrollbar">
+            <!-- Items injected by JS -->
+            <div class="p-6 text-center text-slate-500 text-sm">Loading strategic trends...</div>
+        </div>
+
+        <!-- Removed Verified Data Sources Footer -->
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+        <!-- Top Nav -->
+        <div id="top-nav">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="text-slate-400 hover:text-white"><i class="fa-solid fa-arrow-left mr-2"></i>Back to Hub</a>
+                <div class="h-6 w-px bg-slate-700"></div>
+                <div>
+                    <h2 class="text-lg font-semibold">Long-Term Vulnerability Monitor</h2>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider">Planning View (SDMA/NDMA)</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="https://scihub.copernicus.eu/" target="_blank" class="text-xs text-slate-400 hover:text-blue-400 transition-colors" title="Data via Copernicus Open Access Hub"><i class="fa-solid fa-satellite mr-1"></i>Sentinel-2 Trend Analysis</a>
+                <span class="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-xs font-mono text-emerald-400">API: ONLINE</span>
+                <button onclick="startStrategicTutorial()" class="px-3 py-1 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded transition-colors">🎓 Guided Tour</button>
+            </div>
+
+        </div>
+
+        <!-- Map -->
+        <div id="map">
+      <div style="position: absolute; bottom: 30px; left: 10px; z-index: 1000; background: rgba(15,23,42,0.9); border: 1px solid var(--border); padding: 10px; border-radius: 8px; font-size: 11px; color: var(--text);">
+        <div style="font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid var(--border); padding-bottom: 4px;">Hazard Types</div>
+        <div style="display: flex; align-items: center; margin-bottom: 4px;"><span style="width: 12px; height: 12px; background: #06b6d4; border-radius: 50%; display: inline-block; margin-right: 6px;"></span> GLOF</div>
+        <div style="display: flex; align-items: center; margin-bottom: 4px;"><span style="width: 12px; height: 12px; background: #f59e0b; border-radius: 50%; display: inline-block; margin-right: 6px;"></span> Erosion</div>
+        <div style="display: flex; align-items: center; margin-bottom: 4px;"><span style="width: 12px; height: 12px; background: #8b5cf6; border-radius: 50%; display: inline-block; margin-right: 6px;"></span> Urban Flood</div>
+        <div style="display: flex; align-items: center;"><span style="width: 12px; height: 12px; background: #ec4899; border-radius: 50%; display: inline-block; margin-right: 6px;"></span> Subsidence</div>
+      </div>
+
+      <!-- Verified Data Sources Floating Panel -->
+      <details open style="position: absolute; top: 20px; right: 20px; z-index: 990; background: rgba(15,23,42,0.95); border: 1px solid #334155; padding: 12px; border-radius: 8px; font-size: 11px; color: #f8fafc; backdrop-filter: blur(8px); max-width: 250px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);">
+        <summary style="font-weight: bold; cursor: pointer; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 8px; outline: none; list-style: none;" class="flex items-center justify-between">
+            <span class="tracking-widest uppercase text-blue-400"><i class="fa-solid fa-database mr-2"></i> Verified Sources</span>
+            <i class="fa-solid fa-chevron-down text-slate-500 text-[10px]"></i>
+        </summary>
+        <style> details > summary::-webkit-details-marker { display: none; } details[open] > summary i.fa-chevron-down { transform: rotate(180deg); } </style>
+        <ul class="list-none space-y-2.5 opacity-90">
+            <li><strong class="text-emerald-400 block mb-0.5">Topography & LULC:</strong> BHUVAN (NRSC/ISRO) 3D DEM</li>
+            <li><strong class="text-blue-400 block mb-0.5">Hazard Zonation:</strong> NDEM (Nat. Database for Emergency Mgmt)</li>
+            <li><strong class="text-purple-400 block mb-0.5">Hydrology & Dams:</strong> CWC (Central Water Commission)</li>
+            <li><strong class="text-amber-400 block mb-0.5">Meteorology:</strong> IMD (India Meteorological Department)</li>
+            <li><strong class="text-cyan-400 block mb-0.5">Coastal Erosion:</strong> INCOIS Hazard Profiling</li>
+            <li><strong class="text-pink-400 block mb-0.5">Loss Baselines:</strong> NDMA / ASDMA Historical Data</li>
+            <li><strong class="text-slate-400 block mb-0.5">Global Optical/SAR:</strong> Sentinel-1/2 (Copernicus/GEE)</li>
+            <li><strong class="text-slate-400 block mb-0.5">Demographics:</strong> 2011 Primary Census Abstract</li>
+        </ul>
+      </details>
+    </div>
+
+        <!-- Temporal Controls Overlay (Hidden by default) -->
+        <div id="temporal-controls" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-800/95 border border-slate-600 rounded-lg shadow-2xl p-4 w-[500px] z-[1000] hidden backdrop-blur-md">
+            <div class="flex justify-between items-center mb-3">
+                <div class="text-sm font-semibold text-blue-300"><i class="fa-solid fa-clock-rotate-left mr-2"></i>Temporal Shoreline Playback</div>
+                <div class="text-xs font-mono bg-slate-900 px-2 py-1 rounded border border-slate-700 text-slate-300" id="temporal-year">2019</div>
+            </div>
+            
+            <div class="flex items-center gap-4 mb-2">
+                <button id="btn-play-temporal" class="bg-blue-600 hover:bg-blue-500 text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 transition-colors">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+                <input type="range" id="temporal-slider" min="0" max="5" value="0" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+            </div>
+            
+            <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                <span>2019</span>
+                <span>2024</span>
+            </div>
+            
+            <div class="mt-3 pt-3 border-t border-slate-700 flex justify-between items-center text-xs">
+                <span class="text-slate-400">Cumulative Land Lost:</span>
+                <span id="temporal-land-lost" class="font-bold text-red-400 font-mono">0 m²</span>
+            </div>
+        </div>
+
+        <!-- Right Panel: Trend Detail -->
+        <div id="trend-panel">
+            <div class="flex justify-between items-start border-b border-slate-700 pb-3 mb-4">
+                <div>
+                    <h3 id="panel-hab-name" class="text-xl font-bold text-white">Habitation Name</h3>
+                    <p id="panel-hab-id" class="text-xs text-slate-400 font-mono mt-1">HAB_ID</p>
+                </div>
+                <button onclick="closeTrendPanel()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <!-- Urgent Banner -->
+            <div id="runway-banner" class="mb-4 p-3 rounded bg-red-900/30 border border-red-500/50 flex items-center gap-3">
+                <i class="fa-solid fa-triangle-exclamation text-red-500 text-xl"></i>
+                <div>
+                    <div class="text-xs text-red-400 uppercase tracking-widest">Estimated Runway</div>
+                    <div id="runway-text" class="text-lg font-bold text-red-100">14-22 Months</div>
+                </div>
+            </div>
+
+            <!-- Cost of Inaction Banner -->
+            <div id="coi-banner" class="mb-4 p-3 rounded bg-slate-800/80 border border-slate-600 flex flex-col gap-1 hidden">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-users-slash text-slate-400"></i>
+                    <div class="text-xs text-slate-400 uppercase tracking-widest font-bold">Estimated Cost of Inaction</div>
+                </div>
+                <div id="coi-text" class="text-lg font-bold text-white mt-1">Projecting exposure...</div>
+                <div class="text-[10px] text-slate-500 italic mt-1">Projected via Ward-wise 2011 Census Baseline</div>
+            </div>
+
+            <!-- Scoring Methodology Dropdown -->
+            <details class="text-[10px] text-slate-400 mb-4 bg-slate-800/50 p-2 rounded border border-slate-700">
+                <summary class="cursor-pointer font-bold text-slate-300 outline-none hover:text-white transition-colors"><i class="fa-solid fa-calculator mr-1"></i> AI Scoring Methodology</summary>
+                <div class="mt-2 space-y-1 leading-relaxed">
+                    <p><strong>1. Kinematic Projection:</strong> Fits a 1st or 2nd-degree polynomial (<code class="bg-slate-900 px-1 rounded text-blue-300 font-mono">np.polyfit</code>) to the last 5 years of satellite telemetry. Upgrades to a quadratic (2nd-degree) fit if structural acceleration is detected to prevent underestimating non-linear collapse.</p>
+                    <p><strong>2. Conservative Screening Threshold:</strong> Solves for the exact month this trend line intersects the hazard's carrying capacity (e.g., 150% GLOF expansion, or 10% total land loss).</p>
+                    <p><strong>3. Forest Penalty:</strong> Normalizes hazards into a 0-1 composite score. Habitations with >10% recent forest loss receive an automatic 15% risk penalty.</p>
+                </div>
+            </details>
+
+            <!-- Historical Precedent Banner -->
+            <div id="precedent-banner" class="mb-4 p-3 rounded bg-orange-900/40 border border-orange-500/50 flex items-center gap-3 hidden">
+                <i class="fa-solid fa-bolt text-orange-400 text-xl"></i>
+                <div>
+                    <div class="text-xs text-orange-400 uppercase tracking-widest font-bold">Historical Precedent</div>
+                    <div id="precedent-text" class="text-sm font-semibold text-orange-100"></div>
+                </div>
+            </div>
+
+            <div class="flex-grow overflow-y-auto pr-1">
+                <!-- Generic Data Card -->
+                <div id="metrics-card" class="bg-slate-800 rounded border border-slate-700 p-3 mb-4 hidden">
+                    <div class="flex justify-between items-center mb-2 border-b border-slate-700 pb-2">
+                        <h4 id="metrics-title" class="text-sm font-semibold text-blue-300"></h4>
+                        <span id="metrics-primary" class="text-xs font-mono bg-slate-900 px-2 py-1 rounded"></span>
+                    </div>
+                    <div id="metrics-grid" class="grid grid-cols-2 gap-4 mt-3 text-sm">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Chart Card -->
+                <div id="chart-card" class="bg-slate-800 rounded border border-slate-700 p-3 mb-4 hidden">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="text-sm font-semibold text-slate-300"><i class="fa-solid fa-chart-line mr-2"></i>Satellite Evidence: 5-Year Trend (Sentinel-2 GEE)</h4>
+                    </div>
+                    <p id="chart-source" class="text-[10px] text-slate-500 mb-3 italic">Source: <a href="https://scihub.copernicus.eu/" target="_blank" class="underline hover:text-blue-400">Sentinel-2</a> + <a href="https://earthexplorer.usgs.gov/" target="_blank" class="underline hover:text-blue-400">Landsat 8</a></p>
+                    <div class="h-48 w-full relative">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Action Button -->
+                <div class="mt-6">
+                    <button id="btn-relocate" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-4 rounded shadow-lg shadow-blue-900/20 transition-colors flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-file-export"></i> Generate PMAY-G Relocation Plan
+                    </button>
+                    <p class="text-center text-[10px] text-slate-500 mt-2">Invokes Layer 1 Operational Engine to find nearest structural Safe Zone</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guwahati Deep-Dive Modal -->
+    <div id="guwahati-modal" class="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[2000] hidden flex-col">
+        <div class="h-16 border-b border-slate-700 flex justify-between items-center px-6">
+            <h2 class="text-2xl font-bold text-white"><i class="fa-solid fa-city text-indigo-400 mr-3"></i>Guwahati Urban Flood Risk Index (UFRI) Deep-Dive</h2>
+            <div class="flex items-center gap-4">
+                <a href="guwahati_3d.html" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold py-2 px-4 rounded transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-cube"></i> Launch 3D Spatial Explainer
+                </a>
+                <button onclick="closeGuwahatiDeepDive()" class="text-slate-400 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        
+        <div class="flex-grow flex overflow-hidden">
+            <!-- Left Panel: Backtesting & Policy -->
+            <div class="w-1/3 border-r border-slate-700 p-6 overflow-y-auto custom-scrollbar">
+                <div class="bg-indigo-900/30 border border-indigo-500/50 rounded-lg p-4 mb-6">
+                    <h3 class="text-indigo-300 font-bold mb-2 uppercase tracking-widest text-xs">Backtest Validation (Credibility Matrix)</h3>
+                    <div id="guwahati-backtest-content" class="text-sm text-indigo-100">Loading validation...</div>
+                </div>
+
+                <div class="bg-slate-800 border border-slate-600 rounded-lg p-4 mb-6">
+                    <h3 class="text-slate-300 font-bold mb-3 uppercase tracking-widest text-xs">Policy Intervention Levers</h3>
+                    <div class="mb-4">
+                        <div class="flex items-center gap-2 text-emerald-400 mb-1">
+                            <i class="fa-solid fa-check-circle"></i> 
+                            <span>Wetland Retrofit (Mora Bharalu)</span>
+                            <a href="#" title="Source: GMDA Master Plan 2025" class="text-slate-500 hover:text-slate-300 ml-1"><i class="fa-solid fa-circle-info"></i></a>
+                        </div>
+                        <p class="text-xs text-slate-400">Halt further construction near Mora Bharalu outfall to Deepor Beel. Prioritize 696-acre retrofit project to restore mitigation capacity.</p>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 text-red-400 mb-1">
+                            <i class="fa-solid fa-triangle-exclamation"></i> 
+                            <span>Live Scenario: Guwahati Ring Road</span>
+                            <a href="#" title="Source: NHAI Detailed Project Report (DPR) 2023" class="text-slate-500 hover:text-slate-300 ml-1"><i class="fa-solid fa-circle-info"></i></a>
+                        </div>
+                        <p class="text-xs text-slate-400">The upcoming 121-km Guwahati Ring Road (awarded 2026) threatens severe hill-cutting near the Bahini Basin, likely doubling hill runoff exposure.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Basin Analysis -->
+            <div class="w-2/3 p-6 overflow-y-auto custom-scrollbar">
+                <h3 class="text-slate-300 font-bold mb-4 uppercase tracking-widest text-sm border-b border-slate-700 pb-2">Basin-Level Micro-Zonation</h3>
+                <div id="guwahati-basins-container" class="grid grid-cols-2 gap-6">
+                    <!-- Basins injected by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Config Injection -->
+    <script src="/api/config"></script>
+    <script src="js/tour.js"></script>
+    <script src="js/strategic.js"></script>
+
+</body>
+</html>

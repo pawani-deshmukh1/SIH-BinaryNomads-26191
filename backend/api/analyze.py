@@ -271,3 +271,41 @@ async def _refresh_relocation_plan(region: str):
     except Exception as e:
         logger.error(f"[/analyze] Background relocation refresh failed: {e}")
 
+from pydantic import BaseModel
+
+class CalibrationPayload(BaseModel):
+    lat: float
+    lng: float
+    predicted_flood_polys: int
+    actual_flood_polys: int
+    peak_confidence: float
+    region: str = "assam"
+
+@router.post("/calibrate")
+async def calibrate_model(payload: CalibrationPayload):
+    """
+    Log the gap between Layer 1 prediction and Layer 3 actual segmentation.
+    Stored securely in SQLite for future model retraining.
+    """
+    try:
+        from core.db import log_calibration_gap, check_and_trigger_recalibration
+        log_calibration_gap(
+            lat=payload.lat,
+            lng=payload.lng,
+            predicted=payload.predicted_flood_polys,
+            actual=payload.actual_flood_polys,
+            confidence=payload.peak_confidence,
+            region=payload.region
+        )
+        
+        recalibrated = check_and_trigger_recalibration(payload.region)
+        
+        return {
+            "status": "success", 
+            "message": "Calibration logged to SQLite",
+            "recalibrated": recalibrated
+        }
+    except Exception as e:
+        logger.error(f"Failed to log calibration: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+

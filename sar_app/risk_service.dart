@@ -1,51 +1,21 @@
-import 'dart:convert';
 import 'dart:io';
-
+import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'api_service.dart';
 
 class RiskService {
   static const String baseUrl = 'http://10.102.59.67:8000';
 
   static Future<dynamic> getRedZones() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/red-zones/'),
-    );
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(response.body);
-    }
-
-    throw Exception(
-      'Red zones request failed: ${response.statusCode}',
-    );
+    return ApiService.get('/red-zones/');
   }
 
   static Future<dynamic> getLiveRisk() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/live-risk/'),
-    );
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(response.body);
-    }
-
-    throw Exception(
-      'Live risk request failed: ${response.statusCode}',
-    );
+    return ApiService.get('/live-risk/');
   }
 
   static Future<dynamic> getSusceptibility() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/susceptibility/habitations'),
-    );
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(response.body);
-    }
-
-    throw Exception(
-      'Susceptibility request failed: ${response.statusCode}',
-    );
+    return ApiService.get('/susceptibility/habitations');
   }
 
   static Future<dynamic> assessFlood(File image) async {

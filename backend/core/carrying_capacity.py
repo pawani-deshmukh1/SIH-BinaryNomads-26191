@@ -143,3 +143,96 @@ def calculate_resources(population: int, days: int = 5) -> Dict[str, Any]:
         "food_rations_daily": population,
         "duration_days": days
     }
+
+
+def find_host_community_habitations(
+    habitations: List[Dict[str, Any]],
+    displaced_hab_id: str,
+    displaced_population: int,
+    hab_lat: float,
+    hab_lng: float,
+    formal_camp_distance_km: float,
+    max_radius_km: float = 15.0,
+    min_spare_capacity_pct: float = 0.30,
+) -> List[Dict[str, Any]]:
+    """
+    Finds nearby GREEN/YELLOW zone habitations that can act as host communities.
+
+    A habitation qualifies as a host if:
+      1. It is NOT the displaced habitation itself.
+      2. It is CLOSER than the nearest formal relief camp.
+         (No benefit in showing it if the formal camp is already nearer.)
+      3. It scores GREEN or YELLOW via the XGBoost models.
+      4. It has >= 30% spare hosting headroom above its own population.
+
+    Structural capacity estimate (conservative Sphere-aligned):
+      Each household can reasonably host ~4 extra displaced people in an emergency.
+      host_capacity = households * 4
+    """
+    host_candidates = []
+
+    for hab in habitations:
+        if str(hab.get("id", "")) == str(displaced_hab_id):
+            continue
+
+        dist_km = haversine(hab_lat, hab_lng, float(hab.get("lat", 0)), float(hab.get("lng", 0)))
+        if dist_km > max_radius_km:
+            continue
+        if dist_km >= formal_camp_distance_km:
+            continue  # Formal camp is already closer, no benefit
+
+        terrain = {
+            "elevation":        hab.get("elevation_m", 80.0),
+            "slope":            hab.get("slope_deg", 8.0),
+            "aspect":           hab.get("aspect_deg", 180.0),
+            "tri":              hab.get("tri", 4.0),
+            "twi":              hab.get("twi", 7.0),
+            "dist_to_river_m":  hab.get("dist_to_river_m", 3000.0),
+            "precip_annual_mm": hab.get("precip_annual_mm", 1800.0),
+            "precip_daily_mm":  hab.get("precip_daily_mm", 12.0),
+            "vegetation_proxy": hab.get("vegetation_proxy", 0.6),
+            "hand_proxy_m":     hab.get("hand_proxy_m", 8.0),
+        }
+        score = proactive_engine.score(terrain)
+        if score["zone_class"] not in ("GREEN", "YELLOW"):
+            continue
+
+        households = int(hab.get("households", 0))
+        own_population = int(hab.get("population", 0))
+        host_capacity = households * 4
+        spare_pct = host_capacity / max(1, own_population)
+
+        if spare_pct < min_spare_capacity_pct:
+            continue
+
+        can_host_all = host_capacity >= displaced_population
+
+        host_candidates.append({
+            "id":                 hab.get("id", ""),
+            "name":               hab.get("name", "Unknown"),
+            "type":               hab.get("type", ""),
+            "type_label":         hab.get("type_label", ""),
+            "district":           hab.get("district", ""),
+            "lat":                hab.get("lat", 0),
+            "lng":                hab.get("lng", 0),
+            "own_population":     own_population,
+            "households":         households,
+            "host_capacity":      host_capacity,
+            "can_host_all":       can_host_all,
+            "spare_capacity_pct": round(spare_pct * 100, 1),
+            "distance_km":        round(dist_km, 2),
+            "distance_saving_km": round(formal_camp_distance_km - dist_km, 2),
+            "zone_class":         score["zone_class"],
+            "flood_score":        round(score["flood_score"], 4),
+            "landslide_score":    round(score["landslide_score"], 4),
+            "road_accessible":    hab.get("road_accessible", True),
+            "nearest_road_km":    hab.get("nearest_road_km", 0),
+            "shelter_type":       "host_community",
+            "note": (
+                f"Can host all {displaced_population} displaced people." if can_host_all
+                else f"Can host {host_capacity} of {displaced_population} (partial shelter)."
+            )
+        })
+
+    host_candidates.sort(key=lambda x: x["distance_km"])
+    return host_candidates

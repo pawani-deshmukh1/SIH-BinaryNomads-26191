@@ -20,6 +20,7 @@ from core.optimization import compute_relocation_plan
 from core.vulnerability import score_all_habitations
 from core.analysis_state import get_last_cop, set_last_relocation, get_last_relocation
 from core.settings import get_settings
+from shapely.geometry import shape
 
 router = APIRouter(prefix="/relocation-plan", tags=["PRIORITIZE — Relocation"])
 
@@ -97,12 +98,22 @@ def get_relocation_plan(region: str = Query(default="assam", description="Region
         else:
             habitations = None
 
+        # Extract Shapely Polygons for Dynamic Routing
+        hazard_polygons = []
+        for rz in red_zones:
+            if "geometry" in rz:
+                try:
+                    hazard_polygons.append(shape(rz["geometry"]))
+                except Exception:
+                    pass
+
         plan = compute_relocation_plan(
             habitations=habitations,
             evac_sites=evac_sites,
             immediate_threshold=tiers.immediate_threshold,
             short_term_threshold=tiers.short_term_threshold,
             region=region,
+            hazard_polygons=hazard_polygons,
         )
 
         result = plan.to_dict()
@@ -140,12 +151,22 @@ def submit_habitations(habitations: list[dict], region: str = Query(default="ass
         )
         scored_habs = [{**h, "vulnerability_score": vr.score} for h, vr in zip(habitations, scored)]
 
+        # Extract Shapely Polygons for Dynamic Routing
+        hazard_polygons = []
+        for rz in red_zones:
+            if "geometry" in rz:
+                try:
+                    hazard_polygons.append(shape(rz["geometry"]))
+                except Exception:
+                    pass
+
         plan = compute_relocation_plan(
             habitations=scored_habs,
             evac_sites=evac_sites,
             immediate_threshold=tiers.immediate_threshold,
             short_term_threshold=tiers.short_term_threshold,
             region=region,
+            hazard_polygons=hazard_polygons,
         )
         result = plan.to_dict()
         set_last_relocation(result)

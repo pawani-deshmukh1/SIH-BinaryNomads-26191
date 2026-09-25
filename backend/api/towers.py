@@ -7,36 +7,50 @@ falls within or within ~100m of a Red Zone polygon (shapely spatial check).
 
 Fallback: demo fixture if /analyze has not been called yet.
 """
-from fastapi import APIRouter, HTTPException
-from core.analysis_state import get_last_cop
-from core.cop_builder import build_cop_from_demo
+from fastapi import APIRouter, HTTPException, Query
+from core.analysis_state import check_geofence
+import json
+import os
 
 router = APIRouter(prefix="/towers", tags=["RESPOND — Comms Risk"])
 
 
 @router.get("/")
-def get_towers():
+def get_towers(region: str = Query(default="assam", description="Region to fetch towers for")):
     """
     Returns cell towers with computed operational status (operational | at_risk).
     at_risk = tower centroid is within or within 100m of a Red Zone polygon.
 
-    Source: last /analyze run. Falls back to demo fixture if no analysis yet.
+    Source: OpenCelliD mock fixture. Evaluated dynamically against active red zones.
     """
     try:
-        cop = get_last_cop()
-        if not cop:
-            cop = build_cop_from_demo()
+        region = region.lower()
+        base_dir = os.path.join(os.path.dirname(__file__), "..", "fixtures")
+        towers_file = os.path.join(base_dir, f"cell_towers_{region}.json")
+        
+        if not os.path.exists(towers_file):
+            towers_file = os.path.join(base_dir, "cell_towers_assam.json")
+            
+        with open(towers_file, 'r') as f:
+            data = json.load(f)
+            
+        features = data.get("features", [])
+        at_risk = 0
+        
+        for f in features:
+            lng, lat = f["geometry"]["coordinates"]
+            is_inside, _, _ = check_geofence(lat, lng)
+            if is_inside:
+                f["properties"]["status"] = "at_risk"
+                at_risk += 1
+            else:
+                f["properties"]["status"] = "operational"
 
-        features = [
-            f for f in cop.get("features", [])
-            if f.get("properties", {}).get("layer_type") == "tower"
-        ]
-        at_risk = sum(1 for f in features if f["properties"].get("status") == "at_risk")
         return {
             "type": "FeatureCollection",
             "count": len(features),
             "at_risk_count": at_risk,
-            "source": "analyze_pipeline" if get_last_cop() else "demo_fixture",
+            "source": f"opencellid_{region}",
             "features": features,
         }
     except Exception as e:

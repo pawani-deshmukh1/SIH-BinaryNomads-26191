@@ -12,12 +12,11 @@
   <!-- OSM to GeoJSON -->
   <script src="https://unpkg.com/osmtogeojson@3.0.0-beta.5/osmtogeojson.js"></script>
   
-  <!-- Intro.js CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css" />
-  <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
 
-  <!-- Shared tour engine: speakText, injectVoiceToggle, _voiceEnabled -->
-  <script src="js/tutorial.js"></script>
+  <!-- DISHA Tour Engine v2 -->
+  <script src="js/tour.js"></script>
+  
+
   
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -112,13 +111,17 @@
     .introjs-button { background-color: var(--accent) !important; color: white !important; border: none !important; text-shadow: none !important; }
     .introjs-skipbutton { color: var(--text-dim) !important; }
   </style>
+  <script src="js/config.js"></script>
 </head>
 <body>
 
   <header>
     <div class="brand">
       DISHA
-      <span class="subtitle">Common Operating Picture (COP)</span>
+      <span class="subtitle">
+        Common Operating Picture (COP)<br>
+        <span style="color: var(--accent); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Operational View (Incident Commander)</span>
+      </span>
     </div>
     <div style="display: flex; align-items: center; gap: 16px;">
       <a href="#" id="btn-3d-sim" class="btn" style="padding: 6px 12px; background: var(--accent); color: white; text-decoration: none; font-size: 12px; border-radius: 6px; font-weight: 600;">🌊 View 3D Simulation</a>
@@ -145,14 +148,50 @@
         <div class="panel-title">ML Risk Baseline</div>
         <div class="data-card" id="risk-card">Loading...</div>
         
+        <div class="panel-title text-accent border-b border-slate-700 pb-2 mb-3" style="color: var(--accent);"><i class="fa-solid fa-gavel mr-1"></i> Evidence Basis</div>
+        <div class="data-card" id="evidence-card" style="background: rgba(59, 130, 246, 0.05); border-color: rgba(59, 130, 246, 0.3);">
+            <div class="data-row"><span>Hazard Intensity:</span> <span id="ev-hazard" style="color: var(--danger);">Loading...</span></div>
+            <div class="data-row"><span>Pop. Vulnerability:</span> <span id="ev-vuln">Loading...</span></div>
+            <div class="data-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                <span>Disaster History:</span> 
+                <span id="ev-history" style="font-weight: 500; font-size: 12px; color: var(--warning);">Loading...</span>
+            </div>
+        </div>
+        
         <div class="panel-title">Geospatial Metrics</div>
         <div class="data-card" id="geo-card">Loading...</div>
+        
+        <div class="panel-title text-cyan-400 border-b border-slate-700 pb-2 mb-3" style="color: #22d3ee; margin-top: 24px;"><i class="fa-solid fa-cloud-bolt mr-1"></i> Atmospheric ML (Cloudburst)</div>
+        <div class="data-card" id="cloudburst-card" style="background: rgba(34, 211, 238, 0.05); border-color: rgba(34, 211, 238, 0.3);">
+            <div id="cb-loader" style="font-size: 12px; color: var(--text-dim); margin-bottom: 8px;">Running XGBoost Inference...</div>
+            <div id="cb-content" style="display: none;">
+                <div style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                        <span>Onset Probability</span>
+                        <span id="cb-percentile" style="font-weight: 700;"></span>
+                    </div>
+                    <div style="width: 100%; background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px; overflow: hidden;">
+                        <div id="cb-bar" style="height: 100%; width: 0%; background: #22d3ee; transition: width 0.5s ease;"></div>
+                    </div>
+                    <div id="cb-alert" style="font-size: 11px; font-weight: 700; text-transform: uppercase; margin-top: 8px; display: none;"></div>
+                </div>
+                
+                <div class="panel-title" style="font-size: 10px; margin-bottom: 8px;">XGBoost Thermodynamic Features</div>
+                <div class="data-row" style="font-size: 11px;"><span>Dew Point Depress.</span> <span id="cb-f1"></span></div>
+                <div class="data-row" style="font-size: 11px;"><span>Theta-E (Instability)</span> <span id="cb-f2"></span></div>
+                <div class="data-row" style="font-size: 11px;"><span>3H Pressure Drop</span> <span id="cb-f3"></span></div>
+                <div class="data-row" style="font-size: 11px;"><span>Moisture Flux</span> <span id="cb-f4"></span></div>
+                <div class="data-row" style="font-size: 11px;"><span>Orographic Lift</span> <span id="cb-f5"></span></div>
+            </div>
+        </div>
       </div>
 
       <!-- TAB: RELOCATION -->
       <div class="tab-content" id="tab-relocation">
         <div class="panel-title">Approved Safe Zone</div>
         <div id="approved-safe-zone">Loading...</div>
+        
+        <div id="host-communities"></div>
         
         <div class="panel-title" style="margin-top: 24px;">Rejected Candidates (Failed Sphere Stds)</div>
         <div id="rejected-safe-zones">Loading...</div>
@@ -223,7 +262,7 @@
 
       try {
         // 1. Fetch live ML scores for the map
-        const susRes = await fetch('http://127.0.0.1:8000/susceptibility/zone-map');
+        const susRes = await fetch(window.API_BASE + '/susceptibility/zone-map');
         const susData = await susRes.json();
         const feat = susData.features.find(f => f.properties.id === habId);
         if (!feat) throw new Error("Habitation not found in susceptibility map.");
@@ -249,7 +288,7 @@
         }).bindPopup(`<b>${currentHab.name}</b><br>Zone: ${currentHab.zone_class}`).addTo(map);
 
         // 3. Fetch Advisory (Safe Zones)
-        const advRes = await fetch(`http://127.0.0.1:8000/advisory/${habId}`);
+        const advRes = await fetch(`${window.API_BASE}/advisory/${habId}`);
         const advData = await advRes.json();
 
         // 4. Render UI
@@ -276,52 +315,168 @@
           <div class="data-row"><span>Terrain Ruggedness (TRI)</span><span>${feat.properties.tri.toFixed(2)} (Stability Check)</span></div>
           <div class="data-row"><span>Drainage Index (TWI)</span><span>${feat.properties.twi.toFixed(2)} (Soil/Water Runoff)</span></div>
         `;
+        
+        // Populate Evidence card inputs
+        const vulnPct = ((currentHab.population ? (advData.advisory?.habitation?.vulnerable_population || 0) / currentHab.population : 0)*100).toFixed(1);
+        const scstPct = advData.advisory?.habitation?.vulnerability_sc_st_pct || 0;
+        document.getElementById('ev-vuln').innerText = `${vulnPct}% (SC/ST: ${scstPct}%)`;
+        document.getElementById('ev-hazard').innerText = `Flood: ${(currentHab.flood_score * 100).toFixed(1)}% | Landslide: ${(currentHab.landslide_score * 100).toFixed(1)}%`;
+        
+        try {
+            const evRes = await fetch(`${window.API_BASE}/strategic/${habId}/evidence-summary`);
+            const evData = await evRes.json();
+            if (evData.status === 'success') {
+                const ed = evData.evidence;
+                let histHtml = "";
+                if (ed.has_history) {
+                    histHtml = `<div style="margin-bottom: 4px;">⚡ <strong>${ed.known_event}</strong></div>
+                                <div style="font-size: 11px; opacity: 0.9;">Trend: ${ed.trend_summary}</div>`;
+                } else {
+                    histHtml = `<div style="color: var(--text-dim);">${ed.known_event}</div>`;
+                }
+                document.getElementById('ev-history').innerHTML = histHtml;
+            }
+        } catch (e) {
+            document.getElementById('ev-history').innerText = "Data unavailable.";
+        }
+        
+        // Fetch Cloudburst ML Model
+        try {
+            const cbRes = await fetch(`${window.API_BASE}/heavy-rain/predict?lat=${currentHab.lat}&lon=${currentHab.lng}`);
+            const cbData = await cbRes.json();
+            if (cbData.status === 'success') {
+                document.getElementById('cb-loader').style.display = 'none';
+                document.getElementById('cb-content').style.display = 'block';
+                
+                const pct = cbData.risk_percentile;
+                const isImminent = cbData.is_imminent;
+                const f = cbData.features;
+                
+                document.getElementById('cb-percentile').innerText = `${pct.toFixed(1)}%`;
+                document.getElementById('cb-bar').style.width = `${pct}%`;
+                
+                if (isImminent) {
+                    document.getElementById('cb-bar').style.background = '#ef4444'; // Red
+                    document.getElementById('cb-percentile').style.color = '#ef4444';
+                    const alertDiv = document.getElementById('cb-alert');
+                    alertDiv.style.display = 'block';
+                    alertDiv.style.color = '#ef4444';
+                    alertDiv.innerText = '⚠️ IMMINENT THREAT DETECTED';
+                    document.getElementById('cloudburst-card').style.borderColor = 'rgba(239, 68, 68, 0.5)';
+                    document.getElementById('cloudburst-card').style.background = 'rgba(239, 68, 68, 0.05)';
+                } else if (pct > 50) {
+                    document.getElementById('cb-bar').style.background = '#f59e0b'; // Orange
+                    document.getElementById('cb-percentile').style.color = '#f59e0b';
+                }
+                
+                document.getElementById('cb-f1').innerText = `${f.dew_point_depression}°C`;
+                document.getElementById('cb-f2').innerText = `${f.theta_e_proxy}K`;
+                document.getElementById('cb-f3').innerText = `${f.pressure_drop_3h}hPa`;
+                document.getElementById('cb-f4').innerText = f.moisture_flux;
+                document.getElementById('cb-f5').innerText = f.orographic_lift_index;
+            }
+        } catch (e) {
+            document.getElementById('cb-loader').innerText = "XGBoost API Unavailable.";
+        }
 
         if (advData.status === 'success' && advData.advisory.relocation_plan) {
-          const site = advData.advisory.relocation_plan.recommended_site;
+          const plan = advData.advisory.relocation_plan;
+          const site = plan.recommended_site;
           
-          // Draw Safe Zone
+          // Draw Formal Safe Zone (Blue)
           L.circleMarker([site.lat, site.lng], {
             radius: 8, color: '#fff', weight: 2, fillColor: '#3b82f6', fillOpacity: 1
           }).bindPopup(`<b>Approved Safe Zone: ${site.name}</b>`).addTo(map);
           
-          // Fetch dynamic hazard-aware route
-          fetch(`http://127.0.0.1:8000/route/?origin_lat=${currentHab.lat}&origin_lon=${currentHab.lng}&dest_lat=${site.lat}&dest_lon=${site.lng}`, {
-             method: 'POST',
-             headers: {'Content-Type': 'application/json'},
-             body: JSON.stringify({}) 
-          }).then(r => r.json()).then(routeData => {
-             if (routeData && routeData.features) {
-                 routeData.features.forEach(feat => {
-                     const latlngs = feat.geometry.coordinates.map(c => [c[1], c[0]]);
-                     let color = '#10b981'; 
-                     let dash = null;
-                     if (feat.properties.segment_type === 'kacha_way') {
-                         color = '#3b82f6'; // Blue dashed for kacha way as requested
-                         dash = '6,6';
-                     } else if (feat.properties.segment_type === 'blocked') {
-                         color = '#ef4444'; 
-                     }
-                     L.polyline(latlngs, {
-                         color: color, weight: 3, dashArray: dash, opacity: 0.9
-                     }).bindPopup(feat.properties.description || feat.properties.segment_type).addTo(map);
-                 });
-             }
-          }).catch(err => {
-             L.polyline([[currentHab.lat, currentHab.lng], [site.lat, site.lng]], {
-                color: '#3b82f6', weight: 2, dashArray: '6,6', opacity: 0.8
-             }).bindPopup(`Evac Route: ${site.distance_km} km`).addTo(map);
-          });
+          // Draw pre-computed formal route (Blue)
+          if (plan.verified_route && plan.verified_route.features) {
+              plan.verified_route.features.forEach(feat => {
+                  let color = '#3b82f6';
+                  let dash = null;
+                  if (feat.properties.segment_type === 'kacha_way') {
+                      color = '#60a5fa';
+                      dash = '6,6';
+                  } else if (feat.properties.segment_type === 'blocked' || ['ERROR', 'ISOLATED', 'BLOCKED'].includes(feat.properties.route_status)) {
+                      color = '#ef4444';
+                  }
+                  if (feat.geometry && feat.geometry.coordinates) {
+                      const latlngs = feat.geometry.coordinates.map(c => [c[1], c[0]]);
+                      L.polyline(latlngs, {
+                          color: color, weight: 3, dashArray: dash, opacity: 0.9
+                      }).bindPopup(feat.properties.description || feat.properties.segment_type).addTo(map);
+                  }
+              });
+          } else {
+              L.polyline([[currentHab.lat, currentHab.lng], [site.lat, site.lng]], {
+                  color: '#3b82f6', weight: 2, dashArray: '6,6', opacity: 0.8
+              }).bindPopup(`Evac Route: ${site.distance_km} km`).addTo(map);
+          }
 
           document.getElementById('approved-safe-zone').innerHTML = `
-            <div class="data-card approved-card">
-              <div style="font-weight: 600; color: var(--success); margin-bottom: 12px;">✅ ${site.name}</div>
+            <div class="data-card approved-card" style="border-left-color: #3b82f6; background: rgba(59, 130, 246, 0.05);">
+              <div style="font-weight: 600; color: #3b82f6; margin-bottom: 12px;">🏕️ ${site.name}</div>
               <div class="data-row"><span>Distance</span><span>${site.distance_km} km</span></div>
-              <div class="data-row"><span>Access Mode</span><span>${site.access_mode.toUpperCase()}</span></div>
-              <div class="data-row"><span>Capacity</span><span>${site.capacity} Persons</span></div>
+              <div class="data-row"><span>Access Mode</span><span>${site.access_mode ? site.access_mode.toUpperCase() : 'ROAD'}</span></div>
+              <div class="data-row" style="align-items: flex-start;">
+                <span>Capacity</span>
+                <span style="text-align: right; line-height: 1.4;">
+                  <div style="font-size: 11px; color: var(--text-dim);">Nominal: ${site.capacity} | Avail: ${Math.floor(site.capacity * 0.9)}</div>
+                  <div style="font-weight: 700; color: #fff;">Operational: <span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; padding: 1px 4px; border-radius: 4px; font-size: 10px;">~${Math.floor(site.capacity * 0.7)} pax</span></div>
+                </span>
+              </div>
               <div class="data-row"><span>Safety Score</span><span>${(site.hazard_safety_score * 100).toFixed(1)}%</span></div>
             </div>
           `;
+
+          // Draw Host Communities (Green)
+          const hostOptions = advData.advisory.host_community_options || [];
+          let hostHtml = '';
+          if (hostOptions.length > 0) {
+              hostHtml += `<div class="panel-title" style="margin-top: 24px;">Option B (Host Community)</div>`;
+              hostOptions.forEach(h => {
+                  const splitPop = h.assigned_population || 0;
+                  hostHtml += `
+                    <div class="data-card approved-card" style="border-left-color: #22c55e; background: rgba(34, 197, 94, 0.05);">
+                      <div style="font-weight: 600; color: #22c55e; margin-bottom: 12px;">🏘️ ${h.name}</div>
+                      <div class="data-row"><span>Distance</span><span>${h.distance_km} km</span></div>
+                      <div class="data-row"><span>Receives</span><span>${splitPop} pax</span></div>
+                      <div class="data-row"><span>Zone</span><span>${h.zone_class}</span></div>
+                    </div>
+                  `;
+                  
+                  // Plot host on map
+                  if (h.lat && h.lng) {
+                      L.circleMarker([h.lat, h.lng], {
+                        radius: 8, color: '#fff', weight: 2, fillColor: '#22c55e', fillOpacity: 1
+                      }).bindPopup(`<b>Option B: ${h.name}</b><br>Receives ${splitPop} pax`).addTo(map);
+                      
+                      // Draw pre-computed host route (Green)
+                      if (h.route_geojson && h.route_geojson.features) {
+                          h.route_geojson.features.forEach(feat => {
+                              let color = '#22c55e';
+                              let dash = null;
+                              if (feat.properties.segment_type === 'kacha_way') {
+                                  dash = '6,6';
+                              } else if (feat.properties.segment_type === 'blocked' || ['ERROR', 'ISOLATED', 'BLOCKED'].includes(feat.properties.route_status)) {
+                                  color = '#ef4444';
+                              }
+                              if (feat.geometry && feat.geometry.coordinates) {
+                                  const latlngs = feat.geometry.coordinates.map(c => [c[1], c[0]]);
+                                  L.polyline(latlngs, {
+                                      color: color, weight: 3, dashArray: dash, opacity: 0.9
+                                  }).bindPopup(feat.properties.description || feat.properties.segment_type).addTo(map);
+                              }
+                          });
+                      } else {
+                          L.polyline([[currentHab.lat, currentHab.lng], [h.lat, h.lng]], {
+                              color: '#22c55e', weight: 2, dashArray: '6,6', opacity: 0.8
+                          }).addTo(map);
+                      }
+                  }
+              });
+          }
+          document.getElementById('host-communities').innerHTML = hostHtml;
+
 
           let rejHtml = "";
           (advData.advisory.rejected_sites_log || []).forEach(r => {
@@ -435,121 +590,70 @@
     }
 
     // --- COP TUTORIAL ---
-    // speakText, injectVoiceToggle, _voiceEnabled are all from tutorial.js (loaded in <head>)
-
     function startCopTutorial() {
-      // Make sure we start on the overview tab before the tour begins
+      if (typeof DishaTour === 'undefined') { console.warn('DishaTour not loaded'); return; }
       switchTab('tab-overview');
-
-      const intro = introJs();
-      intro.setOptions({
-        showProgress: true,
-        showBullets: false,
-        exitOnOverlayClick: false,
-        disableInteraction: true,
-        prevLabel: '← Back',
-        nextLabel: 'Next →',
-        doneLabel: 'Finish Tour',
-        steps: [
-          // ── Step 0: Welcome to COP ────────────────────────────────
-          {
-            intro: `<b>Common Operating Picture (COP) 🛰️</b><br><br>
-              This page is auto-generated for a specific at-risk habitation. It fuses terrain analysis, live ML risk scores, and mathematical optimization into a single operational view for the District Collector.<br><br>
-              Let's walk through each layer of the intelligence.`
-          },
-
-          // ── Step 1: Map (always visible, safe to reference) ───────
-          {
-            element: document.querySelector('#map'),
-            intro: `<b>The Geospatial Context Layer 🗺️</b><br><br>
-              The map shows the habitation's geography — flood plains, river segments, and the computed evacuation route in real time.<br><br>
-              <span style="color:#22c55e">Green lines</span> = safe passable roads. <span style="color:#a16207">Brown dashed</span> = kutcha (unpaved) routes. <span style="color:#ef4444">Red lines</span> = flood-blocked segments <b>automatically removed</b> from the routing graph.`,
-            position: 'right'
-          },
-
-          // ── Step 2: Baseline tab (overview tab is active = visible) ─
-          {
-            element: document.querySelector('#tab-overview'),
-            intro: `<b>Baseline Intelligence: Demographics + Terrain 📊</b><br><br>
-              This panel shows the exact socio-demographic profile of the community — population, households, and SC/ST vulnerability percentage.<br><br>
-              Terrain features: <b>Elevation, Slope, Aspect, TRI</b> (Terrain Ruggedness Index), and <b>TWI</b> (Topographic Wetness Index) — the raw signals the XGBoost model used to compute the baseline risk score.`,
-            position: 'left'
-          },
-
-          // ── Step 3: Switch to RELOCATION — no element ref (hidden) ─
-          // Tab is switched in onbeforechange. Tooltip floats center.
-          {
-            intro: `<b>Carrying Capacity & Safe Zone Assignment ✅</b><br><br>
-              We've now switched to the <b>Relocation tab</b> — the mathematical core of PS26191.<br><br>
-              Every candidate safe zone was filtered against <b>UNHCR Sphere Humanitarian Standards</b>:<br>
-              ✅ Min <b>3.5 m²</b> per evacuee &nbsp;|&nbsp; ✅ Slope <b>&lt;8°</b> &nbsp;|&nbsp; ✅ Distance <b>&lt;150 km</b> &nbsp;|&nbsp; ✅ Capacity exceeds population<br><br>
-              The <b>Hungarian Algorithm</b> (O(n³)) then picks the optimal assignment from the passing sites.`
-          },
-
-          // ── Step 4: Rejected sites — no element ref (tab may vary) ─
-          {
-            intro: `<b>Explainable AI: Why Sites Were Rejected 🚫</b><br><br>
-              Every rejected safe zone has a logged, auditable reason — for example:<br><br>
-              <i>"Too far from habitation (176km &gt; 150km)"</i><br>
-              <i>"Insufficient capacity (412 persons &lt; 521 needed)"</i><br>
-              <i>"Terrain too steep (Slope: 10° &gt; 8°)"</i><br><br>
-              This proves our AI follows hard rules — not guesses. It is fully defensible to regulators.`
-          },
-
-          // ── Step 5: Switch to SIMULATOR — no element ref (hidden) ──
-          {
-            intro: `<b>Extreme Weather Scenario Simulator 🌊</b><br><br>
-              We've now switched to the <b>Simulator tab</b>. This module lets you inject a catastrophic weather multiplier to model a once-in-a-decade flood or landslide event.<br><br>
-              The system recomputes the inundation perimeter using <b>Manning's Equation</b> applied to live GloFAS discharge volumes and redraws the map in real time.`
-          },
-
-          // ── Step 6: 3D Sim CTA — no element ref ──────────────────
-          {
-            intro: `<b>In-Browser 3D Simulation 🌐</b><br><br>
-              Click <b>"View 3D Simulation"</b> in the top header bar to launch the <b>Cesium Ion 3D globe</b> — a bathtub-model flood visualization showing water rising over the real terrain topology of Assam in real time, with no GPU infrastructure required.`
-          },
-
-          // ── Step 7: Final CTA ─────────────────────────────────────
-          {
-            intro: `<b>🎓 Tour Complete!</b><br><br>
-              You've now seen the full DISHA pipeline:<br><br>
-              <b>Terrain ML → Live Weather → Risk Fusion → Sphere Capacity Check → Optimal Assignment → 3D Simulation → PDF Mandate</b><br><br>
-              Click <b>"📥 Download Relocation Order PDF"</b> to see the final, print-ready government evacuation mandate generated from all of this intelligence.`
-          }
-        ]
-      });
-
-      // ── Auto-switch tabs at the right steps ─────────────────────
-      intro.onbeforechange(function() {
-        const step = intro._currentStep;
-        if (step === 3 || step === 4) {
-          switchTab('tab-relocation');
-        } else if (step === 5 || step === 6) {
-          switchTab('tab-simulator');
-        } else if (step === 1 || step === 2) {
-          switchTab('tab-overview');
+      DishaTour.start([
+        {
+          title: 'Common Operating Picture (COP)',
+          content: `<b>Habitation Command Brief 🛰️</b><br><br>
+            This page is the per-habitation intelligence brief — auto-generated for a specific at-risk community. It fuses terrain ML scores, live weather data, and mathematical safe zone optimization into a single operational view.<br><br>
+            <i>The UI stays fully interactive. Click anything while the tour narrates.</i>`
+        },
+        {
+          title: 'Geospatial Context',
+          highlight: '#map',
+          content: `<b>Live Evacuation Route Map 🗺️</b><br><br>
+            The map shows the habitation's geography with its computed evacuation route:<br><br>
+            <span class="tour-badge badge-green">Green</span> = passable paved road<br>
+            <span class="tour-badge badge-amber">Brown dashed</span> = kutcha (unpaved) track<br>
+            <span class="tour-badge badge-red">Red</span> = flood-blocked, removed from routing graph<br><br>
+            OSM building footprints are live-loaded via the Overpass API within the map bounds.`
+        },
+        {
+          title: 'Baseline Intelligence',
+          highlight: '#tab-overview',
+          before: function() { switchTab('tab-overview'); },
+          content: `<b>Demographics + Terrain Profile 📊</b><br><br>
+            Population, households, and social vulnerability — SC/ST%, women%, children%, elderly%.<br><br>
+            Terrain metrics: <b>Elevation, Slope, Aspect, TRI</b> (Terrain Ruggedness Index), <b>TWI</b> (Topographic Wetness Index) — the exact features the XGBoost model used to compute this habitation's risk score.`
+        },
+        {
+          title: 'Carrying Capacity Engine',
+          before: function() { switchTab('tab-relocation'); },
+          content: `<b>Sphere-Compliant Safe Zone Assignment ✅</b><br><br>
+            We've switched to the <b>Relocation tab</b> — the mathematical core of PS26191.<br><br>
+            Every candidate site was filtered against UNHCR Sphere Humanitarian Standards:<br>
+            ✅ Min <b>3.5 m²</b> per evacuee &nbsp;|&nbsp; ✅ Slope <b>&lt;8°</b> &nbsp;|&nbsp; ✅ Distance <b>&lt;150 km</b><br><br>
+            The <b>Hungarian Algorithm (O(n³))</b> then picks the optimal assignment from passing sites.`
+        },
+        {
+          title: 'Explainable Rejection Log',
+          before: function() { switchTab('tab-relocation'); },
+          content: `<b>Why Sites Were Rejected 🚫</b><br><br>
+            Every rejected site has an auditable reason — for example:<br><br>
+            <i>"Too far from habitation (176km &gt; 150km)"</i><br>
+            <i>"Insufficient capacity (412 persons &lt; 521 needed)"</i><br>
+            <i>"Terrain too steep (Slope: 10° &gt; 8°)"</i><br><br>
+            This makes DISHA's AI decisions fully defensible to regulators — not a black box.`
+        },
+        {
+          title: 'Extreme Weather Simulator',
+          before: function() { switchTab('tab-simulator'); },
+          content: `<b>Category 4 Scenario Simulator 🌊</b><br><br>
+            This tab injects a catastrophic weather multiplier (1.8x) to model a once-in-a-decade event.<br><br>
+            The system recomputes the inundation perimeter using <b>Manning's Equation</b> applied to live GloFAS discharge volumes, and redraws the flood/landslide boundary on the map in real time.`
+        },
+        {
+          title: 'Tour Complete',
+          before: function() { switchTab('tab-overview'); },
+          content: `<b>🎓 Full DISHA Pipeline Demonstrated!</b><br><br>
+            <b>Terrain ML → Live Weather → Sphere Capacity Check → Hungarian Assignment → Route Verification → PDF Mandate</b><br><br>
+            Click <b>"📥 Download Relocation Order PDF"</b> to see the print-ready government evacuation mandate, or <b>"View 3D Simulation"</b> to launch the Cesium Ion globe.`
         }
-      });
-
-      // ── Speak each step + inject voice toggle ─────────────────────
-      intro.onafterchange(function() {
-        setTimeout(() => {
-          if (typeof injectVoiceToggle === 'function') injectVoiceToggle();
-          const tooltip = document.querySelector('.introjs-tooltiptext');
-          if (tooltip) speakText(tooltip.innerHTML);
-        }, 300);
-      });
-
-      intro.onexit(function() {
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
-        // Restore to overview on close
-        switchTab('tab-overview');
-      });
-
-      intro.start();
-      // Speak step 0 immediately
-      if (intro._options.steps[0]) speakText(intro._options.steps[0].intro);
+      ]);
     }
+
 
     // Check for auto-start
     const urlParams = new URLSearchParams(window.location.search);

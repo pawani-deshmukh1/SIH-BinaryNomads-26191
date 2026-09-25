@@ -1,0 +1,7 @@
+[out:json][timeout:90];
+(
+  node["man_made"="mast"]["communication"="mobile_phone"](25.5, 90.0, 27.5, 94.0);
+  node["telecom"="antenna"](25.5, 90.0, 27.5, 94.0);
+  node["man_made"="communications_tower"](25.5, 90.0, 27.5, 94.0);
+);
+out body;

@@ -1,0 +1,56 @@
+[
+    {
+        "date": "2023-07-10",
+        "district": "Kamrup Metro",
+        "affected_population": 100,
+        "villages_flooded": [
+            "None"
+        ],
+        "crops_damaged_hectares": 45.2
+    },
+    {
+        "date": "2023-07-11",
+        "district": "Kamrup Metro",
+        "affected_population": 500,
+        "villages_flooded": [
+            "Azara"
+        ],
+        "crops_damaged_hectares": 45.2
+    },
+    {
+        "date": "2023-07-12",
+        "district": "Kamrup Metro",
+        "affected_population": 2500,
+        "villages_flooded": [
+            "Azara",
+            "Dispur",
+            "Sonapur"
+        ],
+        "crops_damaged_hectares": 45.2
+    },
+    {
+        "date": "2023-07-13",
+        "district": "Kamrup Metro",
+        "affected_population": 8500,
+        "villages_flooded": [
+            "Azara",
+            "Dispur",
+            "Sonapur",
+            "Chandrapur"
+        ],
+        "crops_damaged_hectares": 45.2
+    },
+    {
+        "date": "2023-07-14",
+        "district": "Kamrup Metro",
+        "affected_population": 12000,
+        "villages_flooded": [
+            "Azara",
+            "Dispur",
+            "Sonapur",
+            "Chandrapur",
+            "North Guwahati"
+        ],
+        "crops_damaged_hectares": 45.2
+    }
+]

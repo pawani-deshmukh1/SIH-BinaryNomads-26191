@@ -15,11 +15,21 @@
   <!-- Turf.js for spatial math -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
 
+  <!-- Chart.js for Live Hydrograph -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="js/config.js"></script>
 </head>
 
 <body class="sim-page">
+
+  <!-- Dramatic FLOOD ALERT Overlay -->
+  <div id="sim-alert-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(220, 38, 38, 0.85); z-index: 9999; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;">
+    <h1 style="font-size: 4rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; text-shadow: 0 4px 20px rgba(0,0,0,0.5);">⚠️ HABITATION SUBMERGED</h1>
+    <h2 id="sim-alert-time" style="font-size: 2rem; font-weight: 500;">--</h2>
+  </div>
 
   <header>
     <div class="brand">
@@ -65,6 +75,14 @@
         </div>
       </div>
 
+      <!-- Live Hydrograph Widget -->
+      <div class="panel-section">
+        <h3>River Level Forecast <span style="font-size:10px; color: var(--text-dim); font-weight:400">(m)</span></h3>
+        <div style="height: 140px; width: 100%; margin-top: 10px;">
+          <canvas id="hydrographChart"></canvas>
+        </div>
+      </div>
+
       <!-- Stage Legend -->
       <div class="panel-section">
         <h3>Simulation Stages <span style="font-size:10px; color: var(--text-dim); font-weight:400">(click to jump)</span></h3>
@@ -73,6 +91,17 @@
           <div class="stage-item" id="stage-6"  onclick="jumpToStage(6)"  title="Jump to T+6h" style="cursor:pointer"><span class="color-box stage-6-color"></span> ⏱ T+6h</div>
           <div class="stage-item" id="stage-18" onclick="jumpToStage(18)" title="Jump to T+18h" style="cursor:pointer"><span class="color-box stage-18-color"></span> ⏱ T+18h</div>
           <div class="stage-item" id="stage-36" onclick="jumpToStage(36)" title="Jump to T+36h (Peak)" style="cursor:pointer"><span class="color-box stage-36-color"></span> ⏱ T+36h (Peak)</div>
+        </div>
+      </div>
+
+      <!-- Speed Controls -->
+      <div class="panel-section">
+        <h3>Playback Speed</h3>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <button onclick="setSimSpeed(1)" class="btn-outline" style="flex:1; padding:4px;">1x</button>
+          <button onclick="setSimSpeed(5)" class="btn-outline" style="flex:1; padding:4px;">5x</button>
+          <button onclick="setSimSpeed(30)" class="btn-outline" style="flex:1; padding:4px;">30x</button>
+          <button onclick="stepSim()" class="btn-outline" style="flex:1; padding:4px;">▶ Step</button>
         </div>
       </div>
 
@@ -96,90 +125,60 @@
   <!-- CesiumJS Core (Loaded last to not block rendering) -->
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Cesium.js"></script>
 
-  <!-- Intro.js for guided tour -->
-  <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
-  <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
-
   <!-- Simulation Controller -->
-  <script src="js/simulation_3d.js?v=14"></script>
-
-  <!-- Shared tour engine (speakText, injectVoiceToggle) -->
-  <script src="js/tutorial.js"></script>
+  <script src="js/simulation_3d.js?v=16"></script>
+  <!-- DISHA Tour Engine v2 -->
+  <script src="js/tour.js"></script>
 
   <script>
     function startSimTutorial() {
-      const intro = introJs();
-      intro.setOptions({
-        showProgress: true,
-        showBullets: false,
-        exitOnOverlayClick: false,
-        disableInteraction: true,
-        prevLabel: '← Back',
-        nextLabel: 'Next →',
-        doneLabel: 'Finish Tour',
-        steps: [
-          {
-            intro: `<b>3D Tactical Simulation 🌊</b><br><br>
-              This is DISHA's real-time <b>Bathtub Flood & Landslide Growth Simulation</b> powered by Cesium Ion 3D terrain.<br><br>
-              It models how a disaster physically expands across the terrain over 36 hours using <b>Manning's Equation</b> applied to live GloFAS river discharge volumes.`
-          },
-          {
-            element: document.getElementById('cesiumContainer'),
-            intro: `<b>3D Cesium Terrain Globe 🌏</b><br><br>
-              The globe uses real-world satellite elevation data (NASA SRTM via Cesium Ion) — actual terrain topology of Assam, not a flat map.<br><br>
-              <span style="color:#22c55e">● Green dot</span> = habitation epicenter.<br>
-              <span style="color:#60a5fa">● Blue polygons</span> = flood inundation stages growing over time.<br>
-              <span style="color:#f97316">● Orange cone</span> = landslide debris flow accumulation.`,
-            position: 'left'
-          },
-          {
-            element: document.getElementById('stage-legend'),
-            intro: `<b>Clickable Time-Jump Controls ⏱️</b><br><br>
-              Each stage is <b>directly clickable</b>. Clicking <b>T+6h</b>, <b>T+18h</b>, or <b>T+36h (Peak)</b> instantly teleports the simulation clock to that exact moment — no need to wait for the animation to play through.<br><br>
-              The simulation auto-pauses for 2 seconds so you can inspect the flood extent at that snapshot, then resumes automatically.`,
-            position: 'left'
-          },
-          {
-            element: document.getElementById('sim-advisory-log'),
-            intro: `<b>Live Advisory Trigger Log 🚨</b><br><br>
-              As the flood water level crosses the habitation's coordinates (computed using Turf.js point-in-polygon), this log fires a <b>real-time advisory trigger</b>.<br><br>
-              The system then calls the <b>Relocation Advisory API</b>, fetches the optimal safe zone assignment, and presents a <b>Human-in-the-Loop confirmation</b> if overflow re-routing is needed.`,
-            position: 'left'
-          },
-          {
-            element: document.querySelector('.panel-section:first-child'),
-            intro: `<b>Live Weather Context Panel ☁️</b><br><br>
-              The top panel shows the <b>live weather readings</b> for this habitation pulled from OpenWeather API:<br><br>
-              • Current rainfall intensity (mm/hr)<br>
-              • 72-hour forecast total (mm)<br>
-              • Trigger Status: CLEAR / ESCALATING / CRITICAL<br>
-              • Risk Multiplier applied to the baseline terrain score`,
-            position: 'left'
-          },
-          {
-            intro: `<b>🎓 Simulation Tour Complete!</b><br><br>
-              You've just seen how DISHA transforms raw terrain + weather data into a <b>physics-informed, time-stepped disaster visualization</b> — running entirely in-browser with no GPU infrastructure.<br><br>
-              When the habitation is breached, the system auto-generates the evacuation route (flood-pruned via OSMnx) and draws it in 3D on the globe.`
-          }
-        ]
-      });
-
-      intro.onafterchange(function() {
-        setTimeout(() => {
-          if (typeof injectVoiceToggle === 'function') injectVoiceToggle();
-          const tooltip = document.querySelector('.introjs-tooltiptext');
-          if (tooltip && typeof speakText === 'function') speakText(tooltip.innerHTML);
-        }, 300);
-      });
-
-      intro.onexit(function() {
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
-      });
-
-      intro.start();
+      if (typeof DishaTour === 'undefined') return;
+      DishaTour.start([
+        {
+          title: '3D Tactical Simulation',
+          content: `<b>Cesium Ion 3D Flood Simulation 🌊</b><br><br>
+            This is DISHA's <b>Bathtub Flood & Landslide Growth Simulation</b> powered by Cesium Ion 3D terrain.<br><br>
+            It models how a disaster physically expands over 36 hours using <b>Manning's Equation</b> applied to live GloFAS river discharge volumes.<br><br>
+            <i>The simulation continues playing while you read — you can click anything on screen.</i>`
+        },
+        {
+          title: 'Cesium 3D Globe',
+          highlight: '#cesiumContainer',
+          content: `<b>Real Indian Terrain 🌏</b><br><br>
+            The globe uses real-world elevation data (ISRO Bhuvan DEM via Cesium Ion) — actual terrain topology of Assam.<br><br>
+            <span class="tour-badge badge-green">● Green</span> = habitation epicenter<br>
+            <span class="tour-badge badge-blue">● Blue</span> = flood inundation stages growing over time<br>
+            <span class="tour-badge badge-amber">● Orange</span> = landslide debris flow accumulation`
+        },
+        {
+          title: 'Time Jump Controls',
+          highlight: '#stage-legend',
+          content: `<b>Clickable Time-Jump Controls ⏱️</b><br><br>
+            Each stage button is directly clickable. Click <b>T+6h</b>, <b>T+18h</b>, or <b>T+36h (Peak)</b> to instantly jump the simulation to that moment — no need to wait through the animation.<br><br>
+            Speed modes: <b>1x / 5x / 30x</b> — 30x compresses the 36h event into ~30 seconds for live demos.`
+        },
+        {
+          title: 'Habitation Breach Alert',
+          highlight: '#sim-advisory-log',
+          content: `<b>Automatic Breach Detection 🚨</b><br><br>
+            As flood water crosses the habitation coordinates (computed using <b>Turf.js point-in-polygon</b>), the system fires a real-time advisory trigger.<br><br>
+            It then calls the Relocation Advisory API, fetches the optimal safe zone, and presents a <b>Human-in-the-Loop</b> confirmation if overflow re-routing is needed.`
+        },
+        {
+          title: 'Live Weather Panel',
+          content: `<b>Synchronized Live Weather Context ☁️</b><br><br>
+            The right panel shows live Open-Meteo data:<br><br>
+            • Current rainfall intensity (mm/hr)<br>
+            • 72-hour forecast total (mm)<br>
+            • Trigger Status: CLEAR / ESCALATING / CRITICAL<br>
+            • Risk Multiplier applied to the simulation speed<br><br>
+            A real-world monsoon event would push this simulation toward the T+36h peak automatically.`
+        }
+      ]);
     }
   </script>
 
 </body>
 
 </html>
+

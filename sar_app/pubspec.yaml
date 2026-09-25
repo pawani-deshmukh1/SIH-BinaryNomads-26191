@@ -19,6 +19,7 @@ dependencies:
   latlong2: ^0.10.1
   image_picker: ^1.1.2
   shared_preferences: ^2.2.3
+  connectivity_plus: ^6.1.1
 
 dev_dependencies:
   flutter_test:

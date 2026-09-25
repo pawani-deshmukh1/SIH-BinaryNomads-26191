@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DISHA — System Reel</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #000;
+    font-family: 'Inter', sans-serif;
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+    color: #fff;
+  }
+
+  /* ── Progress bar ── */
+  #progress-bar {
+    position: fixed; top: 0; left: 0;
+    height: 3px; width: 0%;
+    background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+    z-index: 200;
+    transition: width 0.08s linear;
+  }
+
+  /* ── Wordmark + counter ── */
+  #wm {
+    position: fixed; top: 20px; left: 28px; z-index: 200;
+    font-size: 11px; font-weight: 700; letter-spacing: 5px;
+    color: rgba(255,255,255,0.35); text-transform: uppercase;
+  }
+  #ctr {
+    position: fixed; top: 20px; right: 28px; z-index: 200;
+    font-size: 11px; font-weight: 600; letter-spacing: 2px;
+    color: rgba(255,255,255,0.3);
+  }
+
+  /* ── Slides ── */
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    opacity: 0; transition: opacity 0.7s ease;
+    pointer-events: none;
+  }
+  .slide.active { opacity: 1; pointer-events: all; }
+
+  /* Background image with Ken Burns */
+  .bg {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    filter: brightness(0.5);
+    transform: scale(1.04);
+    transition: transform 10s ease;
+  }
+  .slide.active .bg { transform: scale(1.0); }
+
+  /* Left accent bar */
+  .bg::after {
+    content: '';
+    position: absolute; top: 0; left: 0; bottom: 0; width: 4px;
+    background: linear-gradient(to bottom, #38bdf8, #818cf8);
+    opacity: 0;
+    transition: opacity 0.4s 0.3s;
+  }
+  .slide.active .bg::after { opacity: 1; }
+
+  /* Caption */
+  .cap {
+    position: relative; z-index: 10;
+    padding: 40px 60px 52px;
+    background: linear-gradient(to top,
+      rgba(0,0,0,0.95) 0%,
+      rgba(0,0,0,0.7) 55%,
+      transparent 100%);
+  }
+
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 9px; font-weight: 700; letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #38bdf8;
+    border: 1px solid rgba(56,189,248,0.25);
+    background: rgba(56,189,248,0.08);
+    padding: 3px 10px 3px 8px; border-radius: 3px;
+    margin-bottom: 16px;
+  }
+  .tag-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #38bdf8;
+    animation: blink 1.8s ease infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  .cap h2 {
+    font-size: clamp(24px, 3.8vw, 46px);
+    font-weight: 900; line-height: 1.12;
+    letter-spacing: -0.5px; max-width: 860px;
+  }
+  .cap h2 em {
+    font-style: normal;
+    background: linear-gradient(90deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .cap p {
+    margin-top: 12px;
+    font-size: clamp(13px, 1.4vw, 16px);
+    color: rgba(255,255,255,0.58);
+    max-width: 700px; line-height: 1.65; font-weight: 400;
+  }
+
+  /* ── Pill badges inside caption ── */
+  .pills {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 14px;
+  }
+  .pill {
+    font-size: 11px; font-weight: 600;
+    padding: 4px 10px; border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 0.2px;
+  }
+
+  /* ── Dot nav ── */
+  #dots {
+    position: fixed; bottom: 22px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 7px; z-index: 200;
+  }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.22);
+    cursor: pointer; transition: all 0.3s;
+  }
+  .dot.active {
+    background: #38bdf8; width: 24px; border-radius: 3px;
+  }
+
+  /* Keyboard hint */
+  #hint {
+    position: fixed; bottom: 58px; right: 28px;
+    font-size: 10px; color: rgba(255,255,255,0.18);
+    letter-spacing: 1px; z-index: 200;
+  }
+
+  /* ── FINAL SLIDE ── */
+  #s-final {
+    background: radial-gradient(ellipse at 25% 60%,
+      #1e1b4b 0%, #0f0a2e 40%, #000 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #s-final .cap {
+    background: none; padding: 0;
+    display: flex; flex-direction: column;
+    align-items: center; text-align: center;
+  }
+  .logo-text {
+    font-size: clamp(56px, 10vw, 110px); font-weight: 900;
+    letter-spacing: -3px; line-height: 1;
+    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+  .logo-sub {
+    font-size: clamp(13px, 1.6vw, 18px); font-weight: 300;
+    color: rgba(255,255,255,0.45); letter-spacing: 0.3px;
+    margin-bottom: 52px;
+  }
+  .yt-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 3px;
+    text-transform: uppercase; color: rgba(255,255,255,0.28);
+    margin-bottom: 14px;
+  }
+  .yt-btn {
+    font-size: clamp(14px, 1.8vw, 19px); font-weight: 700;
+    color: #fff; text-decoration: none;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.14);
+    padding: 16px 38px; border-radius: 8px;
+    display: inline-block;
+    animation: glow 2.8s ease infinite;
+  }
+  @keyframes glow {
+    0%,100% { box-shadow: 0 0 18px rgba(56,189,248,0.15); }
+    50%      { box-shadow: 0 0 45px rgba(56,189,248,0.42); }
+  }
+  .yt-btn .blue { color: #38bdf8; }
+  .yt-btn .purple { color: #a78bfa; }
+  .final-meta {
+    margin-top: 52px;
+    display: flex; gap: 28px;
+    font-size: 12px; color: rgba(255,255,255,0.2); font-weight: 500;
+  }
+</style>
+  <script src="js/config.js"></script>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="wm">DISHA</div>
+<div id="ctr">1 / 8</div>
+<div id="hint">SPACE pause · ← → navigate</div>
+
+<!-- ╔══════════════════════════════════════════╗
+     ║  SLIDES — swap image paths after screenshots
+     ╚══════════════════════════════════════════╝ -->
+
+<!-- ── SLIDE 1: index.html — Main EWS Dashboard ── -->
+<div class="slide active" id="s1">
+  <div class="bg" style="background-image:url('images/ss_index.png')"></div>
+  <div class="cap">
+    <div class="tag"><div class="tag-dot"></div> Main Dashboard · Pre-Disaster Early Warning System</div>
+    <h2>Every village in Assam. Scored. Live.<br><em>Alerts, layers, and risk overview — in one view.</em></h2>
+    <p>The DISHA command hub. Real-time IMD/CWC alert banner, risk count sidebar (Evacuate / Watch / Monitor), NWDP reservoir levels, ISRO Bhuvan satellite overlay, live wind vectors, and the Regional Rainfall Trigger showing the Layer B weather multiplier — all in a single dashboard built for the district collector.</p>
+    <div class="pills">
+      <span class="pill">IMD / CWC live alerts</span>
+      <span class="pill">NWDP reservoir levels</span>
+      <span class="pill">ISRO Bhuvan WMS layer</span>
+      <span class="pill">Layer B weather trigger</span>
+      <span class="pill">Live wind vectors</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 2: index.html — Advisory Panel (Hungarian assignment triggered from sidebar) ── -->
+<div class="slide" id="s2">
+  <div class="bg" style="background-image:url('images/ss_advisory.png')"></div>
+  <div class="cap">
+    <div class="tag"><div class="tag-dot"></div> Advisory Panel · Evacuation Assignment Engine</div>
+    <h2>Click a village. Get the evacuation plan.<br><em>Hungarian Algorithm. Sphere-verified. Instant.</em></h2>
+    <p>Clicking any RED/ORANGE habitation card in the sidebar triggers the Carrying Capacity Engine. It runs scipy linear_sum_assignment — the Hungarian Algorithm — to find the optimal safe zone assignment. Capacity-constrained, weighted by real OSMnx road distance. Shows the assigned camp, distance, resource pack (tents, water, food), and generates the PDF mandate in one more click.</p>
+    <div class="pills">
+      <span class="pill">Hungarian Algorithm (O(n³))</span>
+      <span class="pill">Sphere capacity verification</span>
+      <span class="pill">OSMnx road routing</span>
+      <span class="pill">Host community fallback</span>
+      <span class="pill">One-click PDF mandate</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 3: cop.html — Advanced Analysis + Live Coord-Score + Ground Survey ── -->
+<div class="slide" id="s3">
+  <div class="bg" style="background-image:url('images/ss_cop.png')"></div>
+  <div class="cap">
+    <div class="tag"><div class="tag-dot"></div> Advanced COP · Live Coord-Score + Ground Survey</div>
+    <h2>Drop a pin anywhere on Earth.<br><em>Risk scored live from satellites. Added to the grid instantly.</em></h2>
+    <p>DISHA's advanced analysis view. Click "Live Coord-Score" → drop a pin → NASA SRTM elevation, Open-Meteo rainfall, and OSM river proximity fetched concurrently in &lt;2 seconds. SHAP explains every score in plain English. Cascading hazard detected if rainfall &gt;50mm + slope &gt;15°. Field worker fills name and population → location permanently added to the monitoring grid.</p>
+    <div class="pills">
+      <span class="pill">NASA SRTM live fetch</span>
+      <span class="pill">Open-Meteo rainfall</span>
+      <span class="pill">SHAP explainability</span>
+      <span class="pill">Cascading hazard flag</span>
+      <span class="pill">Ground survey → monitoring grid</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 4: Guwahati UFRI 3D (guwahati_3d.html) ── -->
+<div class="slide" id="s4">
+  <div class="bg" style="background-image:url('images/ss_guwahati.png')"></div>
+  <div class="cap">
+    <div class="tag"><div class="tag-dot"></div> UFRI · Guwahati Forensic Intelligence</div>
+    <h2>Groundwater collapse. Hill sediment. Choke points.<br><em>The invisible causes of urban flooding — made visible.</em></h2>
+    <p>5 live map layers: DEM danger zones below 49.68m (Brahmaputra danger level), ISRO InSAR subsidence hotspots, active earth-cutting deforestation, computed drainage choke points, and Sentinel-1 SAR validation. Scenario simulator lets NDRF run what-if gauge levels before monsoon. Validated: Bharalu + Deepor Beel predicted correctly.</p>
+    <div class="pills">
+      <span class="pill">CWC gauge 49.68m threshold</span>
+      <span class="pill">ISRO InSAR subsidence</span>
+      <span class="pill">Drainage choke points</span>
+      <span class="pill">Sentinel-1 SAR validation</span>
+      <span class="pill">MHA DM Act 2025 compliance tool</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 5: Layer 3 ONNX CV (layer3_review.html) ── -->
+<div class="slide" id="s5">
+  <div class="bg" style="background-image:url('images/ss_layer3.png')"></div>
+  <div class="cap">
+    <div class="tag"><div class="tag-dot"></div> Layer 3 · ONNX Computer Vision Pipeline</div>
+    <h2>Road blocked. Route recalculated.<br><em>Three models. Parallel inference. Automatic rerouting.</em></h2>
+    <p>Siamese change-detection model compares pre/post satellite images pixel-by-pixel (damage: minor/moderate/severe). SegFormer maps live flood extent. ResNet50 U-Net detects active landslide zones. All three run via asyncio.gather — dominated by the slowest model, not the sum. Damaged road edges removed from OSMnx graph → Layer 2 reassigns instantly.</p>
+    <div class="pills">
+      <span class="pill">Siamese damage detection</span>
+      <span class="pill">SegFormer flood segmentation</span>
+      <span class="pill">ResNet50 landslide U-Net</span>
+      <span class="pill">OSM building overlay</span>
+      <span class="pill">Auto rerouting</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 6: Integration Agent + PDF (admin_integration.html + pdf_template.html) ── -->
+<div class="slide" id="s6">
+  <div class="bg" style="background-image:url('images/ss_agent_pdf.png')"></div>
+  <div class="cap">
+    <div class="tag"><div class="tag-dot"></div> Integration Agent · One-Click Mandate</div>
+    <h2>Ask it anything. Print the order.<br><em>Natural language → official MHA evacuation mandate.</em></h2>
+    <p>The Integration Agent aggregates data from all layers and answers plain-English queries: "Which habitations in Morigaon are RED with no road access?" One more click exports a print-ready PDF evacuation mandate — village assignments, routes, Sphere resource counts, risk scores — everything the NDRF commander needs to deploy.</p>
+    <div class="pills">
+      <span class="pill">NLP query interface</span>
+      <span class="pill">Cross-layer data aggregation</span>
+      <span class="pill">Print-ready PDF mandate</span>
+      <span class="pill">MHA-format output</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 7: Simulation + Calibration loop ── -->
+<div class="slide" id="s7">
+  <div class="bg" style="background-image:url('images/ss_simulation.png')"></div>
+  <div class="cap">
+    <div class="tag"><div class="tag-dot"></div> 3D Simulation · Self-Calibrating System</div>
+    <h2>Each monsoon makes DISHA smarter.<br><em>Calibration loop. Every event logged. Models improve.</em></h2>
+    <p>The 3D disaster growth simulator visualises inundation spread in real time. After every monsoon cycle, Layer 3's actual damage detections are compared against Layer 1's pre-season risk predictions. Prediction errors are logged to calibration.sqlite and used to retrain the regional XGBoost models — the system gets more accurate every year, automatically.</p>
+    <div class="pills">
+      <span class="pill">3D inundation simulation</span>
+      <span class="pill">Post-event error logging</span>
+      <span class="pill">Annual model retraining</span>
+      <span class="pill">Extensible to any state</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 8: FINAL ── -->
+<div class="slide" id="s-final">
+  <div class="cap">
+    <div class="logo-text">DISHA</div>
+    <div class="logo-sub">Disaster Intelligence & Situational Habitation Analyzer</div>
+    <div class="yt-label">Full 11-Minute Technical Walkthrough</div>
+    <a class="yt-btn" id="yt-link" href="YOUR_YOUTUBE_LINK_HERE" target="_blank">
+      ▶&nbsp; <span class="blue">youtube.com/</span>watch?v=<span class="purple">DISHA_Full_Demo</span>
+    </a>
+    <div class="final-meta">
+      <span>Team Binary Nomads</span><span>·</span>
+      <span>PS-26191</span><span>·</span><span>SIH 2026</span>
+    </div>
+  </div>
+</div>
+
+<!-- Dot nav -->
+<div id="dots">
+  <div class="dot active" onclick="goTo(0)"></div>
+  <div class="dot" onclick="goTo(1)"></div>
+  <div class="dot" onclick="goTo(2)"></div>
+  <div class="dot" onclick="goTo(3)"></div>
+  <div class="dot" onclick="goTo(4)"></div>
+  <div class="dot" onclick="goTo(5)"></div>
+  <div class="dot" onclick="goTo(6)"></div>
+  <div class="dot" onclick="goTo(7)"></div>
+</div>
+
+<script>
+const DURATION  = 16000; // 16s × 8 slides = ~2:08
+const N         = 8;
+let cur = 0, paused = false, elapsed = 0;
+
+const slides = document.querySelectorAll('.slide');
+const dots   = document.querySelectorAll('.dot');
+const bar    = document.getElementById('progress-bar');
+const ctr    = document.getElementById('ctr');
+const hint   = document.getElementById('hint');
+
+function goTo(i) {
+  slides[cur].classList.remove('active');
+  dots[cur].classList.remove('active');
+  cur = i;
+  slides[cur].classList.add('active');
+  dots[cur].classList.add('active');
+  ctr.textContent = `${cur + 1} / ${N}`;
+  elapsed = 0;
+}
+
+// Tick every 60ms
+setInterval(() => {
+  if (paused || cur >= N - 1) return;
+  elapsed += 60;
+  const frac = ((cur + elapsed / DURATION) / N) * 100;
+  bar.style.width = Math.min(frac, 100) + '%';
+  if (elapsed >= DURATION) goTo(cur + 1);
+}, 60);
+
+// Final slide — fill bar
+setInterval(() => {
+  if (cur === N - 1) bar.style.width = '100%';
+}, 200);
+
+document.addEventListener('keydown', e => {
+  if (e.key === ' ') {
+    e.preventDefault();
+    paused = !paused;
+    hint.textContent = paused ? 'PAUSED — SPACE to resume' : 'SPACE pause · ← → navigate';
+  }
+  if (e.key === 'ArrowRight' && cur < N - 1) goTo(cur + 1);
+  if (e.key === 'ArrowLeft'  && cur > 0)     goTo(cur - 1);
+});
+</script>
+</body>
+</html>

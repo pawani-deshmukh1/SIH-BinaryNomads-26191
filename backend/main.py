@@ -32,7 +32,7 @@ def get_config():
         "CESIUM_ION_TOKEN": os.environ.get("CESIUM_TOKEN", "YOUR_CESIUM_TOKEN_HERE")
     }
 
-from api import settings_api, damage, flood, landslide, red_zones, relocation, routes, towers, ground_situation, evac_zones, feedback, analyze, inundation, live_risk, susceptibility, advisory, simulation, alerts, simulation_2d, mobile_assessment, dispatch, field_reports, safe_zone_state
+from api import settings_api, damage, flood, landslide, red_zones, relocation, routes, towers, ground_situation, evac_zones, feedback, analyze, inundation, live_risk, susceptibility, advisory, simulation, alerts, simulation_2d, mobile_assessment, dispatch, field_reports, safe_zone_state, strategic, heavy_rain, weather_grid, comms, strategic_reports, operational_decisions, cwc_telemetry, nwdp_national, gru_inference, sos_webhook, integration_agent
 
 app.include_router(settings_api.router)
 app.include_router(damage.router)
@@ -53,11 +53,21 @@ app.include_router(advisory.router)
 app.include_router(simulation.router)
 app.include_router(alerts.router)
 app.include_router(simulation_2d.router)
-app.include_router(mobile_assessment.flood_router)
-app.include_router(mobile_assessment.landslide_router)
+app.include_router(heavy_rain.router)
+# Removed mobile_assessment routers to avoid duplication with flood.py and landslide.py
 app.include_router(dispatch.router, prefix="/dispatch", tags=["Field Ops"])
 app.include_router(field_reports.router, prefix="/field-reports", tags=["Field Ops"])
 app.include_router(safe_zone_state.router, prefix="/safe-zone-state", tags=["Field Ops"])
+app.include_router(strategic.router)
+app.include_router(strategic_reports.router, prefix="/api/strategic-reports", tags=["Strategic"])
+app.include_router(operational_decisions.router)
+app.include_router(weather_grid.router)
+app.include_router(comms.router)
+app.include_router(cwc_telemetry.router, prefix="/api")
+app.include_router(nwdp_national.router, prefix="/api")
+app.include_router(gru_inference.router, prefix="/api")
+app.include_router(sos_webhook.router, prefix="/api")
+app.include_router(integration_agent.router)
 # Serve the dashboard as static files at /app/
 # Open http://127.0.0.1:8000/app/simulation.html?hab_id=...
 DASHBOARD_DIR = os.path.join(os.path.dirname(__file__), "..", "dashboard")

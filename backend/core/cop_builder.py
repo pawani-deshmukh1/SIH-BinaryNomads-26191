@@ -52,6 +52,7 @@ DEMO_TOWERS = {
         {"id": "TW-A01", "operator": "Airtel", "lat": 26.354, "lng": 92.663, "status": "at_risk"},
         {"id": "TW-A02", "operator": "Jio", "lat": 26.341, "lng": 92.689, "status": "operational"},
         {"id": "TW-A03", "operator": "BSNL", "lat": 26.367, "lng": 92.648, "status": "at_risk"},
+        {"id": "TW-A04", "operator": "Vi", "lat": 26.335, "lng": 92.650, "status": "predicted_offline", "predicted_offline_in_hrs": 12},
     ],
 }
 
@@ -225,6 +226,7 @@ def _make_tower_features(region_key: str = "assam", red_zone_features: list = No
                 "id": tower["id"],
                 "operator": tower["operator"],
                 "status": status,
+                "predicted_offline_in_hrs": tower.get("predicted_offline_in_hrs"),
                 "last_updated": now,
             },
             "geometry": {

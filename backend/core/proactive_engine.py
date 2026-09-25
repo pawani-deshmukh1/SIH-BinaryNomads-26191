@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
-MODELS_DIR = Path(__file__).resolve().parent.parent.parent / "backend" / "models"
+MODELS_DIR = Path(__file__).resolve().parent.parent.parent / "layer0_imminent" / "models"
 
 # Thresholds for Red/Orange/Yellow/Green classification
 # Tuned for NE India hazard profile
@@ -45,12 +45,14 @@ class ProactiveEngine:
     """
 
     def __init__(self):
-        self._landslide_model = None
-        self._flood_model = None
-        self._landslide_features: list[str] = []
-        self._flood_features: list[str] = []
-        self._ls_explainer = None
-        self._fl_explainer = None
+        self._models = {
+            "assam": {"ls": None, "fl": None, "ls_features": [], "fl_features": []},
+            "kerala": {"ls": None, "fl": None, "ls_features": [], "fl_features": []}
+        }
+        self._explainers = {
+            "assam": {"ls": None, "fl": None},
+            "kerala": {"ls": None, "fl": None}
+        }
         self._loaded = False
         self._load_models()
 
@@ -61,38 +63,60 @@ class ProactiveEngine:
             logger.error("[ProactiveEngine] joblib not installed. Run: pip install joblib")
             return
 
-        ls_path  = MODELS_DIR / "landslide_model.joblib"
-        fl_path  = MODELS_DIR / "flood_model.joblib"
-        ls_feat  = MODELS_DIR / "landslide_features.csv"
-        fl_feat  = MODELS_DIR / "flood_features.csv"
+        # Load Assam Models
+        ls_path_assam = MODELS_DIR / "landslide_model.joblib"
+        fl_path_assam = MODELS_DIR / "flood_model.joblib"
+        ls_feat_assam = MODELS_DIR / "landslide_features.csv"
+        fl_feat_assam = MODELS_DIR / "flood_features.csv"
+        
+        # Load Kerala Models
+        ls_path_kerala = MODELS_DIR / "kerala_landslide_model.joblib"
+        fl_path_kerala = MODELS_DIR / "kerala_flood_model.joblib"
+        ls_feat_kerala = MODELS_DIR / "kerala_landslide_features.csv"
+        fl_feat_kerala = MODELS_DIR / "kerala_flood_features.csv"
 
-        missing = [p for p in [ls_path, fl_path, ls_feat, fl_feat] if not p.exists()]
+        missing = [p for p in [ls_path_assam, fl_path_assam, ls_feat_assam, fl_feat_assam] if not p.exists()]
         if missing:
-            logger.warning(f"[ProactiveEngine] Missing model files: {[str(m) for m in missing]}")
-            logger.warning("[ProactiveEngine] Falling back to heuristic scoring.")
-            return
-
-        try:
-            self._landslide_model = joblib.load(ls_path)
-            self._flood_model     = joblib.load(fl_path)
-            self._landslide_features = pd.read_csv(ls_feat)["Feature"].tolist()
-            self._flood_features     = pd.read_csv(fl_feat)["Feature"].tolist()
-            self._loaded = True
-            logger.info(f"[ProactiveEngine] Loaded landslide model. Features: {self._landslide_features}")
-            logger.info(f"[ProactiveEngine] Loaded flood model. Features: {self._flood_features}")
-
-            # Initialise SHAP TreeExplainer (fast, tree-native)
+            logger.warning(f"[ProactiveEngine] Missing Assam model files: {[str(m) for m in missing]}")
+            logger.warning("[ProactiveEngine] Falling back to heuristic scoring for Assam.")
+        else:
             try:
-                import shap
-                self._ls_explainer = shap.TreeExplainer(self._landslide_model)
-                self._fl_explainer = shap.TreeExplainer(self._flood_model)
-                logger.info("[ProactiveEngine] SHAP TreeExplainer initialised for both models.")
-            except Exception as shap_err:
-                logger.warning(f"[ProactiveEngine] SHAP not available — using feature_importances_ fallback: {shap_err}")
-                self._ls_explainer = None
-                self._fl_explainer = None
-        except Exception as e:
-            logger.error(f"[ProactiveEngine] Failed to load models: {e}")
+                self._models["assam"]["ls"] = joblib.load(ls_path_assam)
+                self._models["assam"]["fl"] = joblib.load(fl_path_assam)
+                self._models["assam"]["ls_features"] = pd.read_csv(ls_feat_assam)["Feature"].tolist()
+                self._models["assam"]["fl_features"] = pd.read_csv(fl_feat_assam)["Feature"].tolist()
+                
+                try:
+                    import shap
+                    self._explainers["assam"]["ls"] = shap.TreeExplainer(self._models["assam"]["ls"])
+                    self._explainers["assam"]["fl"] = shap.TreeExplainer(self._models["assam"]["fl"])
+                except Exception as shap_err:
+                    logger.warning(f"[ProactiveEngine] SHAP not available for Assam: {shap_err}")
+            except Exception as e:
+                logger.error(f"[ProactiveEngine] Failed to load Assam models: {e}")
+
+        missing_kerala = [p for p in [ls_path_kerala, fl_path_kerala, ls_feat_kerala, fl_feat_kerala] if not p.exists()]
+        if missing_kerala:
+            logger.warning(f"[ProactiveEngine] Missing Kerala model files: {[str(m) for m in missing_kerala]}")
+            logger.warning("[ProactiveEngine] Falling back to heuristic scoring for Kerala.")
+        else:
+            try:
+                self._models["kerala"]["ls"] = joblib.load(ls_path_kerala)
+                self._models["kerala"]["fl"] = joblib.load(fl_path_kerala)
+                self._models["kerala"]["ls_features"] = pd.read_csv(ls_feat_kerala)["Feature"].tolist()
+                self._models["kerala"]["fl_features"] = pd.read_csv(fl_feat_kerala)["Feature"].tolist()
+                
+                try:
+                    import shap
+                    self._explainers["kerala"]["ls"] = shap.TreeExplainer(self._models["kerala"]["ls"])
+                    self._explainers["kerala"]["fl"] = shap.TreeExplainer(self._models["kerala"]["fl"])
+                except Exception as shap_err:
+                    logger.warning(f"[ProactiveEngine] SHAP not available for Kerala: {shap_err}")
+            except Exception as e:
+                logger.error(f"[ProactiveEngine] Failed to load Kerala models: {e}")
+
+        self._loaded = True
+        logger.info("[ProactiveEngine] Initialization complete.")
 
     def _classify_zone(self, landslide_score: float, flood_score: float) -> str:
         """
@@ -206,42 +230,51 @@ class ProactiveEngine:
             return {"top_factors": [], "plain_english": "Explanation unavailable.", "method": "shap_failed"}
 
 
-    def score(self, features: dict) -> dict:
+    def score(self, features: dict, region: str = "assam") -> dict:
         """
         Score a single habitation.
 
         Args:
             features: dict with terrain/climate values. Any missing features
                       are filled with the training median (safe fallback).
+            region: 'assam' or 'kerala' to route to specific models.
 
         Returns:
             dict with landslide_score, flood_score, zone_class, top_factors,
             model_used, scored_at
         """
         # ── Model Inference ───────────────────────────────────────────────────
-        if self._loaded:
+        if self._loaded and region in self._models and self._models[region]["ls"] is not None:
             try:
+                ls_model = self._models[region]["ls"]
+                fl_model = self._models[region]["fl"]
+                ls_features = self._models[region]["ls_features"]
+                fl_features = self._models[region]["fl_features"]
+                
                 # Landslide inference
-                ls_row = pd.DataFrame([{f: features.get(f, np.nan) for f in self._landslide_features}])
+                ls_row = pd.DataFrame([{f: features.get(f, np.nan) for f in ls_features}])
                 ls_row = ls_row.fillna(ls_row.median(numeric_only=True).fillna(0))
-                ls_prob = float(self._landslide_model.predict_proba(ls_row)[0][1])
+                ls_prob = float(ls_model.predict_proba(ls_row)[0][1])
 
                 # Flood inference
-                fl_row = pd.DataFrame([{f: features.get(f, np.nan) for f in self._flood_features}])
+                fl_row = pd.DataFrame([{f: features.get(f, np.nan) for f in fl_features}])
                 fl_row = fl_row.fillna(fl_row.median(numeric_only=True).fillna(0))
-                fl_prob = float(self._flood_model.predict_proba(fl_row)[0][1])
+                fl_prob = float(fl_model.predict_proba(fl_row)[0][1])
 
-                top_ls = self._get_top_factors(self._landslide_model, self._landslide_features)
-                top_fl = self._get_top_factors(self._flood_model, self._flood_features)
-                model_used = "xgboost_nasa_chirps_hydrorivers"
+                top_ls = self._get_top_factors(ls_model, ls_features)
+                top_fl = self._get_top_factors(fl_model, fl_features)
+                model_used = f"xgboost_nasa_chirps_hydrorivers_{region}"
 
                 # Per-sample SHAP explanation (Lv et al. 2022 methodology)
-                if self._ls_explainer and self._fl_explainer:
+                ls_explainer = self._explainers[region]["ls"]
+                fl_explainer = self._explainers[region]["fl"]
+                
+                if ls_explainer and fl_explainer:
                     ls_explanation = self._shap_explain(
-                        self._ls_explainer, ls_row, self._landslide_features, features
+                        ls_explainer, ls_row, ls_features, features
                     )
                     fl_explanation = self._shap_explain(
-                        self._fl_explainer, fl_row, self._flood_features, features
+                        fl_explainer, fl_row, fl_features, features
                     )
                 else:
                     ls_explanation = {"top_factors": top_ls, "plain_english": "Install 'shap' for detailed explanation.", "method": "feature_importance_fallback"}
@@ -271,6 +304,14 @@ class ProactiveEngine:
             cascade_msg = f"WARNING: Cascading Hazard detected. Extreme rainfall ({precip}mm) is causing rapid soil saturation, amplifying baseline slope instability by {mult}x."
             if isinstance(ls_explanation, dict) and "plain_english" in ls_explanation:
                 ls_explanation["plain_english"] = f"{ls_explanation['plain_english']} {cascade_msg}"
+
+        # ── Layer 2 Strategic Feedback Injection ─────────────────────────────
+        forest_loss = features.get("forest_loss_pct_3yr", 0)
+        if forest_loss > 15.0:
+            ls_prob = min(1.0, ls_prob * 1.2) # 20% penalty for severe deforestation
+            deforest_msg = f"WARNING: Layer 2 satellite tracking detected {forest_loss}% upstream forest cover loss over 3 years, significantly escalating baseline susceptibility due to root cohesion loss."
+            if isinstance(ls_explanation, dict) and "plain_english" in ls_explanation:
+                ls_explanation["plain_english"] = f"{ls_explanation['plain_english']} {deforest_msg}"
                 
         zone = self._classify_zone(ls_prob, fl_prob)
 
@@ -287,7 +328,7 @@ class ProactiveEngine:
             "scored_at":       datetime.now(timezone.utc).isoformat(),
         }
 
-    def score_batch(self, habitations: list[dict]) -> list[dict]:
+    def score_batch(self, habitations: list[dict], region: str = "assam") -> list[dict]:
         """
         Score a list of habitations efficiently.
         Each item in habitations must have 'id', 'lat', 'lng', and terrain features.
@@ -295,7 +336,7 @@ class ProactiveEngine:
         """
         results = []
         for hab in habitations:
-            score_result = self.score(hab)
+            score_result = self.score(hab, region=region)
             results.append({**hab, **score_result})
         return results
 

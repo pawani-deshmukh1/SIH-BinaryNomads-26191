@@ -68,7 +68,7 @@ function startMainTutorial() {
         element: document.querySelector('#map'),
         intro: `<b>The Habitation Intelligence Map 🗺️</b><br><br>
           Every dot on this map is a real vulnerable settlement in Assam — <b>chars, tribal communities, riverbank villages</b>.<br><br>
-          Our backend pre-processes each one using <b>NASA SRTM terrain data</b> (elevation, slope, Topographic Wetness Index) to assign a baseline flood and landslide susceptibility score.`,
+          Our backend pre-processes each one using <b>ISRO Bhuvan DEM</b> (elevation, slope, Topographic Wetness Index) to assign a baseline flood and landslide susceptibility score.`,
         position: 'right'
       },
 

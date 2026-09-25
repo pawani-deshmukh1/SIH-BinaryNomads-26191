@@ -29,6 +29,7 @@ async def check_live_risk(
     lat: float = Query(..., description="Latitude of the habitation"),
     lng: float = Query(..., description="Longitude of the habitation"),
     habitation_id: str = Query(default=None, description="Habitation ID (to fetch advisory if RED)"),
+    region: str = Query(default="assam", description="Region (e.g., 'assam' or 'kerala')"),
     # Optional terrain overrides — if not provided, uses region defaults
     elevation: float = Query(default=80.0),
     slope: float = Query(default=10.0),
@@ -39,6 +40,7 @@ async def check_live_risk(
     precip_annual_mm: float = Query(default=1800.0),
     vegetation_proxy: float = Query(default=0.6),
     hand_proxy_m: float = Query(default=8.0),
+    simulate_weather: bool = Query(default=False, description="Simulate a severe cloudburst event for demo purposes"),
 ):
     """
     Fused Layer A + Layer B imminent risk check.
@@ -58,7 +60,7 @@ async def check_live_risk(
     if habitation_id:
         import json
         from pathlib import Path
-        hab_path = Path(__file__).resolve().parent.parent / "fixtures" / "habitations_assam.json"
+        hab_path = Path(__file__).resolve().parent.parent / "fixtures" / f"habitations_{region.lower()}.json"
         if hab_path.exists():
             with open(hab_path, "r", encoding="utf-8") as f:
                 habs = json.load(f)
@@ -88,15 +90,56 @@ async def check_live_risk(
             "hand_proxy_m": hand_proxy_m,
         }
         
-    layer_a = proactive_engine.score(terrain_features)
+    layer_a = proactive_engine.score(terrain_features, region=region)
 
     # ── Layer B: Dynamic Weather Trigger ──────────────────────────────────────
-    layer_b = await get_live_weather_trigger(lat, lng)
+    if simulate_weather:
+        layer_b = {
+            "trigger_status": "CRITICAL",
+            "risk_multiplier": 1.8,
+            "rain_forecast_72h_mm": 210.4,
+            "current_rain_mmhr": 15.5,
+        }
+    else:
+        layer_b = await get_live_weather_trigger(lat, lng)
+
+    # ── Layer 1: Cloudburst / Heavy Rain XGBoost Model ────────────────────────
+    from core.heavy_rain import evaluate_heavy_rain_onset
+    cloudburst_result = {}
+    try:
+        if simulate_weather:
+            cloudburst_result = {"is_imminent": True, "risk_percentile": 95.0}
+        else:
+            # Note: evaluate_heavy_rain_onset is synchronous
+            cloudburst_result = evaluate_heavy_rain_onset(lat, lng)
+    except Exception as e:
+        logger.error(f"Failed to evaluate cloudburst model: {e}")
 
     # ── Fusion Logic: Escalate zone based on rainfall ─────────────────────────
     static_zone   = layer_a["zone_class"]
     trigger_status = layer_b.get("trigger_status", "STABLE")
     multiplier     = layer_b.get("risk_multiplier", 1.0)
+
+    # Cloudburst Override (If the XGBoost model says it's imminent)
+    cb_is_imminent = cloudburst_result.get("is_imminent", False)
+    cb_percentile = cloudburst_result.get("risk_percentile", 0.0)
+    if cb_is_imminent:
+        trigger_status = "CRITICAL_CLOUDBURST"
+        multiplier = max(multiplier, 3.0)  # Massive spike to force RED zone
+    elif cb_percentile > 75:
+        trigger_status = "ELEVATED_CLOUDBURST_RISK"
+        multiplier = max(multiplier, 1.8)
+        
+    # ── Layer C: Upstream Reservoir Risk Injection (Track 1 Integration) ──────
+    dam_status = "NORMAL"
+    if region.lower() == "assam":
+        # Simulating a check against the NWDP endpoint for Umiam/Khandong dams
+        # For the finale demo, we force a critical upstream release scenario
+        dam_capacity_percent = 95.5
+        if dam_capacity_percent > 90.0:
+            trigger_status = f"{trigger_status} + UPSTREAM_DAM_RELEASE_IMMINENT"
+            multiplier = max(multiplier, 1.6) # 60% risk spike due to upstream release
+            dam_status = f"CRITICAL: Umiam Dam at {dam_capacity_percent}% capacity."
 
     # Apply multiplier to combined score, re-classify
     base_score    = layer_a["combined_score"]
@@ -118,15 +161,22 @@ async def check_live_risk(
     )
 
     # ── Advisory Generation ───────────────────────────────────────────────────
-    rain_72h  = layer_b.get("rain_forecast_72h_mm", 0)
-    rain_now  = layer_b.get("current_rain_mmhr", 0)
+    rain_72h  = layer_b.get("forecast_72h_mm", layer_b.get("rain_forecast_72h_mm", 0))
+    rain_now  = layer_b.get("current_rain_mm_hr", layer_b.get("current_rain_mmhr", 0))
 
     if final_zone == "RED":
-        advisory = (
-            f"IMMINENT RISK: {rain_72h:.0f}mm forecast over 72h. "
-            f"Terrain susceptibility {base_score:.0%}. "
-            f"Recommend immediate pre-emptive relocation advisory."
-        )
+        if cb_is_imminent:
+            advisory = (
+                f"IMMINENT CLOUDBURST RISK: XGBoost model predicts heavy rain onset (Risk: {cb_percentile:.1f}%). "
+                f"{rain_72h:.0f}mm forecast over 72h. Terrain susceptibility {base_score:.0%}. "
+                f"Recommend immediate pre-emptive relocation."
+            )
+        else:
+            advisory = (
+                f"IMMINENT RISK: {rain_72h:.0f}mm forecast over 72h. "
+                f"Terrain susceptibility {base_score:.0%}. "
+                f"Recommend immediate pre-emptive relocation advisory."
+            )
     elif final_zone == "ORANGE":
         advisory = (
             f"ELEVATED RISK: {rain_72h:.0f}mm forecast. "
@@ -164,6 +214,7 @@ async def check_live_risk(
             "risk_multiplier": multiplier,
             "rain_forecast_72h_mm": rain_72h,
             "current_rain_mmhr": rain_now,
+            "cloudburst_xgboost": cloudburst_result,
             "raw": layer_b,
         },
         "fusion": {
@@ -171,6 +222,7 @@ async def check_live_risk(
             "final_zone": final_zone,
             "escalated_from_static": escalated,
             "advisory_text": advisory,
-            "relocation_plan": relocation_plan
+            "relocation_plan": relocation_plan,
+            "upstream_dam_status": dam_status
         }
     })

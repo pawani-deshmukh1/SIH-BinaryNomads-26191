@@ -27,6 +27,8 @@ from typing import Optional
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
+from core.dynamic_routing import get_base_graph, get_safe_route, build_safe_graph
+from shapely.geometry import Polygon
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +131,7 @@ def compute_relocation_plan(
     immediate_threshold: float = 0.70,
     short_term_threshold: float = 0.40,
     region: str = "assam",
+    hazard_polygons: list[Polygon] | None = None,
 ) -> RelocationPlan:
     """
     Compute optimal, capacity-constrained relocation assignments.
@@ -205,12 +208,27 @@ def compute_relocation_plan(
     # Dividing by site quality means high-quality nearby sites get low cost (preferred).
     BIG = 9999.0
     cost = np.full((n_habs, n_cols), fill_value=BIG)
+    
+    # 1. Prepare safe routing graph
+    base_graph = get_base_graph()
+    safe_graph = build_safe_graph(base_graph, hazard_polygons) if hazard_polygons else base_graph
+
+    # Cache routes to avoid n*m redundant graph lookups
+    route_cache = {}
+
     for i, hab in enumerate(habs):
         for j, site in enumerate(expanded_sites):
-            dist = _haversine_km(
-                float(hab.get("lat", 0)), float(hab.get("lng", 0)),
-                float(site["lat"]), float(site["lng"]),
-            )
+            cache_key = f"{hab.get('id')}_{site['id']}"
+            if cache_key in route_cache:
+                dist = route_cache[cache_key]
+            else:
+                dist, _ = get_safe_route(
+                    safe_graph,
+                    float(hab.get("lat", 0)), float(hab.get("lng", 0)),
+                    float(site["lat"]), float(site["lng"])
+                )
+                route_cache[cache_key] = dist
+                
             score = max(0.01, float(site.get("recommendation_score", 0.5)))
             cost[i, j] = dist / score
 
@@ -258,13 +276,19 @@ def compute_relocation_plan(
         site_queue = []
         pref_site = preferred_sites.get(i)
         
-        # Calculate distances to all sites for fallback routing
+        # Calculate true drivable distances to all sites for fallback routing
         all_sites_dist = []
         for s in sites:
-            d = _haversine_km(
-                float(hab.get("lat", 0)), float(hab.get("lng", 0)),
-                float(s["lat"]), float(s["lng"])
-            )
+            cache_key = f"{hab.get('id')}_{s['id']}"
+            if cache_key in route_cache:
+                d = route_cache[cache_key]
+            else:
+                d, _ = get_safe_route(
+                    safe_graph,
+                    float(hab.get("lat", 0)), float(hab.get("lng", 0)),
+                    float(s["lat"]), float(s["lng"])
+                )
+                route_cache[cache_key] = d
             all_sites_dist.append((s, d))
         
         all_sites_dist.sort(key=lambda x: x[1]) # Sort by distance
@@ -290,10 +314,13 @@ def compute_relocation_plan(
             site_capacities[site["id"]] -= assigned_pop
             pop_to_assign -= assigned_pop
             
-            dist = _haversine_km(
-                float(hab.get("lat", 0)), float(hab.get("lng", 0)),
-                float(site["lat"]), float(site["lng"])
-            )
+            cache_key = f"{hab.get('id')}_{site['id']}"
+            dist = route_cache.get(cache_key, 9999.0)
+            
+            # If the road is blocked (Infinity), do not assign! Keep looking.
+            if dist == float('inf'):
+                logger.warning(f"Optimization Engine: Safest route from {hab_id} to {site['id']} is BLOCKED. Trying next fallback.")
+                continue
             
             proximity_score = max(0.0, 1.0 - dist / 30.0)
             rec_score = float(site.get("recommendation_score", 0.5)) * 0.6 + proximity_score * 0.4

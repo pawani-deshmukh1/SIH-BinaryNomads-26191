@@ -1,0 +1,56 @@
+{
+  "GHY_BHARALU_CORE": {
+    "population_2011": 134267,
+    "source": "2011 Primary Census Abstract (Wards 8,9,10,14,15,16,17)",
+    "sc_st_percent": 12,
+    "landless_households_pct": 18
+  },
+  "GHY_SILSAKO_LAKE": {
+    "population_2011": 45320,
+    "source": "2011 Primary Census Abstract (Wards 21, 24)",
+    "sc_st_percent": 24,
+    "landless_households_pct": 35
+  },
+  "GHY_DEEPOR_BEEL": {
+    "population_2011": 22150,
+    "source": "2011 Primary Census Abstract (Wards 1, 3)",
+    "sc_st_percent": 41,
+    "landless_households_pct": 45
+  },
+  "URB_BENGALURU_BELLANDUR": {
+    "population_2011": 80112,
+    "source": "2011 Census - Bellandur Ward 150",
+    "sc_st_percent": 15,
+    "landless_households_pct": 20
+  },
+  "URB_PUNE_MUTHA": {
+    "population_2011": 110450,
+    "source": "2011 Census - Pune MC (Mutha River Wards)",
+    "sc_st_percent": 18,
+    "landless_households_pct": 22
+  },
+  "GL_GEPANG": {
+    "population_2011": 1500,
+    "source": "2011 Census - Lahaul-Spiti Hamlets",
+    "sc_st_percent": 75,
+    "landless_households_pct": 10
+  },
+  "GL_SATOPANTH": {
+    "population_2011": 2435,
+    "source": "2011 Census - Badrinath/Chamoli Downstream",
+    "sc_st_percent": 45,
+    "landless_households_pct": 15
+  },
+  "GL_CHORABARI": {
+    "population_2011": 1100,
+    "source": "2011 Census - Kedarnath Area",
+    "sc_st_percent": 60,
+    "landless_households_pct": 12
+  },
+  "KER_KANJIKUZHY": {
+    "population_2011": 28450,
+    "source": "2011 Census - Kanjikuzhy Panchayat",
+    "sc_st_percent": 14,
+    "landless_households_pct": 28
+  }
+}

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DISHA — Layer 3: ML Pipeline Review</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body {
+      background: #0f172a;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      overflow: hidden;
+    }
+    .top-bar {
+      height: 60px;
+      background: rgba(15, 23, 42, 0.95);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+    .main-grid {
+      display: grid;
+      grid-template-columns: 2fr 2fr 1fr;
+      height: calc(100vh - 60px);
+    }
+    .panel {
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .panel-header {
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .image-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000;
+      overflow: hidden;
+    }
+    .image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .telemetry-panel {
+      padding: 20px;
+      overflow-y: auto;
+      background: #0b1120;
+    }
+    .stat-box {
+      background: rgba(255,255,255,0.05);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .stat-title {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      font-family: monospace;
+    }
+  </style>
+  <script src="js/config.js"></script>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="brand">
+      DISHA <span style="font-size:12px;color:#ec4899;margin-left:8px;">| LAYER 3: POST-DISASTER DAMAGE ASSESSMENT (ONNX)</span>
+    </div>
+    <button class="btn btn-outline" onclick="startLayer3Tutorial()">🎓 Tour</button>
+    <button class="btn btn-outline" onclick="window.location.href='index.html'">← Back to COP</button>
+
+  </div>
+
+  <div class="main-grid">
+    
+    <!-- Input Panel -->
+    <div class="panel">
+      <div class="panel-header" style="border-left: 4px solid #3b82f6;">
+        <span>Input: Sentinel-2 Optical Imagery</span>
+        <span style="font-size:11px;color:#94a3b8;">T0 + 12h</span>
+      </div>
+      <div class="image-container" id="input-container" style="flex-direction: column; padding: 20px; align-items: stretch; background: #0b1120; justify-content: flex-start;">
+        <form id="onnx-form" style="display: flex; flex-direction: column; gap: 15px;">
+            <label style="font-size:12px; color:var(--text-dim);">Post-Disaster Image Upload</label>
+            <input type="file" id="post-image" accept="image/*" required style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 4px; border: 1px dashed rgba(255,255,255,0.2); color:white;">
+            
+            <label style="font-size:12px; color:var(--text-dim);">Latitude</label>
+            <input type="number" step="0.0001" id="lat-input" value="26.1534" required style="background: rgba(255,255,255,0.05); padding: 8px; border: 1px solid rgba(255,255,255,0.1); color: white; border-radius:4px;">
+            
+            <label style="font-size:12px; color:var(--text-dim);">Longitude</label>
+            <input type="number" step="0.0001" id="lng-input" value="91.6612" required style="background: rgba(255,255,255,0.05); padding: 8px; border: 1px solid rgba(255,255,255,0.1); color: white; border-radius:4px;">
+            
+            <button type="submit" id="run-btn" class="btn" style="background: #3b82f6; color: white; padding: 12px; margin-top: 10px; font-weight:bold;">Run ONNX Pipeline</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Output Panel -->
+    <div class="panel">
+      <div class="panel-header" style="border-left: 4px solid #ec4899;">
+        <span>Output: ONNX Flood & Landslide Masks</span>
+        <span id="output-conf" style="font-size:11px;color:#94a3b8;">Awaiting Inference...</span>
+      </div>
+      <div class="image-container" id="output-container" style="background: #000;">
+        <div id="loading-spinner" style="display:none; color: #94a3b8; font-size: 14px; text-align:center;">
+           <div class="spinner" style="display:inline-block; margin-bottom:8px; width:24px; height:24px;"></div><br>
+           Running inference (Damage + Flood + Landslide)
+        </div>
+        <img id="output-image" src="" alt="ONNX Segmentation Mask" style="display:none; width:100%; height:100%; object-fit:contain;">
+      </div>
+    </div>
+
+    <!-- Telemetry Panel -->
+    <div class="telemetry-panel">
+      <h3 style="margin-top:0; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">Inference Telemetry</h3>
+      
+      <div class="stat-box">
+        <div class="stat-title">Model Architecture</div>
+        <div style="font-size:13px; color:#ec4899; font-weight:600;">U-Net (ResNet-50 Backbone)</div>
+        <div style="font-size:11px; color:#94a3b8; margin-top:4px;">Weights: disha_flood_v4.onnx</div>
+      </div>
+      
+      <div class="stat-box">
+        <div class="stat-title">Inference Latency (Parallel)</div>
+        <div id="latency-val" class="stat-value" style="color:var(--success);">-- ms</div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-title">Layer 1 vs Layer 3 Calibration Gap</div>
+        <div id="gap-val" class="stat-value" style="color:var(--orange);">--</div>
+        <div id="gap-desc" style="font-size:11px; color:#94a3b8; margin-top:4px;">Awaiting pipeline execution to compare predictive vs actual.</div>
+      </div>
+      
+      <div class="stat-box">
+        <div class="stat-title">Detected Vulnerable Features</div>
+        <div id="area-val" class="stat-value">--</div>
+      </div>
+
+      <div style="margin-top: 40px;">
+        <p style="font-size:12px; color:var(--text-dim); margin-bottom:12px; line-height:1.5;">
+          The system has computed the delta between Layer 1's predictive forecast and the Layer 3 actual segmentation. Committing this will update the model weights for the next monsoon cycle.
+        </p>
+        <button class="btn" style="width:100%; background:var(--success); color:white; padding:12px;" onclick="commitCalibration()">Commit Calibration Loop</button>
+      </div>
+
+      <!-- Calibration Logs -->
+      <div style="margin-top: 30px;">
+        <h4 style="margin-top:0; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; font-size:12px; text-transform:uppercase; color:var(--text-dim);">Recent Calibrations (SQLite)</h4>
+        <div style="max-height: 150px; overflow-y: auto; font-size: 11px; margin-top: 10px;">
+          <table style="width: 100%; border-collapse: collapse; color: #cbd5e1;">
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left;">
+                <th style="padding: 4px;">Time</th>
+                <th style="padding: 4px;">Gap</th>
+                <th style="padding: 4px;">Conf</th>
+              </tr>
+            </thead>
+            <tbody id="calibration-log-body">
+              <tr><td colspan="3" style="text-align:center; padding:8px; color:var(--text-dim);">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/tour.js"></script>
+  <script src="js/layer3.js"></script>
+
+</body>
+</html>

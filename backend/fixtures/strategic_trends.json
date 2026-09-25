@@ -1,0 +1,1556 @@
+[
+  {
+    "hab_id": "GHY_BHARALU_CORE",
+    "name": "Guwahati - Bharalu Basin",
+    "state": "Assam",
+    "city": "Guwahati",
+    "lat": 26.162,
+    "lng": 91.758,
+    "monitor_type": "urban_flood_risk",
+    "risk_class": "CRITICAL",
+    "ufri_score": 0.85,
+    "wetland_loss_pct": -85.2,
+    "concrete_growth_pct": 420.5,
+    "known_event": "2024 August Flash Floods",
+    "estimated_runway_months": [
+      12,
+      36
+    ],
+    "trend_series": {
+      "built_area": [
+        {
+          "year": 2014,
+          "built_area_ha": 450.0
+        },
+        {
+          "year": 2019,
+          "built_area_ha": 650.0
+        },
+        {
+          "year": 2024,
+          "built_area_ha": 850.0
+        }
+      ],
+      "wetland_area": [
+        {
+          "year": 2014,
+          "wetland_area_ha": 120.0
+        },
+        {
+          "year": 2019,
+          "wetland_area_ha": 60.0
+        },
+        {
+          "year": 2024,
+          "wetland_area_ha": 20.0
+        }
+      ]
+    },
+    "source": "Sentinel-2 + GEE + GMDA",
+    "forest_loss_pct_3yr": 18.5,
+    "encroachment_new_buildings_5yr": 3240
+  },
+  {
+    "hab_id": "GL_GEPANG",
+    "name": "Gepang Gath Lake",
+    "state": "Himachal Pradesh",
+    "lat": 32.15,
+    "lng": 77.295,
+    "monitor_type": "glof_expansion",
+    "risk_class": "CRITICAL",
+    "glof_risk_index": 0.9745,
+    "lake_growth_pct_5yr": 247.74,
+    "glacier_ice_loss_pct": 89.39,
+    "elevation_m": 4800,
+    "downstream_pop": "Lahaul-Spiti downstream habitations",
+    "estimated_runway_months": [
+      3,
+      12
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "lake_area_ha": 3.343
+      },
+      {
+        "year": 2020,
+        "lake_area_ha": 11.092
+      },
+      {
+        "year": 2021,
+        "lake_area_ha": 11.775
+      },
+      {
+        "year": 2022,
+        "lake_area_ha": 2.659
+      },
+      {
+        "year": 2023,
+        "lake_area_ha": 2.051
+      },
+      {
+        "year": 2024,
+        "lake_area_ha": 11.624
+      }
+    ],
+    "source": "Sentinel-2 NDWI + NDSI GEE | ICIMOD lake coordinates",
+    "key_metrics": {
+      "lake_area_2019_ha": 3.34,
+      "lake_area_2024_ha": 11.62,
+      "growth_pct": 247.74
+    },
+    "forest_loss_pct_3yr": 13.3,
+    "encroachment_new_buildings_5yr": 11
+  },
+  {
+    "hab_id": "GL_SATOPANTH",
+    "name": "Satopanth Glacier Zone",
+    "state": "Uttarakhand",
+    "lat": 30.77,
+    "lng": 79.33,
+    "monitor_type": "glof_expansion",
+    "risk_class": "CRITICAL",
+    "glof_risk_index": 0.7734,
+    "lake_growth_pct_5yr": 53.92,
+    "glacier_ice_loss_pct": 14.64,
+    "elevation_m": 4500,
+    "downstream_pop": "Badrinath, Chamoli district",
+    "estimated_runway_months": [
+      3,
+      12
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "lake_area_ha": 8.147
+      },
+      {
+        "year": 2020,
+        "lake_area_ha": 11.847
+      },
+      {
+        "year": 2021,
+        "lake_area_ha": 8.378
+      },
+      {
+        "year": 2022,
+        "lake_area_ha": 6.012
+      },
+      {
+        "year": 2023,
+        "lake_area_ha": 10.021
+      },
+      {
+        "year": 2024,
+        "lake_area_ha": 12.54
+      }
+    ],
+    "source": "Sentinel-2 NDWI + NDSI GEE | ICIMOD lake coordinates",
+    "key_metrics": {
+      "lake_area_2019_ha": 8.15,
+      "lake_area_2024_ha": 12.54,
+      "growth_pct": 53.92
+    },
+    "forest_loss_pct_3yr": 14.6,
+    "encroachment_new_buildings_5yr": 25
+  },
+  {
+    "hab_id": "KER_KANJIKUZHY",
+    "name": "Kanjikuzhy",
+    "state": "Kerala",
+    "lat": 9.52,
+    "lng": 76.33500000000001,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "coastal",
+    "risk_class": "MEDIUM",
+    "cvi_score": 0.4848,
+    "erosion_velocity_m_yr": 11.376,
+    "estimated_runway_months": [
+      24,
+      48
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 48717602.47196159
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 47614769.16332571
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 48056889.44929935
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 47755581.87896268
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 48426231.32407293
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 48211050.65925862
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": 0.025,
+      "bsi_increase": 0.0194,
+      "sar_water_increase_m2": -416156.3
+    },
+    "forest_loss_pct_3yr": 3.3,
+    "encroachment_new_buildings_5yr": 46
+  },
+  {
+    "hab_id": "URB_BENGALURU_BELLANDUR",
+    "name": "Bengaluru \u2013 Bellandur",
+    "state": "Karnataka",
+    "city": "Bengaluru",
+    "lat": 12.925,
+    "lng": 77.67500000000001,
+    "monitor_type": "urban_flood_risk",
+    "risk_class": "HIGH",
+    "ufri_score": 0.6,
+    "wetland_loss_pct": -264546461.01,
+    "concrete_growth_pct": 6497560844.36,
+    "jrc_permanent_water_loss_pct": 90.78,
+    "perm_water_2000_10_ha": 84.42,
+    "perm_water_2012_23_ha": 7.78,
+    "known_event": "2022 Bengaluru floods",
+    "estimated_runway_months": [
+      24,
+      60
+    ],
+    "trend_series": {
+      "built_area": [
+        {
+          "year": 2014,
+          "built_area_ha": 0.0
+        },
+        {
+          "year": 2017,
+          "built_area_ha": 0.0
+        },
+        {
+          "year": 2020,
+          "built_area_ha": 6764.7
+        },
+        {
+          "year": 2022,
+          "built_area_ha": 7005.16
+        },
+        {
+          "year": 2024,
+          "built_area_ha": 6497.56
+        }
+      ],
+      "wetland_area": [
+        {
+          "year": 2014,
+          "wetland_area_ha": 0.0
+        },
+        {
+          "year": 2017,
+          "wetland_area_ha": 0.0
+        },
+        {
+          "year": 2020,
+          "wetland_area_ha": 133.92
+        },
+        {
+          "year": 2022,
+          "wetland_area_ha": 229.34
+        },
+        {
+          "year": 2024,
+          "wetland_area_ha": 264.55
+        }
+      ]
+    },
+    "source": "Sentinel-2 + Landsat 8 + JRC Global Surface Water GEE",
+    "key_metrics": {
+      "wetland_loss_pct": -264546461.01,
+      "concrete_growth_pct": 6497560844.36,
+      "jrc_loss_pct": 90.78
+    },
+    "forest_loss_pct_3yr": 3.7,
+    "encroachment_new_buildings_5yr": 1616
+  },
+  {
+    "hab_id": "URB_PUNE_MUTHA",
+    "name": "Pune \u2013 Mutha River",
+    "state": "Maharashtra",
+    "city": "Pune",
+    "lat": 18.525,
+    "lng": 73.88,
+    "monitor_type": "urban_flood_risk",
+    "risk_class": "HIGH",
+    "ufri_score": 0.6,
+    "wetland_loss_pct": -133528729.34,
+    "concrete_growth_pct": 6341422651.98,
+    "jrc_permanent_water_loss_pct": 70.68,
+    "perm_water_2000_10_ha": 36.15,
+    "perm_water_2012_23_ha": 10.6,
+    "known_event": "2019 Pune floods",
+    "estimated_runway_months": [
+      24,
+      60
+    ],
+    "trend_series": {
+      "built_area": [
+        {
+          "year": 2014,
+          "built_area_ha": 0.0
+        },
+        {
+          "year": 2017,
+          "built_area_ha": 0.0
+        },
+        {
+          "year": 2020,
+          "built_area_ha": 5483.66
+        },
+        {
+          "year": 2022,
+          "built_area_ha": 6346.88
+        },
+        {
+          "year": 2024,
+          "built_area_ha": 6341.42
+        }
+      ],
+      "wetland_area": [
+        {
+          "year": 2014,
+          "wetland_area_ha": 0.0
+        },
+        {
+          "year": 2017,
+          "wetland_area_ha": 0.0
+        },
+        {
+          "year": 2020,
+          "wetland_area_ha": 141.05
+        },
+        {
+          "year": 2022,
+          "wetland_area_ha": 130.7
+        },
+        {
+          "year": 2024,
+          "wetland_area_ha": 133.53
+        }
+      ]
+    },
+    "source": "Sentinel-2 + Landsat 8 + JRC Global Surface Water GEE",
+    "key_metrics": {
+      "wetland_loss_pct": -133528729.34,
+      "concrete_growth_pct": 6341422651.98,
+      "jrc_loss_pct": 70.68
+    },
+    "forest_loss_pct_3yr": 1.3,
+    "encroachment_new_buildings_5yr": 1364
+  },
+  {
+    "hab_id": "GL_CHORABARI",
+    "name": "Chorabari Lake (Kedarnath)",
+    "state": "Uttarakhand",
+    "lat": 30.755000000000003,
+    "lng": 79.06,
+    "monitor_type": "glof_expansion",
+    "risk_class": "MEDIUM",
+    "glof_risk_index": 0.342,
+    "lake_growth_pct_5yr": -72.73,
+    "glacier_ice_loss_pct": 26.69,
+    "elevation_m": 3900,
+    "downstream_pop": "Kedarnath town, Rambara",
+    "estimated_runway_months": [
+      36,
+      84
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "lake_area_ha": 0.848
+      },
+      {
+        "year": 2020,
+        "lake_area_ha": 0.806
+      },
+      {
+        "year": 2021,
+        "lake_area_ha": 0.154
+      },
+      {
+        "year": 2022,
+        "lake_area_ha": 0.077
+      },
+      {
+        "year": 2023,
+        "lake_area_ha": 0.135
+      },
+      {
+        "year": 2024,
+        "lake_area_ha": 0.231
+      }
+    ],
+    "source": "Sentinel-2 NDWI + NDSI GEE | ICIMOD lake coordinates",
+    "key_metrics": {
+      "lake_area_2019_ha": 0.85,
+      "lake_area_2024_ha": 0.23,
+      "growth_pct": -72.73
+    },
+    "forest_loss_pct_3yr": 5.4,
+    "encroachment_new_buildings_5yr": 15
+  },
+  {
+    "hab_id": "KER_CHERAI",
+    "name": "Cherai-Munambam",
+    "state": "Kerala",
+    "lat": 10.16,
+    "lng": 76.19,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "coastal",
+    "risk_class": "LOW",
+    "cvi_score": 0.1157,
+    "erosion_velocity_m_yr": 0.101,
+    "estimated_runway_months": [
+      48,
+      120
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 35727419.561346814
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 35613635.157057114
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 35633071.43547077
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 35654089.92137812
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 35817212.40466957
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 35722943.89255804
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": 0.0063,
+      "bsi_increase": 0.0059,
+      "sar_water_increase_m2": -295180.3
+    },
+    "forest_loss_pct_3yr": 3.3,
+    "encroachment_new_buildings_5yr": 149
+  },
+  {
+    "hab_id": "KER_KOCHI",
+    "name": "Kochi-Chellanam",
+    "state": "Kerala",
+    "lat": 9.899999999999999,
+    "lng": 76.2,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "coastal",
+    "risk_class": "LOW",
+    "cvi_score": 0.1266,
+    "erosion_velocity_m_yr": 0.127,
+    "estimated_runway_months": [
+      48,
+      120
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 1791899.6347476738
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 1791018.768475701
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 1773400.4401675956
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 1782244.5044926666
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 1787529.7636479398
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 1784852.4074527519
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": -0.0024,
+      "bsi_increase": 0.0001,
+      "sar_water_increase_m2": 8809.2
+    },
+    "forest_loss_pct_3yr": 5.6,
+    "encroachment_new_buildings_5yr": 70
+  },
+  {
+    "hab_id": "KER_ARTHUNKAL",
+    "name": "Arthunkal-Alleppey",
+    "state": "Kerala",
+    "lat": 9.309999999999999,
+    "lng": 76.39,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "coastal",
+    "risk_class": "LOW",
+    "cvi_score": 0.2332,
+    "erosion_velocity_m_yr": 0.0,
+    "estimated_runway_months": [
+      48,
+      120
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 79375708.56858967
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 79462618.21118098
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 76789509.68343276
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 79004029.84459208
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 79218529.4507066
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 79630393.38394134
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": 0.0118,
+      "bsi_increase": 0.03,
+      "sar_water_increase_m2": 1712037.2
+    },
+    "forest_loss_pct_3yr": 6.3,
+    "encroachment_new_buildings_5yr": 127
+  },
+  {
+    "hab_id": "KER_MARARI",
+    "name": "Mararikulam",
+    "state": "Kerala",
+    "lat": 9.395,
+    "lng": 76.35,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "coastal",
+    "risk_class": "LOW",
+    "cvi_score": 0.1226,
+    "erosion_velocity_m_yr": 0.0,
+    "estimated_runway_months": [
+      48,
+      120
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 57310689.59622925
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 57292273.01238442
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 56529896.21446058
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 57288102.96819473
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 57233834.44468566
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 57392215.093975976
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": -0.0041,
+      "bsi_increase": 0.0273,
+      "sar_water_increase_m2": -576317.4
+    },
+    "forest_loss_pct_3yr": 3.3,
+    "encroachment_new_buildings_5yr": 91
+  },
+  {
+    "hab_id": "KER_CHAVAKKAD",
+    "name": "Chavakkad",
+    "state": "Kerala",
+    "lat": 10.620000000000001,
+    "lng": 75.99000000000001,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "coastal",
+    "risk_class": "LOW",
+    "cvi_score": 0.1,
+    "erosion_velocity_m_yr": 0.0,
+    "estimated_runway_months": [
+      48,
+      120
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 43168449.52895081
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 43166254.77401845
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 43170210.78226969
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 43240531.238179326
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 43338430.94666824
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 43376665.04284815
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": -0.0237,
+      "bsi_increase": -0.0148,
+      "sar_water_increase_m2": -97133.2
+    },
+    "forest_loss_pct_3yr": 6.9,
+    "encroachment_new_buildings_5yr": 21
+  },
+  {
+    "hab_id": "KER_NEENDAKARA",
+    "name": "Neendakara",
+    "state": "Kerala",
+    "lat": 8.91,
+    "lng": 76.57,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "coastal",
+    "risk_class": "LOW",
+    "cvi_score": 0.1008,
+    "erosion_velocity_m_yr": 0.0,
+    "estimated_runway_months": [
+      48,
+      120
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 51444429.741748616
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 51402024.382373616
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 51271941.73651323
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 51348689.75852107
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 51375225.725790665
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 51515546.76453771
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": -0.0014,
+      "bsi_increase": 0.0011,
+      "sar_water_increase_m2": -150931.8
+    },
+    "forest_loss_pct_3yr": 6.6,
+    "encroachment_new_buildings_5yr": 60
+  },
+  {
+    "hab_id": "KER_ALAPPAD",
+    "name": "Alappad",
+    "state": "Kerala",
+    "lat": 8.84,
+    "lng": 76.58,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "coastal",
+    "risk_class": "LOW",
+    "cvi_score": 0.1134,
+    "erosion_velocity_m_yr": 0.0,
+    "estimated_runway_months": [
+      48,
+      120
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 10907688.487539716
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 10912439.140304968
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 10876468.926906914
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 10931878.896896765
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 10924810.677841589
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 10940716.472397253
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": -0.0041,
+      "bsi_increase": -0.0099,
+      "sar_water_increase_m2": 6515.3
+    },
+    "forest_loss_pct_3yr": 6.2,
+    "encroachment_new_buildings_5yr": 107
+  },
+  {
+    "hab_id": "KER_VALIATHURA",
+    "name": "Valiathura",
+    "state": "Kerala",
+    "lat": 8.530000000000001,
+    "lng": 76.94,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "coastal",
+    "risk_class": "LOW",
+    "cvi_score": 0.1141,
+    "erosion_velocity_m_yr": 0.0,
+    "estimated_runway_months": [
+      48,
+      120
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 77837250.33947645
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 77878069.76828791
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 77866732.48542204
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 77828670.22682089
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 77889968.70514381
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 77844395.25005636
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": 0.0057,
+      "bsi_increase": -0.0082,
+      "sar_water_increase_m2": -110834.5
+    },
+    "forest_loss_pct_3yr": 3.7,
+    "encroachment_new_buildings_5yr": 75
+  },
+  {
+    "hab_id": "KER_SHANKUMUGHAM",
+    "name": "Shankumugham",
+    "state": "Kerala",
+    "lat": 8.49,
+    "lng": 76.955,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "coastal",
+    "risk_class": "LOW",
+    "cvi_score": 0.1134,
+    "erosion_velocity_m_yr": 0.109,
+    "estimated_runway_months": [
+      48,
+      120
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 50606248.76175568
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 50588632.15912973
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 50583252.31107209
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 50604479.75406525
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 50607906.58828443
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 50602599.93154615
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": 0.0086,
+      "bsi_increase": -0.0097,
+      "sar_water_increase_m2": -40528.7
+    },
+    "forest_loss_pct_3yr": 7.7,
+    "encroachment_new_buildings_5yr": 106
+  },
+  {
+    "hab_id": "ASS_MORIGAON_CHAR",
+    "name": "Morigaon Char Islands",
+    "state": "Assam",
+    "lat": 26.27,
+    "lng": 92.25,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "riverbank",
+    "risk_class": "LOW",
+    "cvi_score": 0.1093,
+    "erosion_velocity_m_yr": 0.0,
+    "estimated_runway_months": [
+      48,
+      120
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 212379655.69353458
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 198751658.37546247
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 214064245.55170774
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 212855736.1116939
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 216347085.17107996
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 216619408.36018193
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": 0.0138,
+      "bsi_increase": -0.0037,
+      "sar_water_increase_m2": -1160255.0
+    },
+    "forest_loss_pct_3yr": 2.6,
+    "encroachment_new_buildings_5yr": 117
+  },
+  {
+    "hab_id": "ASS_DHUBRI",
+    "name": "Dhubri-Gauripur Banks",
+    "state": "Assam",
+    "lat": 26.05,
+    "lng": 90.065,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "riverbank",
+    "risk_class": "LOW",
+    "cvi_score": 0.1108,
+    "erosion_velocity_m_yr": 0.0,
+    "estimated_runway_months": [
+      48,
+      120
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 144681826.8592735
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 145387985.86514628
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 150505379.23379487
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 138282124.83988082
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 145609953.2908622
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 150541777.5187306
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": -0.0009,
+      "bsi_increase": 0.0144,
+      "sar_water_increase_m2": -6617358.2
+    },
+    "forest_loss_pct_3yr": 2.6,
+    "encroachment_new_buildings_5yr": 108
+  },
+  {
+    "hab_id": "ASS_BARPETA",
+    "name": "Barpeta-Sarthebari",
+    "state": "Assam",
+    "lat": 26.365000000000002,
+    "lng": 91.1,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "riverbank",
+    "risk_class": "LOW",
+    "cvi_score": 0.2001,
+    "erosion_velocity_m_yr": 0.0,
+    "estimated_runway_months": [
+      48,
+      120
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 234974527.36667997
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 233817524.30470705
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 236185199.70286852
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 231734048.66741416
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 235609890.37340617
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 235134765.93563548
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": -0.0089,
+      "bsi_increase": -0.0149,
+      "sar_water_increase_m2": 999159.7
+    },
+    "forest_loss_pct_3yr": 5.6,
+    "encroachment_new_buildings_5yr": 31
+  },
+  {
+    "hab_id": "ASS_JORHAT_CHAR",
+    "name": "Jorhat Majuli South",
+    "state": "Assam",
+    "lat": 26.93,
+    "lng": 94.19999999999999,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "riverbank",
+    "risk_class": "LOW",
+    "cvi_score": 0.1095,
+    "erosion_velocity_m_yr": 0.0,
+    "estimated_runway_months": [
+      48,
+      120
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 189855913.04050237
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 191010460.66497806
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 194009277.97914854
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 193136460.2804987
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 197284409.6690205
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 193105320.5953602
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": -0.0467,
+      "bsi_increase": 0.0074,
+      "sar_water_increase_m2": -6961797.6
+    },
+    "forest_loss_pct_3yr": 6.4,
+    "encroachment_new_buildings_5yr": 51
+  },
+  {
+    "hab_id": "ASS_KAZIRANGA",
+    "name": "Kaziranga-Nagaon Flank",
+    "state": "Assam",
+    "lat": 26.6,
+    "lng": 93.4,
+    "monitor_type": "coastal_erosion",
+    "sub_type": "riverbank",
+    "risk_class": "LOW",
+    "cvi_score": 0.1173,
+    "erosion_velocity_m_yr": 0.0,
+    "estimated_runway_months": [
+      48,
+      120
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "land_area_m2": 215879923.25718257
+      },
+      {
+        "year": 2020,
+        "land_area_m2": 216185455.91996837
+      },
+      {
+        "year": 2021,
+        "land_area_m2": 216234844.12774137
+      },
+      {
+        "year": 2022,
+        "land_area_m2": 216274111.32577887
+      },
+      {
+        "year": 2023,
+        "land_area_m2": 216927396.89311936
+      },
+      {
+        "year": 2024,
+        "land_area_m2": 216569074.83926913
+      }
+    ],
+    "source": "Sentinel-2 GEE + NCSCM CVI Methodology",
+    "key_metrics": {
+      "ndvi_loss": -0.01,
+      "bsi_increase": 0.015,
+      "sar_water_increase_m2": -408232.7
+    },
+    "forest_loss_pct_3yr": 7.8,
+    "encroachment_new_buildings_5yr": 116
+  },
+  {
+    "hab_id": "URB_GUWAHATI_DEEPOR",
+    "name": "Guwahati \u2013 Deepor Beel",
+    "state": "Assam",
+    "city": "Guwahati",
+    "lat": 26.130000000000003,
+    "lng": 91.63,
+    "monitor_type": "urban_flood_risk",
+    "risk_class": "MEDIUM",
+    "ufri_score": 0.4131,
+    "wetland_loss_pct": -1253719481.88,
+    "concrete_growth_pct": 3682777323.04,
+    "jrc_permanent_water_loss_pct": 22.62,
+    "perm_water_2000_10_ha": 455.18,
+    "perm_water_2012_23_ha": 352.23,
+    "known_event": "Recurring urban floods",
+    "estimated_runway_months": [
+      60,
+      120
+    ],
+    "trend_series": {
+      "built_area": [
+        {
+          "year": 2014,
+          "built_area_ha": 0.0
+        },
+        {
+          "year": 2017,
+          "built_area_ha": 0.0
+        },
+        {
+          "year": 2020,
+          "built_area_ha": 3684.39
+        },
+        {
+          "year": 2022,
+          "built_area_ha": 3625.09
+        },
+        {
+          "year": 2024,
+          "built_area_ha": 3682.78
+        }
+      ],
+      "wetland_area": [
+        {
+          "year": 2014,
+          "wetland_area_ha": 0.0
+        },
+        {
+          "year": 2017,
+          "wetland_area_ha": 0.0
+        },
+        {
+          "year": 2020,
+          "wetland_area_ha": 1299.34
+        },
+        {
+          "year": 2022,
+          "wetland_area_ha": 1252.8
+        },
+        {
+          "year": 2024,
+          "wetland_area_ha": 1253.72
+        }
+      ]
+    },
+    "source": "Sentinel-2 + Landsat 8 + JRC Global Surface Water GEE",
+    "key_metrics": {
+      "wetland_loss_pct": -1253719481.88,
+      "concrete_growth_pct": 3682777323.04,
+      "jrc_loss_pct": 22.62
+    },
+    "forest_loss_pct_3yr": 1.3,
+    "encroachment_new_buildings_5yr": 1100
+  },
+  {
+    "hab_id": "GL_S_LHONAK",
+    "name": "South Lhonak Lake",
+    "state": "Sikkim",
+    "lat": 27.87,
+    "lng": 88.1915,
+    "monitor_type": "glof_expansion",
+    "risk_class": "LOW",
+    "glof_risk_index": 0.1891,
+    "lake_growth_pct_5yr": -87.76,
+    "glacier_ice_loss_pct": -15.14,
+    "elevation_m": 5200,
+    "downstream_pop": "Lachen Valley, Chungthang town",
+    "estimated_runway_months": [
+      84,
+      240
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "lake_area_ha": 53.714
+      },
+      {
+        "year": 2020,
+        "lake_area_ha": 150.397
+      },
+      {
+        "year": 2021,
+        "lake_area_ha": 94.101
+      },
+      {
+        "year": 2022,
+        "lake_area_ha": 11.767
+      },
+      {
+        "year": 2023,
+        "lake_area_ha": 29.756
+      },
+      {
+        "year": 2024,
+        "lake_area_ha": 6.572
+      }
+    ],
+    "source": "Sentinel-2 NDWI + NDSI GEE | ICIMOD lake coordinates",
+    "key_metrics": {
+      "lake_area_2019_ha": 53.71,
+      "lake_area_2024_ha": 6.57,
+      "growth_pct": -87.76
+    },
+    "forest_loss_pct_3yr": 15.8,
+    "encroachment_new_buildings_5yr": 49
+  },
+  {
+    "hab_id": "GL_GURUDONGMAR",
+    "name": "Gurudongmar Glacial Zone",
+    "state": "Sikkim",
+    "lat": 28.049999999999997,
+    "lng": 88.73,
+    "monitor_type": "glof_expansion",
+    "risk_class": "LOW",
+    "glof_risk_index": 0.1855,
+    "lake_growth_pct_5yr": -1.35,
+    "glacier_ice_loss_pct": -22.57,
+    "elevation_m": 5100,
+    "downstream_pop": "Lachung Valley",
+    "estimated_runway_months": [
+      84,
+      240
+    ],
+    "trend_series": [
+      {
+        "year": 2019,
+        "lake_area_ha": 114.829
+      },
+      {
+        "year": 2020,
+        "lake_area_ha": 113.977
+      },
+      {
+        "year": 2021,
+        "lake_area_ha": 124.087
+      },
+      {
+        "year": 2022,
+        "lake_area_ha": 122.504
+      },
+      {
+        "year": 2023,
+        "lake_area_ha": 114.591
+      },
+      {
+        "year": 2024,
+        "lake_area_ha": 113.276
+      }
+    ],
+    "source": "Sentinel-2 NDWI + NDSI GEE | ICIMOD lake coordinates",
+    "key_metrics": {
+      "lake_area_2019_ha": 114.83,
+      "lake_area_2024_ha": 113.28,
+      "growth_pct": -1.35
+    },
+    "forest_loss_pct_3yr": 16.5,
+    "encroachment_new_buildings_5yr": 33
+  },
+  {
+    "hab_id": "URB_CHENNAI_PALLIKARANAI",
+    "name": "Chennai \u2013 Pallikaranai",
+    "state": "Tamil Nadu",
+    "city": "Chennai",
+    "lat": 12.920000000000002,
+    "lng": 80.225,
+    "monitor_type": "urban_flood_risk",
+    "risk_class": "LOW",
+    "ufri_score": 0.3,
+    "wetland_loss_pct": -1673975785.36,
+    "concrete_growth_pct": 3668373894.34,
+    "jrc_permanent_water_loss_pct": 0,
+    "perm_water_2000_10_ha": 1187.29,
+    "perm_water_2012_23_ha": 1189.81,
+    "known_event": "2015 Chennai floods",
+    "estimated_runway_months": [
+      120,
+      300
+    ],
+    "trend_series": {
+      "built_area": [
+        {
+          "year": 2014,
+          "built_area_ha": 0.0
+        },
+        {
+          "year": 2017,
+          "built_area_ha": 0.0
+        },
+        {
+          "year": 2020,
+          "built_area_ha": 2459.49
+        },
+        {
+          "year": 2022,
+          "built_area_ha": 4009.26
+        },
+        {
+          "year": 2024,
+          "built_area_ha": 3668.37
+        }
+      ],
+      "wetland_area": [
+        {
+          "year": 2014,
+          "wetland_area_ha": 0.0
+        },
+        {
+          "year": 2017,
+          "wetland_area_ha": 0.0
+        },
+        {
+          "year": 2020,
+          "wetland_area_ha": 1671.3
+        },
+        {
+          "year": 2022,
+          "wetland_area_ha": 1522.95
+        },
+        {
+          "year": 2024,
+          "wetland_area_ha": 1673.98
+        }
+      ]
+    },
+    "source": "Sentinel-2 + Landsat 8 + JRC Global Surface Water GEE",
+    "key_metrics": {
+      "wetland_loss_pct": -1673975785.36,
+      "concrete_growth_pct": 3668373894.34,
+      "jrc_loss_pct": 0
+    },
+    "forest_loss_pct_3yr": 3.3,
+    "encroachment_new_buildings_5yr": 1942
+  },
+  {
+    "hab_id": "URB_MUMBAI_MITHI",
+    "name": "Mumbai \u2013 Mithi River",
+    "state": "Maharashtra",
+    "city": "Mumbai",
+    "lat": 19.08,
+    "lng": 72.87,
+    "monitor_type": "urban_flood_risk",
+    "risk_class": "LOW",
+    "ufri_score": 0.3,
+    "wetland_loss_pct": -450835766.95,
+    "concrete_growth_pct": 4388234098.43,
+    "jrc_permanent_water_loss_pct": 0,
+    "perm_water_2000_10_ha": 307.1,
+    "perm_water_2012_23_ha": 340.98,
+    "known_event": "2005 Mumbai deluge",
+    "estimated_runway_months": [
+      120,
+      300
+    ],
+    "trend_series": {
+      "built_area": [
+        {
+          "year": 2014,
+          "built_area_ha": 0.0
+        },
+        {
+          "year": 2017,
+          "built_area_ha": 0.0
+        },
+        {
+          "year": 2020,
+          "built_area_ha": 4554.16
+        },
+        {
+          "year": 2022,
+          "built_area_ha": 4627.7
+        },
+        {
+          "year": 2024,
+          "built_area_ha": 4388.23
+        }
+      ],
+      "wetland_area": [
+        {
+          "year": 2014,
+          "wetland_area_ha": 0.0
+        },
+        {
+          "year": 2017,
+          "wetland_area_ha": 0.0
+        },
+        {
+          "year": 2020,
+          "wetland_area_ha": 432.81
+        },
+        {
+          "year": 2022,
+          "wetland_area_ha": 422.32
+        },
+        {
+          "year": 2024,
+          "wetland_area_ha": 450.84
+        }
+      ]
+    },
+    "source": "Sentinel-2 + Landsat 8 + JRC Global Surface Water GEE",
+    "key_metrics": {
+      "wetland_loss_pct": -450835766.95,
+      "concrete_growth_pct": 4388234098.43,
+      "jrc_loss_pct": 0
+    },
+    "forest_loss_pct_3yr": 1.3,
+    "encroachment_new_buildings_5yr": 1854
+  },
+  {
+    "hab_id": "URB_HYDERABAD_MUSI",
+    "name": "Hyderabad \u2013 Musi",
+    "state": "Telangana",
+    "city": "Hyderabad",
+    "lat": 17.405,
+    "lng": 78.485,
+    "monitor_type": "urban_flood_risk",
+    "risk_class": "LOW",
+    "ufri_score": 0.3,
+    "wetland_loss_pct": -499799733.38,
+    "concrete_growth_pct": 8540628902.64,
+    "jrc_permanent_water_loss_pct": 0,
+    "perm_water_2000_10_ha": 328.79,
+    "perm_water_2012_23_ha": 354.92,
+    "known_event": "2020 Hyderabad floods",
+    "estimated_runway_months": [
+      120,
+      300
+    ],
+    "trend_series": {
+      "built_area": [
+        {
+          "year": 2014,
+          "built_area_ha": 0.0
+        },
+        {
+          "year": 2017,
+          "built_area_ha": 0.0
+        },
+        {
+          "year": 2020,
+          "built_area_ha": 8738.73
+        },
+        {
+          "year": 2022,
+          "built_area_ha": 9193.06
+        },
+        {
+          "year": 2024,
+          "built_area_ha": 8540.63
+        }
+      ],
+      "wetland_area": [
+        {
+          "year": 2014,
+          "wetland_area_ha": 0.0
+        },
+        {
+          "year": 2017,
+          "wetland_area_ha": 0.0
+        },
+        {
+          "year": 2020,
+          "wetland_area_ha": 507.82
+        },
+        {
+          "year": 2022,
+          "wetland_area_ha": 500.62
+        },
+        {
+          "year": 2024,
+          "wetland_area_ha": 499.8
+        }
+      ]
+    },
+    "source": "Sentinel-2 + Landsat 8 + JRC Global Surface Water GEE",
+    "key_metrics": {
+      "wetland_loss_pct": -499799733.38,
+      "concrete_growth_pct": 8540628902.64,
+      "jrc_loss_pct": 0
+    },
+    "forest_loss_pct_3yr": 1.9,
+    "encroachment_new_buildings_5yr": 1092
+  },
+  {
+    "hab_id": "SUB_JOSHIMATH",
+    "name": "Joshimath Sub-Division",
+    "state": "Uttarakhand",
+    "lat": 30.55,
+    "lng": 79.56,
+    "monitor_type": "subsidence",
+    "risk_class": "CRITICAL",
+    "deformation_velocity_mm_yr": -54.2,
+    "encroachment_new_buildings_5yr": 342,
+    "forest_loss_pct_3yr": 4.2,
+    "trend_series": [
+      {
+        "year": 2019,
+        "subsidence_mm": 0.0
+      },
+      {
+        "year": 2020,
+        "subsidence_mm": -12.4
+      },
+      {
+        "year": 2021,
+        "subsidence_mm": -28.9
+      },
+      {
+        "year": 2022,
+        "subsidence_mm": -65.1
+      },
+      {
+        "year": 2023,
+        "subsidence_mm": -145.8
+      },
+      {
+        "year": 2024,
+        "subsidence_mm": -210.3
+      }
+    ],
+    "source": "Sentinel-1 InSAR + GEE",
+    "key_metrics": {
+      "total_deformation_mm": -210.3,
+      "acceleration_factor": 3.1
+    }
+  }
+]

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../../services/risk_service.dart';
+import 'api_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -31,10 +34,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int get _atRiskCount =>
       _zones.where((zone) => zone.risk >= 0.40).length;
 
+  StreamSubscription? _connectivitySubscription;
+  bool _isDeviceOffline = false;
+
   @override
   void initState() {
     super.initState();
+    _checkInitialConnectivity();
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> result) {
+      final isOffline = result.contains(ConnectivityResult.none);
+      setState(() {
+        _isDeviceOffline = isOffline;
+      });
+      if (!isOffline) {
+        ApiService.syncOfflineQueue();
+        _loadRiskZones();
+      }
+    });
     _loadRiskZones();
+  }
+
+  Future<void> _checkInitialConnectivity() async {
+    final connectivityResult = await (Connectivity().checkConnectivity());
+    setState(() {
+      _isDeviceOffline = connectivityResult.contains(ConnectivityResult.none);
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadRiskZones() async {
@@ -335,7 +365,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildStatus() {
-    final online = !_loading && _error == null;
+    final online = !_loading && _error == null && !_isDeviceOffline;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
@@ -361,7 +391,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              online ? 'RISK INTELLIGENCE ONLINE' : 'BACKEND OFFLINE',
+              _isDeviceOffline ? 'DEVICE OFFLINE' : (online ? 'RISK INTELLIGENCE ONLINE' : 'BACKEND OFFLINE'),
               style: TextStyle(
                 color: online ? Colors.greenAccent : Colors.redAccent,
                 fontSize: 11,
@@ -371,7 +401,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const Spacer(),
             Text(
-              _loading ? 'SYNCING...' : 'SYNC READY',
+              _isDeviceOffline ? 'QUEUEING REPORTS' : (_loading ? 'SYNCING...' : 'SYNC READY'),
               style: const TextStyle(
                 color: Colors.white38,
                 fontSize: 10,

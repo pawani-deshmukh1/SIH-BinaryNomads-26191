@@ -13,16 +13,31 @@ from fastapi import APIRouter, HTTPException
 import osmnx as ox
 import networkx as nx
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, List, Dict, Any
+from pydantic import BaseModel
 import logging
 import os
 import json
 
 ox.settings.use_cache = True
 ox.settings.cache_folder = os.path.join(os.path.dirname(__file__), "..", "osmnx_cache")
-ox.settings.overpass_endpoint = "https://overpass.kumi.systems/api/interpreter"
+ox.settings.overpass_endpoint = "https://lz4.overpass-api.de/api/interpreter"
+ox.settings.timeout = 5  # Fail fast to OSRM fallback so UI doesn't hang
 
 logger = logging.getLogger(__name__)
+
+# Load pre-cached GraphML at startup to completely bypass Overpass API timeouts!
+G_base = None
+try:
+    graph_path = os.path.join(os.path.dirname(__file__), "..", "guwahati_drive.graphml")
+    if os.path.exists(graph_path):
+        logger.info(f"Loading pre-cached OSMnx graph from {graph_path}...")
+        G_base = ox.load_graphml(graph_path)
+        logger.info(f"Graph loaded! Nodes: {len(G_base.nodes)}")
+    else:
+        logger.warning(f"No cached graph found at {graph_path}. Routing will hit Overpass API.")
+except Exception as e:
+    logger.error(f"Failed to load cached graph: {e}")
 
 router = APIRouter(prefix="/route", tags=["Infrastructure"])
 
@@ -156,10 +171,17 @@ def get_safe_route(
         max_lon = max(origin_lon, dest_lon) + buffer
 
         bbox = (min_lon, min_lat, max_lon, max_lat)
-        logger.info(f"Fetching OSMnx graph for routing: {bbox}")
-        # Fetch the base graph (strictly drivable roads for vehicles)
-        G = ox.graph_from_bbox(bbox=bbox, network_type='drive', simplify=True)
         
+        # Use the pre-cached graph if available to eliminate all API timeouts!
+        global G_base
+        if G_base is not None:
+            logger.info("Using pre-cached OSMnx graph from memory!")
+            G = G_base.copy()
+        else:
+            logger.info(f"Fetching OSMnx graph for routing: {bbox}")
+            # Fetch the base graph (strictly drivable roads for vehicles)
+            G = ox.graph_from_bbox(bbox=bbox, network_type='drive', simplify=True)
+            
         # 1. Create Shapely union of flood zones
         flood_union = None
         if flood_geojson and flood_geojson.get("features"):
@@ -381,3 +403,87 @@ def get_safe_route(
                     },
                 }],
             }
+
+class SafeZoneCandidate(BaseModel):
+    id: str
+    name: str = "Unknown"
+    lat: float
+    lng: float
+    access_mode: str = "road"
+
+class ReachableRouteRequest(BaseModel):
+    origin_lat: float
+    origin_lng: float
+    candidates: List[SafeZoneCandidate]
+    flood_geojson: Optional[Dict[str, Any]] = None
+
+@router.post("/reachable")
+def get_reachable_route(req: ReachableRouteRequest):
+    """
+    Tries candidates in order. Returns the first reachable zone, 
+    plus a list of unreachable zones with reasons.
+    """
+    rejected_zones = []
+    
+    for candidate in req.candidates:
+        if candidate.access_mode != "road":
+            continue
+            
+        route_result = get_safe_route(
+            req.origin_lat, req.origin_lng, 
+            candidate.lat, candidate.lng, 
+            req.flood_geojson
+        )
+        
+        # Check if route is ISOLATED
+        is_isolated = False
+        route_status = "CLEAR"
+        if route_result and "features" in route_result and len(route_result["features"]) > 0:
+            first_feature = route_result["features"][0]
+            if first_feature.get("properties", {}).get("route_status") in ["ERROR", "ISOLATED"]:
+                is_isolated = True
+            
+            # Check for kacha way presence
+            for f in route_result["features"]:
+                if f.get("properties", {}).get("route_status") == "KACHA_WAY":
+                    route_status = "KACHA_WAY"
+        else:
+            is_isolated = True
+            
+        if not is_isolated:
+            return {
+                "routing_decision": "REACHABLE",
+                "selected_zone_id": candidate.id,
+                "route_geojson": route_result,
+                "route_status": route_status,
+                "evacuation_mode": "road",
+                "rejected_zones": rejected_zones
+            }
+            
+        rejected_zones.append({
+            "id": candidate.id,
+            "reason": "ISOLATED: All access roads blocked by flood or no safe path exists."
+        })
+        
+    # If we get here, all road candidates failed. 
+    # Fallback to the first boat_or_heli zone if available.
+    for candidate in req.candidates:
+        if candidate.access_mode in ["boat_or_heli", "boat", "heli"]:
+            return {
+                "routing_decision": "BOAT_OR_HELI_ONLY",
+                "selected_zone_id": candidate.id,
+                "route_geojson": {"type": "FeatureCollection", "features": []},
+                "route_status": "BLOCKED",
+                "evacuation_mode": "boat_or_heli",
+                "rejected_zones": rejected_zones
+            }
+            
+    # If no boat/heli zones, we are truly isolated
+    return {
+        "routing_decision": "ISOLATED_ALL",
+        "selected_zone_id": None,
+        "route_geojson": {"type": "FeatureCollection", "features": []},
+        "route_status": "BLOCKED",
+        "evacuation_mode": "none",
+        "rejected_zones": rejected_zones
+    }

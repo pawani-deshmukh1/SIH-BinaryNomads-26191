@@ -1,0 +1,56 @@
+[
+  {
+    "type": "Feature",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        91.7583,
+        26.1528
+      ]
+    },
+    "properties": {
+      "id": "S-REP-MOCK01",
+      "report_type": "construction",
+      "description": "ILLUSTRATIVE EXAMPLE \u00e2\u20ac\u201d demonstrates intended field-report format, not an actual submitted report. Large multi-story residential complex actively under construction. Overlaps with baseline designated wetland area.",
+      "timestamp": "2026-09-12T10:00:00Z",
+      "status": "pending_verification",
+      "mock": true
+    }
+  },
+  {
+    "type": "Feature",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        91.745,
+        26.16
+      ]
+    },
+    "properties": {
+      "id": "S-REP-MOCK02",
+      "report_type": "waterlogging",
+      "description": "ILLUSTRATIVE EXAMPLE \u00e2\u20ac\u201d demonstrates intended field-report format, not an actual submitted report. Severe localized pooling up to 2.5ft deep not captured by standard DEM. Probable blocked drain culvert.",
+      "timestamp": "2026-09-11T14:30:00Z",
+      "status": "pending_verification",
+      "mock": true
+    }
+  },
+  {
+    "type": "Feature",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        91.75,
+        26.15
+      ]
+    },
+    "properties": {
+      "id": "S-REP-4943A0",
+      "report_type": "waterlogging",
+      "description": "Valid test",
+      "timestamp": "2026-09-13T05:09:15.804588+00:00",
+      "status": "pending_verification",
+      "mock": false
+    }
+  }
+]

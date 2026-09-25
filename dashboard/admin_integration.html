@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DISHA - Integration Agent</title>
+    <!-- Use Tailwind via CDN for rapid styling to match the hackathon vibe -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#0f172a',
+                        darker: '#020617',
+                        accent: '#10b981', // emerald
+                        accentHover: '#059669',
+                    },
+                    fontFamily: {
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .code-block { background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+  <script src="js/config.js"></script>
+</head>
+<body class="min-h-screen p-6">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 border-b border-gray-800 pb-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-white flex items-center gap-3">
+                    <i class="fa-solid fa-microchip text-accent"></i> DISHA Integration Agent
+                </h1>
+                <p class="text-gray-400 mt-1">AI-Powered Plug-and-Play Data Ingestion</p>
+            </div>
+            <div class="px-4 py-1.5 bg-green-500/10 text-green-400 border border-green-500/20 rounded-full text-sm font-mono flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                SYSTEM ONLINE
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Left Column: Input -->
+            <div class="glass-panel rounded-xl p-6 flex flex-col gap-5">
+                <h2 class="text-xl font-semibold text-white mb-2"><i class="fa-solid fa-plug pr-2"></i>Target API Details</h2>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">API Name</label>
+                    <input type="text" id="api_name" class="w-full bg-darker border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-accent transition-colors" placeholder="e.g. CWC Live Reservoir Telemetry">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">API Endpoint URL</label>
+                    <input type="text" id="api_url" class="w-full bg-darker border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-accent font-mono text-sm transition-colors" placeholder="https://indiawris.gov.in/api/v1/reservoirs">
+                </div>
+                
+                <div class="flex-grow">
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Sample JSON Response</label>
+                    <textarea id="sample_json" class="w-full h-48 bg-darker border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-accent font-mono text-sm transition-colors resize-none" placeholder="Paste a sample of the JSON payload here..."></textarea>
+                </div>
+                
+                <button id="btn_analyze" onclick="analyzeAPI()" class="w-full bg-accent hover:bg-accentHover text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 mt-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Analyze with DISHA AI
+                </button>
+            </div>
+
+            <!-- Right Column: Output -->
+            <div class="glass-panel rounded-xl p-6 flex flex-col gap-4 relative overflow-hidden" id="output_panel">
+                <!-- Overlay for empty state -->
+                <div id="empty_state" class="absolute inset-0 bg-dark/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-8">
+                    <i class="fa-solid fa-robot text-5xl text-gray-600 mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-300">Awaiting Target API</h3>
+                    <p class="text-sm text-gray-500 mt-2">Enter API details on the left to generate the integration backend, frontend configs, and architectural mapping.</p>
+                </div>
+                
+                <!-- Loading State -->
+                <div id="loading_state" class="hidden absolute inset-0 bg-dark/90 backdrop-blur-md z-20 flex flex-col items-center justify-center">
+                    <i class="fa-solid fa-circle-notch text-4xl text-accent spinner mb-4"></i>
+                    <span class="text-accent font-mono text-sm">LLM Analyzing Payload...</span>
+                </div>
+
+                <h2 class="text-xl font-semibold text-white mb-1"><i class="fa-solid fa-code pr-2"></i>Generated Integration</h2>
+                
+                <div class="mb-4">
+                    <h3 class="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2">Architectural Mapping</h3>
+                    <div id="out_analysis" class="flex flex-col gap-3">
+                        <!-- AI text will go here -->
+                        <div class="text-sm text-blue-200 bg-blue-900/20 border border-blue-900/50 rounded-lg p-4 leading-relaxed italic">
+                            Awaiting analysis...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Human Override -->
+                <div class="mb-4 bg-gray-800/40 border border-gray-700/50 rounded-lg p-3 flex items-center justify-between">
+                    <div>
+                        <span class="text-white text-sm font-medium block"><i class="fa-solid fa-user-shield text-gray-400 mr-2"></i>Human Override (HITL)</span>
+                        <span class="text-xs text-gray-500">Override AI layer decision before deployment</span>
+                    </div>
+                    <select id="layer_override" class="bg-darker border border-gray-600 rounded px-3 py-1.5 text-white text-sm focus:outline-none focus:border-accent">
+                        <option value="auto">Keep AI Decision</option>
+                        <option value="Layer 1 (Immediate)">Force Layer 1 (Immediate)</option>
+                        <option value="Layer 2 (Strategic)">Force Layer 2 (Strategic)</option>
+                    </select>
+                </div>
+
+                <!-- Code Output -->
+                <div class="flex-grow flex flex-col gap-4">
+                    <div class="flex-grow flex flex-col">
+                        <h3 class="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2 flex justify-between">
+                            <span>FastAPI Backend Route</span>
+                            <span class="text-gray-600">.py</span>
+                        </h3>
+                        <pre class="code-block rounded-lg p-4 h-32 overflow-auto text-xs text-green-300 font-mono"><code id="out_python"></code></pre>
+                    </div>
+                    
+                    <div class="flex-grow flex flex-col">
+                        <h3 class="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2 flex justify-between">
+                            <span>Map Layer Config</span>
+                            <span class="text-gray-600">.js</span>
+                        </h3>
+                        <pre class="code-block rounded-lg p-4 h-24 overflow-auto text-xs text-yellow-300 font-mono"><code id="out_js"></code></pre>
+                    </div>
+                </div>
+
+                <!-- Deploy Button -->
+                <button id="btn_deploy" onclick="deployIntegration()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 mt-2 border border-blue-500/30">
+                    <i class="fa-solid fa-rocket"></i> Deploy to DISHA
+                </button>
+            </div>
+        </div>
+        
+        <!-- Toast Notification -->
+        <div id="toast" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 bg-gray-800 border border-gray-700 text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 z-50">
+            <i class="fa-solid fa-check-circle text-accent text-xl"></i>
+            <div>
+                <h4 class="font-semibold text-sm">Deployment Successful</h4>
+                <p id="toast_msg" class="text-xs text-gray-400 mt-0.5">Integration written to engine.</p>
+            </div>
+        </div>
+
+        <!-- System Logs Section -->
+        <div class="mt-6 glass-panel rounded-xl p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-white"><i class="fa-solid fa-server pr-2"></i>System Audit Logs</h2>
+                <div class="flex gap-2">
+                    <button onclick="fetchLogs('integration')" class="px-4 py-1.5 bg-darker border border-gray-700 hover:border-accent text-sm rounded transition-colors text-white">Integration Logs</button>
+                    <button onclick="fetchLogs('calibration')" class="px-4 py-1.5 bg-darker border border-gray-700 hover:border-accent text-sm rounded transition-colors text-white">Calibration Gaps</button>
+                </div>
+            </div>
+            <div class="bg-darker border border-gray-800 rounded-lg p-4 h-64 overflow-y-auto">
+                <table class="w-full text-sm text-left font-mono">
+                    <thead class="text-xs text-gray-500 uppercase bg-gray-900/50 sticky top-0">
+                        <tr id="log_header">
+                            <th class="px-4 py-2">Timestamp</th>
+                            <th class="px-4 py-2">Event</th>
+                            <th class="px-4 py-2">Status / Variance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="log_body" class="divide-y divide-gray-800/50 text-gray-300">
+                        <tr><td colspan="3" class="px-4 py-4 text-center text-gray-600">Select a log type above to view audit trail.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const baseUrl = window.API_BASE + "";
+
+        async function analyzeAPI() {
+            const api_name = document.getElementById('api_name').value;
+            const api_url = document.getElementById('api_url').value;
+            const sample_json = document.getElementById('sample_json').value;
+
+            if (!api_name || !api_url || !sample_json) {
+                alert("Please fill all fields.");
+                return;
+            }
+
+            document.getElementById('empty_state').classList.add('hidden');
+            document.getElementById('loading_state').classList.remove('hidden');
+
+            try {
+                const res = await fetch(`${baseUrl}/api/admin/integration/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_name, api_url, sample_json })
+                });
+                
+                const data = await res.json();
+                
+                // Construct the 3-step thought process UI
+                const analysisHtml = `
+                    <div class="text-sm border border-gray-700 bg-gray-800/50 rounded-lg p-3">
+                        <span class="text-gray-400 block text-xs font-semibold mb-1 uppercase tracking-wider"><i class="fa-solid fa-sitemap mr-1"></i> Architecture Context</span>
+                        <span class="text-gray-200">${data.disha_architecture_context || "Context not provided."}</span>
+                    </div>
+                    <div class="text-sm border border-gray-700 bg-gray-800/50 rounded-lg p-3">
+                        <span class="text-gray-400 block text-xs font-semibold mb-1 uppercase tracking-wider"><i class="fa-solid fa-magnifying-glass-chart mr-1"></i> Relevance Assessment</span>
+                        <span class="text-gray-200">${data.relevance_assessment || "Assessment not provided."}</span>
+                    </div>
+                    <div class="text-sm border border-accent/30 bg-accent/10 rounded-lg p-3">
+                        <span class="text-accent block text-xs font-semibold mb-1 uppercase tracking-wider"><i class="fa-solid fa-code-branch mr-1"></i> Integration Decision</span>
+                        <span class="text-white font-medium">${data.integration_decision || "Decision pending."}</span>
+                    </div>
+                `;
+                
+                document.getElementById('out_analysis').innerHTML = analysisHtml;
+                document.getElementById('out_python').innerText = data.python_code || "# No code generated";
+                document.getElementById('out_js').innerText = data.js_config || "// No config generated";
+                
+            } catch (error) {
+                console.error("Analysis failed:", error);
+                alert("Failed to reach integration agent.");
+            } finally {
+                document.getElementById('loading_state').classList.add('hidden');
+            }
+        }
+
+        async function deployIntegration() {
+            const api_name = document.getElementById('api_name').value;
+            const btn = document.getElementById('btn_deploy');
+            const override = document.getElementById('layer_override').value;
+            
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch spinner"></i> Deploying...';
+            btn.disabled = true;
+
+            try {
+                const payload = { 
+                    api_name: api_name,
+                    api_url: document.getElementById('api_url').value,
+                    sample_json: override !== "auto" ? `HUMAN_OVERRIDE:${override}` : "approved"
+                };
+
+                const res = await fetch(`${baseUrl}/api/admin/integration/deploy`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                showToast(data.message || `${api_name} integrated successfully.`);
+                
+            } catch (error) {
+                console.error(error);
+                showToast("Simulated deployment failed.", true);
+            } finally {
+                btn.innerHTML = '<i class="fa-solid fa-rocket"></i> Deploy to DISHA';
+                btn.disabled = false;
+            }
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast_msg').innerText = message;
+            
+            if (isError) {
+                toast.querySelector('i').className = "fa-solid fa-triangle-exclamation text-red-500 text-xl";
+            } else {
+                toast.querySelector('i').className = "fa-solid fa-check-circle text-accent text-xl";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 4000);
+        }
+
+        async function fetchLogs(type) {
+            const tbody = document.getElementById('log_body');
+            const thead = document.getElementById('log_header');
+            tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-4 text-center text-gray-600"><i class="fa-solid fa-spinner spinner"></i> Fetching logs...</td></tr>';
+            
+            try {
+                const res = await fetch(`${baseUrl}/api/admin/integration/logs/${type}`);
+                const data = await res.json();
+                
+                if (data.error) throw new Error(data.error);
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-4 text-center text-gray-600">No logs found.</td></tr>';
+                    return;
+                }
+
+                if (type === 'integration') {
+                    thead.innerHTML = '<th class="px-4 py-2">Timestamp</th><th class="px-4 py-2">API Target</th><th class="px-4 py-2">Layer Assigned</th><th class="px-4 py-2">Status</th>';
+                    tbody.innerHTML = data.map(log => `
+                        <tr class="hover:bg-gray-800/30">
+                            <td class="px-4 py-2 text-xs text-gray-500">${new Date(log.timestamp).toLocaleString()}</td>
+                            <td class="px-4 py-2 text-blue-400">${log.api_name}</td>
+                            <td class="px-4 py-2">${log.layer_assigned}</td>
+                            <td class="px-4 py-2 text-accent">${log.status}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    thead.innerHTML = '<th class="px-4 py-2">Timestamp</th><th class="px-4 py-2">Location</th><th class="px-4 py-2">Actual vs Pred</th><th class="px-4 py-2">Variance</th>';
+                    tbody.innerHTML = data.map(log => `
+                        <tr class="hover:bg-gray-800/30">
+                            <td class="px-4 py-2 text-xs text-gray-500">${new Date(log.timestamp).toLocaleString()}</td>
+                            <td class="px-4 py-2 text-blue-400">${log.region.toUpperCase()} (${log.lat.toFixed(2)}, ${log.lng.toFixed(2)})</td>
+                            <td class="px-4 py-2">${log.actual_flood_polys} vs ${log.predicted_flood_polys}</td>
+                            <td class="px-4 py-2 font-bold ${log.gap_variance > 2 ? 'text-red-400' : 'text-accent'}">${log.gap_variance}</td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center text-red-500">Failed to load logs.</td></tr>';
+            }
+        }
+    </script>
+</body>
+</html>

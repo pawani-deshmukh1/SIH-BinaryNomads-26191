@@ -1,0 +1,225 @@
+{
+  "generated_from": "SRTM 30m via Google Earth Engine",
+  "method": "min elevation across each building footprint (not centroid)",
+  "datum_caveat": "Elevations below are raw SRTM (EGM96-referenced). The 0.81m empirical offset found during SAR-edge calibration was based on an unverified proxy event and was NOT confirmed against a real observed river level. Treat any elevation near the 49.68m/48.68m thresholds as having +/- ~1m uncertainty until the datum question is formally resolved against a real CWC gauge reading.",
+  "facility_count": 31,
+  "facilities": {
+    "Faculty Higer Secondary School": {
+      "osm_id": 221491263,
+      "amenity": "school",
+      "min_elevation_m": 50.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Delhi Public School, Guwahati": {
+      "osm_id": 224011409,
+      "amenity": "school",
+      "min_elevation_m": 47.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "GMCH Emergency Centre": {
+      "osm_id": 261074468,
+      "amenity": "hospital",
+      "min_elevation_m": 55.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Dispur Model Primary School": {
+      "osm_id": 301150615,
+      "amenity": "school",
+      "min_elevation_m": 54.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "beltola high school": {
+      "osm_id": 501920098,
+      "amenity": "school",
+      "min_elevation_m": 58.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Assam institute of Management": {
+      "osm_id": 517462550,
+      "amenity": "school",
+      "min_elevation_m": 45.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Pragjyotisch Senior Secondary School": {
+      "osm_id": 518201147,
+      "amenity": "school",
+      "min_elevation_m": 47.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Don Bosco School": {
+      "osm_id": 657782637,
+      "amenity": "school",
+      "min_elevation_m": 54.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Advance Neuro Science Hospital": {
+      "osm_id": 738302621,
+      "amenity": "hospital",
+      "min_elevation_m": 62.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Unnamed_796934736": {
+      "osm_id": 796934736,
+      "amenity": "school",
+      "min_elevation_m": 60.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Unnamed_796934739": {
+      "osm_id": 796934739,
+      "amenity": "school",
+      "min_elevation_m": 63.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Unnamed_796934742": {
+      "osm_id": 796934742,
+      "amenity": "school",
+      "min_elevation_m": 62.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "KAYA SKIN CLINIC": {
+      "osm_id": 806033541,
+      "amenity": "clinic",
+      "min_elevation_m": 55.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "GNRC Institute of Medical Science": {
+      "osm_id": 833415498,
+      "amenity": "hospital",
+      "min_elevation_m": 48.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Unnamed_912248059": {
+      "osm_id": 912248059,
+      "amenity": "school",
+      "min_elevation_m": 49.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Narayana e-Techno School": {
+      "osm_id": 1068917568,
+      "amenity": "school",
+      "min_elevation_m": 54.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "South Point School": {
+      "osm_id": 1168255716,
+      "amenity": "school",
+      "min_elevation_m": 55.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "GMC HOSPITAL": {
+      "osm_id": 1217793677,
+      "amenity": "hospital",
+      "min_elevation_m": 60.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "GMC DENTAL HOSPITAL AND COLLEGE": {
+      "osm_id": 1217793682,
+      "amenity": "hospital",
+      "min_elevation_m": 56.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "ST CLARET SCHOOL, BORJHAR": {
+      "osm_id": 1224696314,
+      "amenity": "school",
+      "min_elevation_m": 52.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "St. Joseph High School": {
+      "osm_id": 1224697903,
+      "amenity": "school",
+      "min_elevation_m": 63.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Maria's Public School": {
+      "osm_id": 1294938806,
+      "amenity": "school",
+      "min_elevation_m": 51.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Axel Public School": {
+      "osm_id": 1294949105,
+      "amenity": "school",
+      "min_elevation_m": 63.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Maligaon Railway Hospital": {
+      "osm_id": 1304575005,
+      "amenity": "hospital",
+      "min_elevation_m": 50.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Unnamed_1334976165": {
+      "osm_id": 1334976165,
+      "amenity": "hospital",
+      "min_elevation_m": 54.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "arya vidyapeeth college": {
+      "osm_id": 1335028676,
+      "amenity": "school",
+      "min_elevation_m": 52.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Delhi Public School Khanapara": {
+      "osm_id": 1338253745,
+      "amenity": "school",
+      "min_elevation_m": 205.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Gopal Boro Govt HS School": {
+      "osm_id": 1388625189,
+      "amenity": "school",
+      "min_elevation_m": 58.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Sabitri Bharali High School": {
+      "osm_id": 1388634456,
+      "amenity": "school",
+      "min_elevation_m": 55.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "St. Stephen's School": {
+      "osm_id": 1414223289,
+      "amenity": "school",
+      "min_elevation_m": 58.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    },
+    "Saint Francis de Sales School": {
+      "osm_id": 1540881235,
+      "amenity": "school",
+      "min_elevation_m": 53.0,
+      "datum_offset_applied_m": 0.0,
+      "elevation_source": "SRTM 30m (EGM96), min over footprint via GEE reduceRegions"
+    }
+  }
+}

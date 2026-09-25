@@ -1,0 +1,152 @@
+[
+  {
+    "id": "KER_SZ_REAL_000",
+    "name": "Diocese of Cochin",
+    "type": "school_ground",
+    "site_area_sqm": 10041,
+    "capacity_persons": 2339,
+    "suitability_score": 0.83,
+    "lat": 9.964774,
+    "lng": 76.242738
+  },
+  {
+    "id": "KER_SZ_REAL_001",
+    "name": "INS Garuda",
+    "type": "school_ground",
+    "site_area_sqm": 10429,
+    "capacity_persons": 2177,
+    "suitability_score": 0.92,
+    "lat": 9.941,
+    "lng": 76.275
+  },
+  {
+    "id": "KER_SZ_REAL_002",
+    "name": "Thoppumpady",
+    "type": "school_ground",
+    "site_area_sqm": 6121,
+    "capacity_persons": 2153,
+    "suitability_score": 0.91,
+    "lat": 9.935277777777777,
+    "lng": 76.25916666666667
+  },
+  {
+    "id": "KER_SZ_REAL_003",
+    "name": "Adventure Park, Kollam",
+    "type": "school_ground",
+    "site_area_sqm": 9937,
+    "capacity_persons": 2010,
+    "suitability_score": 0.87,
+    "lat": 8.897217,
+    "lng": 76.58492
+  },
+  {
+    "id": "KER_SZ_REAL_004",
+    "name": "Chelakkottukara",
+    "type": "school_ground",
+    "site_area_sqm": 11197,
+    "capacity_persons": 1138,
+    "suitability_score": 0.91,
+    "lat": 10.516666666666666,
+    "lng": 76.23333333333333
+  },
+  {
+    "id": "KER_SZ_REAL_005",
+    "name": "Chandrasekharan Nair Stadium",
+    "type": "school_ground",
+    "site_area_sqm": 11022,
+    "capacity_persons": 1285,
+    "suitability_score": 0.81,
+    "lat": 8.5049,
+    "lng": 76.9507
+  },
+  {
+    "id": "KER_SZ_REAL_006",
+    "name": "Hari Sri Vidya Nidhi School",
+    "type": "school_ground",
+    "site_area_sqm": 13276,
+    "capacity_persons": 1645,
+    "suitability_score": 0.84,
+    "lat": 10.5352,
+    "lng": 76.1985
+  },
+  {
+    "id": "KER_SZ_REAL_007",
+    "name": "Pulayanarkotta",
+    "type": "school_ground",
+    "site_area_sqm": 9800,
+    "capacity_persons": 2109,
+    "suitability_score": 0.76,
+    "lat": 8.5203731,
+    "lng": 76.9122711
+  },
+  {
+    "id": "KER_SZ_REAL_008",
+    "name": "Peringavu",
+    "type": "school_ground",
+    "site_area_sqm": 11594,
+    "capacity_persons": 2020,
+    "suitability_score": 0.96,
+    "lat": 10.55,
+    "lng": 76.21666666666667
+  },
+  {
+    "id": "KER_SZ_REAL_009",
+    "name": "Kannammoola",
+    "type": "school_ground",
+    "site_area_sqm": 19485,
+    "capacity_persons": 2753,
+    "suitability_score": 0.82,
+    "lat": 8.503333333333334,
+    "lng": 76.93166666666667
+  },
+  {
+    "id": "KER_SZ_REAL_010",
+    "name": "Maharaja's Technological Institute",
+    "type": "school_ground",
+    "site_area_sqm": 8612,
+    "capacity_persons": 1565,
+    "suitability_score": 0.7,
+    "lat": 10.5315,
+    "lng": 76.2216
+  },
+  {
+    "id": "KER_SZ_REAL_011",
+    "name": "Quilon Aerodrome",
+    "type": "school_ground",
+    "site_area_sqm": 19073,
+    "capacity_persons": 2202,
+    "suitability_score": 0.77,
+    "lat": 8.894,
+    "lng": 76.593
+  },
+  {
+    "id": "KER_SZ_REAL_012",
+    "name": "Samoothiri Tower",
+    "type": "school_ground",
+    "site_area_sqm": 8486,
+    "capacity_persons": 1835,
+    "suitability_score": 0.94,
+    "lat": 11.25,
+    "lng": 75.77
+  },
+  {
+    "id": "KER_SZ_REAL_013",
+    "name": "Punnapra",
+    "type": "school_ground",
+    "site_area_sqm": 16729,
+    "capacity_persons": 1978,
+    "suitability_score": 0.92,
+    "lat": 9.433333333333334,
+    "lng": 76.33333333333333
+  },
+  {
+    "id": "KER_SZ_REAL_014",
+    "name": "Kozhikode",
+    "type": "school_ground",
+    "site_area_sqm": 16845,
+    "capacity_persons": 2000,
+    "suitability_score": 0.92,
+    "lat": 11.248888888888889,
+    "lng": 75.78388888888888
+  }
+]

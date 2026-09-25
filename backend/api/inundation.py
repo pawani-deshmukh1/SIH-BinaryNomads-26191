@@ -65,18 +65,23 @@ async def run_inundation_simulation(req: InundationRequest):
 
 
 @router.get("/demo")
-async def run_inundation_demo():
+async def run_inundation_demo(region: str = "assam"):
     """
-    Returns a pre-built demo inundation result for Nagaon, Assam
+    Returns a pre-built demo inundation result for Nagaon, Assam or Kerala
     without running actual SRTM computation. For fast UI testing.
     """
     try:
         from core.flood_inundation import compute_inundation_scenarios
         # Run with synthetic DEM (no srtm needed) by using a tiny radius
         # so it falls back gracefully
+        if region == "kerala":
+            lat, lng = 9.8, 76.2
+        else:
+            lat, lng = 26.342, 92.651
+            
         result = compute_inundation_scenarios(
-            lat=26.342,
-            lng=92.651,
+            lat=lat,
+            lng=lng,
             radius_km=10.0,
             water_levels_m=[0.5, 1.0, 2.0, 3.0, 5.0],
             resolution_m=500,  # coarser = faster for demo

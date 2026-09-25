@@ -2,6 +2,7 @@
 
 :root {
   --bg: #07090f;
+  --bg-card: #0d1117;
   --surface: #0d1117;
   --surface-2: #161b22;
   --border: rgba(255, 255, 255, 0.08);
@@ -12,8 +13,11 @@
   --yellow: #eab308;
   --green: #22c55e;
   --accent: #3b82f6;
+  --danger: #ef4444;
+  --success: #22c55e;
   
   --text: #f1f5f9;
+  --text-bright: #ffffff;
   --text-dim: #94a3b8;
   --text-muted: #64748b;
   
@@ -126,6 +130,28 @@ header {
 .btn-primary:hover {
   background: rgba(59, 130, 246, 0.2);
   border-color: var(--accent);
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: var(--danger);
+}
+
+.btn-outline {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text);
+}
+
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--border-hover);
 }
 
 /* ────────────────────────────────────────────────────────
@@ -494,12 +520,55 @@ header {
   box-shadow: 0 0 8px 2px rgba(249, 115, 22, 0.5);
 }
 
+.marker-pulse-ORANGE {
+  animation: pulse-orange 2s infinite;
+}
+@keyframes pulse-orange {
+  0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.6); }
+  70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+}
+
 .flash-white {
   animation: flash-white-anim 0.3s ease-out;
 }
 @keyframes flash-white-anim {
   0% { fill: white; box-shadow: 0 0 20px 10px rgba(255,255,255,0.8); }
   100% { fill: inherit; }
+}
+
+/* Weather Grid Icons */
+.weather-icon-heavy {
+  font-size: 28px;
+  line-height: 1;
+  text-align: center;
+  filter: drop-shadow(0 0 4px rgba(0,0,0,0.8));
+}
+
+.weather-icon-cloudburst {
+  font-size: 36px;
+  line-height: 1;
+  text-align: center;
+  animation: pulse-storm 1.5s infinite;
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
+}
+
+@keyframes pulse-storm {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.weather-icon-cyclone {
+  font-size: 32px;
+  line-height: 1;
+  text-align: center;
+  animation: spin-cyclone 2s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.8));
+}
+
+@keyframes spin-cyclone {
+  100% { transform: rotate(360deg); }
 }
 
 /* Inundation Circle Animation */

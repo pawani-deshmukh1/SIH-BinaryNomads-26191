@@ -1,0 +1,2555 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.31943619522735,
+          10.802610112754635
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_0",
+        "operator": "Airtel",
+        "cell_id": 593277,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.50025473297246,
+          10.321345063705765
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_1",
+        "operator": "BSNL",
+        "cell_id": 471161,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.31986282775054,
+          9.400483294740416
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_2",
+        "operator": "Vi",
+        "cell_id": 946004,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.26858208461492,
+          10.911126749706195
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_3",
+        "operator": "Airtel",
+        "cell_id": 637844,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.28052288681306,
+          11.080857504213188
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_4",
+        "operator": "BSNL",
+        "cell_id": 316536,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.60116807556432,
+          11.090911279026162
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_5",
+        "operator": "Jio",
+        "cell_id": 697779,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.35123549320822,
+          8.648585943823338
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_6",
+        "operator": "Jio",
+        "cell_id": 343816,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.47257402230059,
+          8.820052718390006
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_7",
+        "operator": "Jio",
+        "cell_id": 359622,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.48738120339411,
+          9.949096981372339
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_8",
+        "operator": "Airtel",
+        "cell_id": 795713,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.79826733113615,
+          10.161095213738808
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_9",
+        "operator": "Vi",
+        "cell_id": 717514,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.82012034981483,
+          9.608632372872938
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_10",
+        "operator": "Vi",
+        "cell_id": 305303,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.38764013267443,
+          11.432809337826319
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_11",
+        "operator": "Airtel",
+        "cell_id": 787348,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.79962241730348,
+          10.23413212444401
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_12",
+        "operator": "Jio",
+        "cell_id": 689491,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.96775251059519,
+          10.650303943625678
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_13",
+        "operator": "BSNL",
+        "cell_id": 974436,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.03130445750638,
+          8.800086432859398
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_14",
+        "operator": "BSNL",
+        "cell_id": 948933,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.1905181952655,
+          10.569795879388106
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_15",
+        "operator": "Vi",
+        "cell_id": 293326,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.78153407763955,
+          8.794411583150127
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_16",
+        "operator": "BSNL",
+        "cell_id": 102072,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.12509113483164,
+          9.986673662275667
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_17",
+        "operator": "BSNL",
+        "cell_id": 400265,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.79760141498666,
+          9.757239191362718
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_18",
+        "operator": "Vi",
+        "cell_id": 258425,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.30936885437373,
+          10.49049992025929
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_19",
+        "operator": "Vi",
+        "cell_id": 300506,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.71548180639556,
+          10.596213635915353
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_20",
+        "operator": "Airtel",
+        "cell_id": 990509,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.14125222361923,
+          8.743388892560855
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_21",
+        "operator": "Vi",
+        "cell_id": 462848,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.43846857881027,
+          9.644435828370973
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_22",
+        "operator": "Vi",
+        "cell_id": 643490,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.01793845814193,
+          8.70469061173549
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_23",
+        "operator": "Vi",
+        "cell_id": 558619,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.4750461878499,
+          8.863028055703628
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_24",
+        "operator": "Jio",
+        "cell_id": 164252,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.86442085097154,
+          8.918715860075068
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_25",
+        "operator": "Vi",
+        "cell_id": 636815,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.80399362304335,
+          9.093963007856019
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_26",
+        "operator": "Jio",
+        "cell_id": 913514,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.46789217240004,
+          9.389101095247247
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_27",
+        "operator": "Jio",
+        "cell_id": 320724,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.38427788193314,
+          10.17848608853604
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_28",
+        "operator": "Jio",
+        "cell_id": 291029,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.63312077482655,
+          8.59506714186433
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_29",
+        "operator": "Airtel",
+        "cell_id": 892531,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.4243619392817,
+          10.036277377760637
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_30",
+        "operator": "BSNL",
+        "cell_id": 466362,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.31206814021239,
+          9.450146553846993
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_31",
+        "operator": "Airtel",
+        "cell_id": 136770,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.83994652625522,
+          10.371782191502387
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_32",
+        "operator": "Jio",
+        "cell_id": 695517,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.95838021706608,
+          10.26759445134067
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_33",
+        "operator": "BSNL",
+        "cell_id": 257209,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.48962328369824,
+          9.317391852099545
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_34",
+        "operator": "Airtel",
+        "cell_id": 634519,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.34538378132883,
+          8.517530753626849
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_35",
+        "operator": "Airtel",
+        "cell_id": 580155,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.54315244528684,
+          9.849431895671595
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_36",
+        "operator": "Airtel",
+        "cell_id": 921877,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.06853285987684,
+          10.551172419095689
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_37",
+        "operator": "Jio",
+        "cell_id": 529573,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.10588636640871,
+          11.150753460864662
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_38",
+        "operator": "Vi",
+        "cell_id": 111990,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.0673269699448,
+          11.335447703553141
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_39",
+        "operator": "BSNL",
+        "cell_id": 479602,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.5189389865002,
+          8.812793731330174
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_40",
+        "operator": "BSNL",
+        "cell_id": 851115,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.03883888233761,
+          9.59996692239062
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_41",
+        "operator": "Jio",
+        "cell_id": 690670,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.96331488286302,
+          11.321897108946716
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_42",
+        "operator": "Airtel",
+        "cell_id": 827225,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.56183460136509,
+          9.937640521781772
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_43",
+        "operator": "BSNL",
+        "cell_id": 719147,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.19740015031674,
+          8.776285816555408
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_44",
+        "operator": "Vi",
+        "cell_id": 282119,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.85742617615989,
+          10.732269229212655
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_45",
+        "operator": "Jio",
+        "cell_id": 753398,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.46199838102406,
+          9.138166263756506
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_46",
+        "operator": "Airtel",
+        "cell_id": 892281,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.50110192419282,
+          9.256605558021576
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_47",
+        "operator": "Airtel",
+        "cell_id": 795368,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.04512388541121,
+          10.544296622929766
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_48",
+        "operator": "Vi",
+        "cell_id": 595317,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.52714074600622,
+          9.76113382781827
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_49",
+        "operator": "Vi",
+        "cell_id": 484958,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.85777579214957,
+          9.158714708321302
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_50",
+        "operator": "Airtel",
+        "cell_id": 615832,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.3428227177199,
+          9.670474350414285
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_51",
+        "operator": "Airtel",
+        "cell_id": 882847,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.31459891455742,
+          9.659310245825207
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_52",
+        "operator": "Jio",
+        "cell_id": 364868,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.40728967211642,
+          9.181646534665205
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_53",
+        "operator": "Airtel",
+        "cell_id": 277838,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.29452227233105,
+          9.389036388013658
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_54",
+        "operator": "Airtel",
+        "cell_id": 284593,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.79997333378635,
+          10.03182385674299
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_55",
+        "operator": "BSNL",
+        "cell_id": 310285,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.43521763630812,
+          8.889968814698271
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_56",
+        "operator": "Jio",
+        "cell_id": 310749,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.64274248441107,
+          8.60010122166745
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_57",
+        "operator": "Airtel",
+        "cell_id": 509980,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.1906990208641,
+          11.02011289679885
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_58",
+        "operator": "Jio",
+        "cell_id": 584904,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.03368335669535,
+          9.430440661334767
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_59",
+        "operator": "Jio",
+        "cell_id": 612639,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.56048950495239,
+          10.239573332664975
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_60",
+        "operator": "Airtel",
+        "cell_id": 401073,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.25309870500443,
+          8.948200463240628
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_61",
+        "operator": "Vi",
+        "cell_id": 665577,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.9558267407806,
+          10.652348425823645
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_62",
+        "operator": "Airtel",
+        "cell_id": 956860,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.9685813545678,
+          10.038358982032985
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_63",
+        "operator": "Airtel",
+        "cell_id": 251378,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.31284539859698,
+          10.453527919485975
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_64",
+        "operator": "Airtel",
+        "cell_id": 315939,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.69004867193284,
+          11.160703757299885
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_65",
+        "operator": "Jio",
+        "cell_id": 284652,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.40060987790618,
+          9.639399851036227
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_66",
+        "operator": "Jio",
+        "cell_id": 813830,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.55265959798233,
+          10.359756426623544
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_67",
+        "operator": "Vi",
+        "cell_id": 727067,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.9874768111191,
+          10.306334445615487
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_68",
+        "operator": "Jio",
+        "cell_id": 391243,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.59505837755577,
+          9.001231387218837
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_69",
+        "operator": "Vi",
+        "cell_id": 649700,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.17267176614584,
+          8.50627821912379
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_70",
+        "operator": "Airtel",
+        "cell_id": 543701,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.8064033144756,
+          9.16548505033531
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_71",
+        "operator": "Jio",
+        "cell_id": 120560,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.3836709356006,
+          9.834444203650289
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_72",
+        "operator": "Vi",
+        "cell_id": 493600,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.57103187110417,
+          8.731651157793985
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_73",
+        "operator": "Vi",
+        "cell_id": 491015,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.00682319511306,
+          10.638079467244172
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_74",
+        "operator": "Vi",
+        "cell_id": 581189,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.67300949248927,
+          10.665506726582322
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_75",
+        "operator": "Vi",
+        "cell_id": 613674,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.1533222283527,
+          9.898040675082603
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_76",
+        "operator": "BSNL",
+        "cell_id": 762897,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.8510383235998,
+          8.975652751779148
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_77",
+        "operator": "BSNL",
+        "cell_id": 814125,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.8623187015382,
+          11.284646089005939
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_78",
+        "operator": "Airtel",
+        "cell_id": 568024,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.41635812950364,
+          10.598153325478673
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_79",
+        "operator": "Jio",
+        "cell_id": 439500,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.58106161395477,
+          10.973154890477137
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_80",
+        "operator": "Airtel",
+        "cell_id": 172740,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.35849729090437,
+          9.887999147028001
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_81",
+        "operator": "Jio",
+        "cell_id": 719520,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.67929758319612,
+          9.862744794413343
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_82",
+        "operator": "Jio",
+        "cell_id": 530454,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.96303430489647,
+          9.84885126990332
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_83",
+        "operator": "Jio",
+        "cell_id": 244251,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.98477515099138,
+          11.455799934968843
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_84",
+        "operator": "BSNL",
+        "cell_id": 719258,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.51384005348581,
+          9.147540047063169
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_85",
+        "operator": "BSNL",
+        "cell_id": 310448,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.10239665879088,
+          8.812931149248255
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_86",
+        "operator": "Vi",
+        "cell_id": 565497,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.31850609173948,
+          9.173723136031404
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_87",
+        "operator": "Vi",
+        "cell_id": 710197,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.27728767729334,
+          9.264753713906357
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_88",
+        "operator": "Vi",
+        "cell_id": 522228,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.06940982845424,
+          10.159890070362923
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_89",
+        "operator": "BSNL",
+        "cell_id": 687547,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.9831869725751,
+          8.98535260546058
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_90",
+        "operator": "Vi",
+        "cell_id": 142144,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.025461803923,
+          10.383010507593905
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_91",
+        "operator": "Airtel",
+        "cell_id": 957703,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.39904959339023,
+          9.489403425400193
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_92",
+        "operator": "BSNL",
+        "cell_id": 104107,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.37685992715329,
+          10.649141127202066
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_93",
+        "operator": "Jio",
+        "cell_id": 540146,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.9129821044911,
+          11.370811831346376
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_94",
+        "operator": "Airtel",
+        "cell_id": 828640,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.19529750876718,
+          9.10738180981251
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_95",
+        "operator": "BSNL",
+        "cell_id": 134793,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.63168582634964,
+          8.72939077585634
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_96",
+        "operator": "Vi",
+        "cell_id": 887265,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.1961189890715,
+          10.830253604802254
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_97",
+        "operator": "BSNL",
+        "cell_id": 327672,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.92357167990028,
+          11.29990820497775
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_98",
+        "operator": "Jio",
+        "cell_id": 661761,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.9536068775261,
+          9.556228873218384
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_99",
+        "operator": "Vi",
+        "cell_id": 586660,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.96380668173775,
+          11.04516853413903
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_100",
+        "operator": "Airtel",
+        "cell_id": 373267,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.57667165025977,
+          8.708101162353502
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_101",
+        "operator": "Jio",
+        "cell_id": 647995,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.76297055117233,
+          11.24202115931715
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_102",
+        "operator": "Jio",
+        "cell_id": 837892,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.30011801508451,
+          9.707198385042544
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_103",
+        "operator": "Vi",
+        "cell_id": 208053,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.99123136491673,
+          10.530399431830734
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_104",
+        "operator": "Airtel",
+        "cell_id": 763994,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.77879637058855,
+          9.539884223912614
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_105",
+        "operator": "Jio",
+        "cell_id": 137269,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.10736422555797,
+          8.677321569679995
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_106",
+        "operator": "Airtel",
+        "cell_id": 505111,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.34095447334498,
+          10.480822219090978
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_107",
+        "operator": "Jio",
+        "cell_id": 987927,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.98894870315907,
+          10.99514542863446
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_108",
+        "operator": "Vi",
+        "cell_id": 954601,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.13294058458341,
+          9.978488580548913
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_109",
+        "operator": "BSNL",
+        "cell_id": 881489,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.30401742545774,
+          10.589537763644119
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_110",
+        "operator": "BSNL",
+        "cell_id": 192164,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.6568673425697,
+          8.672115985102584
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_111",
+        "operator": "Jio",
+        "cell_id": 116004,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.24384880711567,
+          10.332833381006063
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_112",
+        "operator": "Vi",
+        "cell_id": 379226,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.69870576452143,
+          11.484310319201533
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_113",
+        "operator": "BSNL",
+        "cell_id": 377258,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.6794737779202,
+          11.353705810204808
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_114",
+        "operator": "BSNL",
+        "cell_id": 860921,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.8723169477706,
+          11.021697213786327
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_115",
+        "operator": "BSNL",
+        "cell_id": 364478,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.28800280476993,
+          9.000382841874858
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_116",
+        "operator": "BSNL",
+        "cell_id": 791843,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.45662256321167,
+          10.060042956512667
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_117",
+        "operator": "Vi",
+        "cell_id": 616246,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.39664116253775,
+          11.436861753193783
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_118",
+        "operator": "Airtel",
+        "cell_id": 995223,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.50553215437185,
+          10.93465647559724
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_119",
+        "operator": "Jio",
+        "cell_id": 752161,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.26258362528414,
+          8.638860718290253
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_120",
+        "operator": "Vi",
+        "cell_id": 634354,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.05854484961303,
+          8.560746437340521
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_121",
+        "operator": "BSNL",
+        "cell_id": 419423,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.56594534302079,
+          9.560650176233898
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_122",
+        "operator": "Jio",
+        "cell_id": 987500,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.56835473516061,
+          11.04489149096105
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_123",
+        "operator": "Airtel",
+        "cell_id": 247449,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.4791811054948,
+          10.069750501206487
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_124",
+        "operator": "Jio",
+        "cell_id": 813629,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.44368768470126,
+          11.153564651742775
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_125",
+        "operator": "BSNL",
+        "cell_id": 864846,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.95442660117251,
+          9.343797652218335
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_126",
+        "operator": "Jio",
+        "cell_id": 331328,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.24397814621081,
+          10.816745708728593
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_127",
+        "operator": "Airtel",
+        "cell_id": 707349,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.94457758290514,
+          11.024742149634003
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_128",
+        "operator": "Vi",
+        "cell_id": 196639,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.93128184594539,
+          9.587436872298545
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_129",
+        "operator": "Airtel",
+        "cell_id": 759141,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.9634751284645,
+          9.727131860683519
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_130",
+        "operator": "BSNL",
+        "cell_id": 524138,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.8170517511036,
+          11.312205976920293
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_131",
+        "operator": "BSNL",
+        "cell_id": 988825,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.5162817248334,
+          11.431110681968784
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_132",
+        "operator": "BSNL",
+        "cell_id": 331873,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.9299613245497,
+          9.758712330113054
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_133",
+        "operator": "Jio",
+        "cell_id": 762909,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.54252564430811,
+          8.859824242407697
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_134",
+        "operator": "Airtel",
+        "cell_id": 422745,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.16783818925643,
+          9.803501576546294
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_135",
+        "operator": "Jio",
+        "cell_id": 150240,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.4887503073485,
+          10.585488110985843
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_136",
+        "operator": "Vi",
+        "cell_id": 910304,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.40544433863036,
+          9.77307715822418
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_137",
+        "operator": "BSNL",
+        "cell_id": 981368,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.96617441919538,
+          10.107462183072212
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_138",
+        "operator": "Vi",
+        "cell_id": 610940,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.96367084190317,
+          9.876775327865658
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_139",
+        "operator": "Vi",
+        "cell_id": 651849,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.89998635981036,
+          10.645899164172913
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_140",
+        "operator": "Jio",
+        "cell_id": 515554,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.57493743202672,
+          8.569238077181181
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_141",
+        "operator": "Airtel",
+        "cell_id": 220587,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.85903136486863,
+          10.723508324901893
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_142",
+        "operator": "BSNL",
+        "cell_id": 968033,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.34657069097082,
+          8.659386039544565
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_143",
+        "operator": "Airtel",
+        "cell_id": 570431,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.66481000740943,
+          10.890744982769746
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_144",
+        "operator": "Jio",
+        "cell_id": 931749,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.56687637674787,
+          9.514924700336204
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_145",
+        "operator": "Jio",
+        "cell_id": 492400,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.05861330513582,
+          10.976317675218443
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_146",
+        "operator": "Jio",
+        "cell_id": 594783,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.18564934820087,
+          9.57209848427349
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_147",
+        "operator": "BSNL",
+        "cell_id": 213957,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.25829678373475,
+          9.056799228466309
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_148",
+        "operator": "BSNL",
+        "cell_id": 801451,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.50639726902764,
+          8.637495140070477
+        ]
+      },
+      "properties": {
+        "id": "TWR_KERALA_149",
+        "operator": "BSNL",
+        "cell_id": 666357,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    }
+  ]
+}

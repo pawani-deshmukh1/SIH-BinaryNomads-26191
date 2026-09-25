@@ -1,0 +1,188 @@
+[
+  {
+    "basin_id": "GHY_BHARALU_CORE",
+    "name": "Bharalu Urban Drainage Corridor",
+    "monitor_type": "urban_flood_risk",
+    "risk_class": "HIGH",
+    "ufri_score": 0.5958,
+    "estimated_runway_months": 120,
+    "validation_flood_extent_ha": 29.01,
+    "trend_series": [
+      {
+        "year": 2016,
+        "built_ha": 1707.14,
+        "wetland_ha": 427.49
+      },
+      {
+        "year": 2017,
+        "built_ha": 2027.06,
+        "wetland_ha": 318.3
+      },
+      {
+        "year": 2018,
+        "built_ha": 1956.21,
+        "wetland_ha": 370.77
+      },
+      {
+        "year": 2019,
+        "built_ha": 2069.56,
+        "wetland_ha": 260.02
+      },
+      {
+        "year": 2020,
+        "built_ha": 1962.07,
+        "wetland_ha": 326.62
+      },
+      {
+        "year": 2021,
+        "built_ha": 2130.5,
+        "wetland_ha": 248.68
+      },
+      {
+        "year": 2022,
+        "built_ha": 2138.32,
+        "wetland_ha": 252.58
+      },
+      {
+        "year": 2023,
+        "built_ha": 2106.15,
+        "wetland_ha": 320.38
+      },
+      {
+        "year": 2024,
+        "built_ha": 2131.29,
+        "wetland_ha": 258.45
+      }
+    ],
+    "basin_geometrics": {
+      "total_area_ha": 2663.2,
+      "mean_slope_deg": 5.77,
+      "pump_dependency_score": 0.9
+    },
+    "source": "Dynamic World + SRTM + Sentinel-1 SAR (GEE)"
+  },
+  {
+    "basin_id": "GHY_DEEPOR_BEEL",
+    "name": "Deepor Beel Basin",
+    "monitor_type": "urban_flood_risk",
+    "risk_class": "MEDIUM",
+    "ufri_score": 0.3779,
+    "estimated_runway_months": 120,
+    "validation_flood_extent_ha": 8.79,
+    "trend_series": [
+      {
+        "year": 2016,
+        "built_ha": 850.49,
+        "wetland_ha": 878.46
+      },
+      {
+        "year": 2017,
+        "built_ha": 1324.03,
+        "wetland_ha": 760.28
+      },
+      {
+        "year": 2018,
+        "built_ha": 1298.84,
+        "wetland_ha": 967.5
+      },
+      {
+        "year": 2019,
+        "built_ha": 1585.59,
+        "wetland_ha": 844.46
+      },
+      {
+        "year": 2020,
+        "built_ha": 1441.08,
+        "wetland_ha": 728.67
+      },
+      {
+        "year": 2021,
+        "built_ha": 1649.99,
+        "wetland_ha": 835.83
+      },
+      {
+        "year": 2022,
+        "built_ha": 1732.12,
+        "wetland_ha": 632.35
+      },
+      {
+        "year": 2023,
+        "built_ha": 1721.35,
+        "wetland_ha": 865.59
+      },
+      {
+        "year": 2024,
+        "built_ha": 1812.43,
+        "wetland_ha": 761.86
+      }
+    ],
+    "basin_geometrics": {
+      "total_area_ha": 5328.8,
+      "mean_slope_deg": 6.99,
+      "pump_dependency_score": 0.2
+    },
+    "source": "Dynamic World + SRTM + Sentinel-1 SAR (GEE)"
+  },
+  {
+    "basin_id": "GHY_SILSAKO_BEEL",
+    "name": "Silsako Beel Catchment",
+    "monitor_type": "urban_flood_risk",
+    "risk_class": "HIGH",
+    "ufri_score": 0.6318,
+    "estimated_runway_months": 120,
+    "validation_flood_extent_ha": 0.13,
+    "trend_series": [
+      {
+        "year": 2016,
+        "built_ha": 1703.69,
+        "wetland_ha": 186.15
+      },
+      {
+        "year": 2017,
+        "built_ha": 2309.9,
+        "wetland_ha": 27.03
+      },
+      {
+        "year": 2018,
+        "built_ha": 2246.2,
+        "wetland_ha": 31.48
+      },
+      {
+        "year": 2019,
+        "built_ha": 2427.42,
+        "wetland_ha": 28.2
+      },
+      {
+        "year": 2020,
+        "built_ha": 2290.51,
+        "wetland_ha": 26.91
+      },
+      {
+        "year": 2021,
+        "built_ha": 2497.52,
+        "wetland_ha": 32.47
+      },
+      {
+        "year": 2022,
+        "built_ha": 2542.18,
+        "wetland_ha": 18.96
+      },
+      {
+        "year": 2023,
+        "built_ha": 2497.36,
+        "wetland_ha": 43.9
+      },
+      {
+        "year": 2024,
+        "built_ha": 2503.82,
+        "wetland_ha": 24.76
+      }
+    ],
+    "basin_geometrics": {
+      "total_area_ha": 3329.5,
+      "mean_slope_deg": 6.15,
+      "pump_dependency_score": 0.6
+    },
+    "source": "Dynamic World + SRTM + Sentinel-1 SAR (GEE)"
+  }
+]

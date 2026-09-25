@@ -59,6 +59,104 @@ def save_buildings_cache(bbox: tuple, geojson: dict) -> None:
     logger.info(f"[OSM] Cache written: {path.name} ({len(geojson.get('features', []))} buildings)")
 
 
+def _assets_cache_path(bbox: tuple) -> Path:
+    return CACHE_DIR / f"critical_assets_{_bbox_cache_key(bbox)}.geojson"
+
+def fetch_critical_assets_overpass(bbox: tuple[float, float, float, float]) -> dict:
+    """
+    Fetch critical infrastructure (hospitals, schools) and roads from Overpass API, with caching.
+    """
+    import requests
+    
+    # 1. Check Cache
+    cache_file = _assets_cache_path(bbox)
+    if cache_file.exists():
+        logger.info(f"[OSM] Critical assets cache hit: {cache_file.name}")
+        with open(cache_file, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    min_lng, min_lat, max_lng, max_lat = bbox
+    overpass_bbox = f"{min_lat},{min_lng},{max_lat},{max_lng}"
+
+    query = f"""
+    [out:json][timeout:120];
+    (
+      node["amenity"~"hospital|clinic|school"]({overpass_bbox});
+      way["amenity"~"hospital|clinic|school"]({overpass_bbox});
+      way["highway"~"primary|secondary|trunk|residential|unclassified"]({overpass_bbox});
+    );
+    out body geom;
+    """
+
+    url = "https://lz4.overpass-api.de/api/interpreter"
+    logger.info(f"[OSM] Fetching critical assets from Overpass (optimized) for bbox {bbox}...")
+
+    headers = {
+        "User-Agent": "DISHA-DisasterResponse-SIH2026/1.0",
+        "Accept": "application/json"
+    }
+
+    try:
+        resp = requests.post(url, data={"data": query}, headers=headers, timeout=180)
+        resp.raise_for_status()
+        osm_data = resp.json()
+    except Exception as e:
+        logger.error(f"[OSM] Overpass assets fetch failed: {e}")
+        return {"type": "FeatureCollection", "features": []}
+
+    features = []
+    for element in osm_data.get("elements", []):
+        tags = element.get("tags", {})
+        name = tags.get("name", "Unknown")
+        
+        feature_type = "unknown"
+        if "highway" in tags:
+            feature_type = "road"
+        elif "amenity" in tags:
+            feature_type = tags["amenity"]
+            
+        geom = None
+        if element["type"] == "node":
+            geom = {
+                "type": "Point",
+                "coordinates": [element["lon"], element["lat"]]
+            }
+        elif element["type"] == "way" and "geometry" in element:
+            coords = [[pt["lon"], pt["lat"]] for pt in element["geometry"]]
+            if feature_type == "road":
+                geom = {
+                    "type": "LineString",
+                    "coordinates": coords
+                }
+            else:
+                if len(coords) >= 4 and coords[0] != coords[-1]:
+                    coords.append(coords[0]) # close ring for polygons
+                geom = {
+                    "type": "Polygon",
+                    "coordinates": [coords]
+                }
+                
+        if geom:
+            features.append({
+                "type": "Feature",
+                "properties": {
+                    "osm_id": f"{element['type']}/{element['id']}",
+                    "name": name,
+                    "type": feature_type,
+                    "layer_type": "critical_asset"
+                },
+                "geometry": geom
+            })
+
+    result = {"type": "FeatureCollection", "features": features}
+    
+    # 2. Save to Cache
+    with open(cache_file, "w", encoding="utf-8") as f:
+        json.dump(result, f)
+        
+    logger.info(f"[OSM] Fetched and cached {len(features)} critical assets")
+    return result
+
 def fetch_buildings_overpass(bbox: tuple[float, float, float, float]) -> dict:
     """
     Fetch building footprints from Overpass API.

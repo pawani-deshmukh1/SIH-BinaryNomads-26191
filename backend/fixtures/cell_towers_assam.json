@@ -1,0 +1,56 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.63996149190402,
+          26.391915320753206
+        ]
+      },
+      "properties": {
+        "id": "TWR_OCID_6451",
+        "operator": "Vi",
+        "cell_id": 6451,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.70816270947516,
+          26.449196632772722
+        ]
+      },
+      "properties": {
+        "id": "TWR_OCID_2810",
+        "operator": "Jio",
+        "cell_id": 2810,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.58486508678847,
+          26.368236329462718
+        ]
+      },
+      "properties": {
+        "id": "TWR_OCID_9998",
+        "operator": "Airtel",
+        "cell_id": 9998,
+        "layer_type": "tower",
+        "status": "operational"
+      }
+    }
+  ]
+}

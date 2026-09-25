@@ -58,6 +58,10 @@ def _compute_continuous_multiplier(
     else:
         status = "STABLE"
 
+    # Flash Flood 3-hour short-window check (Layer 1 Bonus)
+    # If intensity is extremely high in the immediate 3 hours, override to flash flood.
+    # Note: We need the hourly data to do this properly, so we will do it outside this function.
+
     return multiplier, status
 
 
@@ -73,7 +77,7 @@ async def get_live_weather_trigger(lat: float, lng: float) -> dict:
         f"https://api.open-meteo.com/v1/forecast"
         f"?latitude={lat}&longitude={lng}"
         f"&current=precipitation"
-        f"&hourly=precipitation"
+        f"&hourly=precipitation,cape"
         f"&forecast_days=3"
     )
 
@@ -98,23 +102,43 @@ async def get_live_weather_trigger(lat: float, lng: float) -> dict:
 
             current_rain   = float(forecast_data.get("current", {}).get("precipitation", 0.0))
             hourly_rain    = forecast_data.get("hourly", {}).get("precipitation", [])
-            forecast_72h   = float(sum(hourly_rain[:72]) if hourly_rain else 0.0)
+            hourly_cape    = forecast_data.get("hourly", {}).get("cape", [])
+            forecast_72h   = float(sum(r for r in hourly_rain[:72] if r is not None) if hourly_rain else 0.0)
+            short_window_3h = float(sum(r for r in hourly_rain[:3] if r is not None) if hourly_rain else 0.0)
+            current_cape   = float(hourly_cape[0]) if hourly_cape and hourly_cape[0] is not None else 0.0
+            
             daily_precip   = archive_data.get("daily", {}).get("precipitation_sum", [])
             antecedent_30d = float(sum(v for v in daily_precip if v is not None))
 
             multiplier, status = _compute_continuous_multiplier(
                 current_rain, forecast_72h, antecedent_30d
             )
+            
+            # --- LAYER 1: Flash Flood Override ---
+            if short_window_3h >= 25.0:  # 25mm in 3 hours is a flash flood threat for steep catchments
+                status = "FLASH_FLOOD_WARNING"
+                multiplier = max(multiplier, 2.8)
+                
+            # --- LAYER 0: Atmospheric Nowcasting (Cloudburst Risk) ---
+            if current_cape > 1500:
+                atmospheric_instability = "CRITICAL_CLOUDBURST_RISK"
+            elif current_cape > 1000:
+                atmospheric_instability = "ELEVATED"
+            else:
+                atmospheric_instability = "STABLE"
 
             return {
                 "status":              "success",
                 "current_rain_mm_hr":  round(current_rain,   2),
                 "forecast_72h_mm":     round(forecast_72h,   1),
+                "short_window_3h_mm":  round(short_window_3h, 1),
                 "antecedent_30d_mm":   round(antecedent_30d, 1),
                 "trigger_status":      status,
                 "risk_multiplier":     multiplier,
+                "current_cape_j_kg":   round(current_cape, 1),
+                "atmospheric_instability": atmospheric_instability,
                 "multiplier_method":   "continuous_weighted_composite",
-                "source":              "Open-Meteo / WMO Standard (Zhu et al. 2023)",
+                "source":              "Open-Meteo / WMO Standard",
             }
 
     except Exception as e:
@@ -123,8 +147,11 @@ async def get_live_weather_trigger(lat: float, lng: float) -> dict:
             "message":             str(e),
             "current_rain_mm_hr":  0.0,
             "forecast_72h_mm":     0.0,
+            "short_window_3h_mm":  0.0,
             "antecedent_30d_mm":   0.0,
             "trigger_status":      "UNKNOWN",
             "risk_multiplier":     1.0,
+            "current_cape_j_kg":   0.0,
+            "atmospheric_instability": "UNKNOWN",
             "multiplier_method":   "fallback",
         }

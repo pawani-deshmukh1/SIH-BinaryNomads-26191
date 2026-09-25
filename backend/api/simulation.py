@@ -251,7 +251,7 @@ async def get_simulation_data(habitation_id: str):
             lng=lng, 
             radius_km=15.0, # 15km radius is standard for our local sim
             water_levels_m=water_levels,
-            resolution_m=300
+            resolution_m=90
         )
         
         # 4. Format Flood Stages

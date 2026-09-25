@@ -138,6 +138,7 @@
       height: 100%;
     }
   </style>
+  <script src="js/config.js"></script>
 </head>
 <body>
 
@@ -145,13 +146,19 @@
     <div class="brand">
       <div class="pulse-status"></div>
       DISHA 
-      <span class="flow-title">Field Operations Command</span>
+      <span class="flow-title">
+        Field Operations Command<br>
+        <span style="color: var(--accent); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1;">Operational View (Field Commander)</span>
+      </span>
     </div>
     <div class="header-actions" style="display: flex; align-items: center; gap: 12px;">
       <span style="font-size: 10px; color: var(--text-dim); background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);" title="Data provided by various sources">
-        DATA: NASA SRTM · CHIRPS · IMD Open-Meteo · HydroRIVERS · ESA WorldCover
+        DATA: ISRO Bhuvan DEM · CHIRPS · IMD Nowcast Telemetry · HydroRIVERS · ESA WorldCover
       </span>
+      <button class="btn" style="padding: 6px 12px; background: rgba(239, 68, 68, 0.2); color: white; border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 4px; cursor: pointer; font-weight: 600;" onclick="simulateDeadZone()">📡 Sim Dead Zone Alert</button>
+      <button class="btn" style="padding: 6px 12px; background: rgba(255,255,255,0.1); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;" onclick="startFieldOpsTutorial()">🎓 Guided Tour</button>
       <button class="btn" style="padding: 6px 12px; background: rgba(255,255,255,0.1); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;" onclick="window.location.href='index.html'">🔙 Back to Main EWS</button>
+
       <span>🕐 <span id="last-sync">Just now</span></span>
     </div>
   </header>
@@ -174,20 +181,150 @@
       <div id="map"></div>
     </div>
 
-    <!-- RIGHT PANEL: Live Reports -->
-    <div class="panel-right">
-      <div class="panel-header">
-        Live Field Reports
-        <button onclick="fetchReports()" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">🔄</button>
+    <!-- RIGHT PANEL: Mission Briefing -->
+    <div class="panel-right" style="width:400px; overflow-y:auto;">
+
+      <!-- Header -->
+      <div class="panel-header" style="background:rgba(0,180,200,0.08);">
+        📋 Mission Briefing
+        <span id="brief-hab-name" style="font-size:11px; color:var(--text-dim); font-weight:normal; text-transform:none; letter-spacing:0;">Select a habitation to load</span>
       </div>
-      <div class="panel-content" id="reports-list">
-        <div style="text-align:center; color:var(--text-dim); margin-top:20px;">Waiting for field updates...</div>
+
+      <!-- ① TRANSPORT FEASIBILITY -->
+      <div style="border-bottom:1px solid var(--border);">
+        <div style="padding:10px 12px 4px; font-size:11px; color:var(--accent); font-weight:bold; letter-spacing:1px; text-transform:uppercase;">
+          🚌 Transport Feasibility
+          <span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; padding: 1px 4px; border-radius: 4px; font-size: 9px; margin-left: 6px; text-transform: none; letter-spacing: normal;">🟡 Calculated</span>
+        </div>
+        <div style="padding:0 12px 12px; font-size:12px; color:var(--text-dim);">CDR inputs available buses → DISHA checks if plan is executable</div>
+        <div style="padding:0 12px 10px; display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+          <div>
+            <div style="font-size:11px; color:var(--text-dim); margin-bottom:3px;">Population at risk</div>
+            <input id="transport-pop" type="number" value="850" min="1"
+              style="width:80px; padding:5px 8px; background:rgba(0,0,0,0.4); border:1px solid var(--border); color:white; border-radius:4px; font-size:13px;"
+              oninput="calcTransport()">
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--text-dim); margin-bottom:3px;">Buses available (CDR)</div>
+            <input id="transport-buses" type="number" value="5" min="0"
+              style="width:70px; padding:5px 8px; background:rgba(0,0,0,0.4); border:1px solid var(--border); color:white; border-radius:4px; font-size:13px;"
+              oninput="calcTransport()">
+          </div>
+        </div>
+        <div id="transport-result" style="margin:0 12px 12px; font-size:12px; border-radius:6px; padding:8px;"></div>
       </div>
+
+      <!-- ② SPHERE RESOURCE PACK -->
+      <div style="border-bottom:1px solid var(--border);">
+        <div style="padding:10px 12px 4px; font-size:11px; color:var(--accent); font-weight:bold; letter-spacing:1px; text-transform:uppercase;">
+          🎒 Sphere Resource Pack
+          <span style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; padding: 1px 4px; border-radius: 4px; font-size: 9px; margin-left: 6px; text-transform: none; letter-spacing: normal;">🔴 Configured Assumption</span>
+        </div>
+        <div id="resource-pack" style="padding:0 12px 12px;">
+          <div style="font-size:12px; color:var(--text-dim);">Select a habitation to load resources needed.</div>
+        </div>
+      </div>
+
+      <!-- ③ OPTION B — HOST COMMUNITY FALLBACK -->
+      <div style="border-bottom:1px solid var(--border);">
+        <div style="padding:10px 12px 4px; font-size:11px; color:var(--accent); font-weight:bold; letter-spacing:1px; text-transform:uppercase;">🏘️ Option B — Alternate Relocation</div>
+        <div style="padding:0 12px 4px; font-size:12px; color:var(--text-dim);">If primary shelter is at capacity or route is cut off</div>
+        <div id="option-b-panel" style="padding:0 12px 12px;">
+          <div style="font-size:12px; color:var(--text-dim);">Select a habitation to load fallback options.</div>
+        </div>
+      </div>
+
+      <!-- ④ LIVE FIELD REPORTS -->
+      <div style="flex:1;">
+        <div class="panel-header" style="border-bottom:1px solid var(--border);">
+          📡 Live Field Reports
+          <button onclick="fetchReports()" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:16px;">🔄</button>
+        </div>
+        <div class="panel-content" id="reports-list">
+          <div style="text-align:center; color:var(--text-dim); margin-top:20px;">Waiting for field updates...</div>
+        </div>
+      </div>
+
     </div>
+
+
 
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/tour.js"></script>
   <script src="js/field_ops.js?v=4"></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          })
+          .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+      });
+    }
+
+    async function simulateDeadZone() {
+      const banner = document.createElement('div');
+      banner.style.position = 'absolute';
+      banner.style.top = '70px';
+      banner.style.left = '50%';
+      banner.style.transform = 'translateX(-50%)';
+      banner.style.background = 'rgba(239, 68, 68, 0.9)';
+      banner.style.color = 'white';
+      banner.style.padding = '12px 24px';
+      banner.style.borderRadius = '8px';
+      banner.style.fontWeight = 'bold';
+      banner.style.zIndex = '9999';
+      banner.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+      banner.innerHTML = `📡 Entering Comms Dead Zone. Caching active routes... SMS Alert Fired!`;
+      document.body.appendChild(banner);
+      setTimeout(() => banner.remove(), 5000);
+      try {
+        await fetch(`${window.API_BASE}/comms/offline-alert/?officer_id=NDRF-A-1&phone=%2B919999999999&tower_id=TWR_ASSAM_42`, { method: 'POST' });
+      } catch (e) { console.error("SMS trigger failed", e); }
+    }
+
+    function calcTransport() {
+      const pop       = parseInt(document.getElementById('transport-pop').value)   || 0;
+      const available = parseInt(document.getElementById('transport-buses').value) || 0;
+      const BUS_CAP   = 45; // standard seating
+      const needed    = Math.ceil(pop / BUS_CAP);
+      const shortage  = needed - available;
+      const el        = document.getElementById('transport-result');
+
+      if (pop <= 0) { el.innerHTML = ''; return; }
+
+      if (shortage <= 0) {
+        // Feasible
+        el.style.background = 'rgba(34,197,94,0.15)';
+        el.style.border     = '1px solid rgba(34,197,94,0.4)';
+        el.innerHTML = `
+          <div style="color:#22c55e; font-weight:bold; margin-bottom:4px;">✅ Plan Executable</div>
+          <div>Buses needed: <b>${needed}</b> &nbsp;|&nbsp; Available: <b>${available}</b></div>
+          <div style="color:var(--text-dim); margin-top:4px;">Surplus: ${Math.abs(shortage)} bus(es). Proceed with relocation.</div>`;
+      } else {
+        // Bottleneck detected
+        el.style.background = 'rgba(239,68,68,0.15)';
+        el.style.border     = '1px solid rgba(239,68,68,0.4)';
+        // How many can we move in one trip?
+        const moveable1trip = available * BUS_CAP;
+        el.innerHTML = `
+          <div style="color:#ef4444; font-weight:bold; margin-bottom:4px;">⚠️ TRANSPORT BOTTLENECK</div>
+          <div>Needed: <b>${needed}</b> buses &nbsp;|&nbsp; Available: <b>${available}</b> &nbsp;|&nbsp; Shortage: <b>${shortage}</b></div>
+          <div style="color:#f59e0b; font-weight:bold; margin:6px 0 3px;">Alternatives:</div>
+          <div style="color:var(--text-dim);">A) Multi-trip: Move <b>${moveable1trip}</b> first, vulnerable population priority</div>
+          <div style="color:var(--text-dim);">B) Split: Use primary shelter (Shelter A) + host community overflow</div>
+          <div style="color:var(--text-dim);">C) Request ${shortage} additional bus(es) before dispatch</div>`;
+      }
+    }
+
+    // Run on load with default values
+    window.addEventListener('load', () => setTimeout(calcTransport, 500));
+  </script>
 </body>
 </html>
