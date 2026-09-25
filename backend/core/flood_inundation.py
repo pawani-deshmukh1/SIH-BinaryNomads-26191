@@ -55,13 +55,18 @@ def _fetch_dem_srtm(lat_center: float, lng_center: float, radius_km: float, reso
     dem = np.full((n_lat, n_lng), fill_value=np.nan, dtype=np.float32)
 
     logger.info(f"[Inundation] Fetching {n_lat}x{n_lng} elevation grid ...")
+    srtm_failed = False
     for i, lat in enumerate(lat_arr):
         for j, lng in enumerate(lng_arr):
+            if srtm_failed:
+                dem[i, j] = np.nan
+                continue
             try:
                 elev = srtm_data.get_elevation(lat, lng)
                 dem[i, j] = float(elev) if elev is not None else np.nan
             except Exception as e:
                 logger.warning(f"SRTM error at {lat},{lng}: {e}")
+                srtm_failed = True
                 dem[i, j] = np.nan
 
     # Fill NaN with interpolated values (coasts, water bodies in SRTM)

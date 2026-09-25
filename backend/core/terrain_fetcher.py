@@ -97,15 +97,18 @@ def _fetch_srtm_grid(lat: float, lng: float) -> tuple[np.ndarray, float]:
     lng_arr = np.linspace(lng - delta, lng + delta, n)
 
     dem = np.full((n, n), np.nan)
+    srtm_failed = False
     for i, rlat in enumerate(lat_arr):
         for j, rlng in enumerate(lng_arr):
+            if srtm_failed:
+                continue
             try:
                 elev = srtm_data.get_elevation(rlat, rlng)
                 if elev is not None:
                     dem[i, j] = float(elev)
             except Exception as e:
                 logger.warning(f"SRTM fetch failed: {e}")
-                pass
+                srtm_failed = True
 
     # Fill NaN
     nan_mask = np.isnan(dem)
