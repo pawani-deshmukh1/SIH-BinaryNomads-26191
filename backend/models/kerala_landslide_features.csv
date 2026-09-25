@@ -1,0 +1,11 @@
+Feature
+elevation
+slope
+aspect
+tri
+twi
+dist_to_river_m
+dist_to_road_m
+precip_annual_mm
+precip_daily_mm
+vegetation_proxy
