@@ -183,8 +183,9 @@ async def _fetch_nearest_river_m(lat: float, lng: float) -> float:
     # Use multiple endpoints to avoid rate-limiting during the demo
     endpoints = [
         "https://overpass-api.de/api/interpreter",
-        "https://overpass.kumi.systems/api/interpreter",
-        "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
+        "https://z.overpass-api.de/api/interpreter",
+        "https://lz4.overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter"
     ]
     
     headers = {
