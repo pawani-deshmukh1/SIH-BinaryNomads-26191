@@ -71,5 +71,6 @@ app.include_router(integration_agent.router)
 # Serve the dashboard as static files at /app/
 # Open http://127.0.0.1:8000/app/simulation.html?hab_id=...
 DASHBOARD_DIR = os.path.join(os.path.dirname(__file__), "..", "dashboard")
-app.mount("/app", StaticFiles(directory=DASHBOARD_DIR, html=True), name="dashboard")
+if os.path.exists(DASHBOARD_DIR):
+    app.mount("/app", StaticFiles(directory=DASHBOARD_DIR, html=True), name="dashboard")
 
