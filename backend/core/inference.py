@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 class InferenceEngine:
     def __init__(self):
         # We assume models are mounted via docker-compose to /app/models or locally to layer0_imminent/models
-        model_dir = Path(__file__).resolve().parent.parent.parent / "layer0_imminent" / "models"
+        model_dir = Path(__file__).resolve().parent.parent / "models" if (Path(__file__).resolve().parent.parent / "models").exists() else Path(__file__).resolve().parent.parent.parent / "layer0_imminent" / "models"
         
         self.model_paths = {
             "damage": str(model_dir / "damage_model.onnx"),

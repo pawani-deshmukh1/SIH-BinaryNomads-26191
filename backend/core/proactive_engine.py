@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
-MODELS_DIR = Path(__file__).resolve().parent.parent.parent / "layer0_imminent" / "models"
+MODELS_DIR = Path(__file__).resolve().parent.parent / "models" if (Path(__file__).resolve().parent.parent / "models").exists() else Path(__file__).resolve().parent.parent.parent / "layer0_imminent" / "models"
 
 # Thresholds for Red/Orange/Yellow/Green classification
 # Tuned for NE India hazard profile

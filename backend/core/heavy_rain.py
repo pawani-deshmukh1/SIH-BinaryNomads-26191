@@ -9,7 +9,7 @@ import pickle
 logger = logging.getLogger(__name__)
 
 # Constants
-MODEL_PATH = Path(__file__).resolve().parent.parent.parent / "layer0_imminent" / "models" / "disha_heavy_rain_model.pkl"
+MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "disha_heavy_rain_model.pkl" if (Path(__file__).resolve().parent.parent / "models" / "disha_heavy_rain_model.pkl").exists() else Path(__file__).resolve().parent.parent.parent / "layer0_imminent" / "models" / "disha_heavy_rain_model.pkl"
 _xgb_model = None
 
 def get_xgb_model():
