@@ -454,6 +454,18 @@ async function loadMissionBrief(habId) {
     rEl.innerHTML = `
       <table style="width:100%; border-collapse:collapse; font-size:12px;">
         <tr style="border-bottom:1px solid rgba(255,255,255,0.07);">
+          <td style="padding:5px 0; color:var(--text-dim);">⛺ Tents (50-person)</td>
+          <td style="text-align:right; font-weight:bold; color:white;">${resources.tents_50_person ?? '—'}</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.07);">
+          <td style="padding:5px 0; color:var(--text-dim);">💧 Water (15L/person/day)</td>
+          <td style="text-align:right; font-weight:bold; color:#3b82f6;">${resources.water_litres_per_day ? resources.water_litres_per_day.toLocaleString() + ' L/day' : '—'}</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.07);">
+          <td style="padding:5px 0; color:var(--text-dim);">🥫 Food rations / day</td>
+          <td style="text-align:right; font-weight:bold; color:#34d399;">${resources.food_rations_daily ? resources.food_rations_daily.toLocaleString() : '—'}</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.07);">
           <td style="padding:5px 0; color:var(--text-dim);">💧 Dewatering Pump (1 per 1,000)</td>
           <td style="text-align:right; font-weight:bold; color:white;">${resources.dewatering_pump ?? '—'}</td>
         </tr>
@@ -463,7 +475,7 @@ async function loadMissionBrief(habId) {
         </tr>
         <tr style="border-bottom:1px solid rgba(255,255,255,0.07);">
           <td style="padding:5px 0; color:var(--text-dim);">🏥 Medical Kit (3 per 1,000)</td>
-          <td style="text-align:right; font-weight:bold; color:white;">${resources.medical_kit ?? '—'}</td>
+          <td style="text-align:right; font-weight:bold; color:#fb923c;">${resources.medical_kit ?? '—'}</td>
         </tr>
         <tr style="border-bottom:1px solid rgba(255,255,255,0.07);">
           <td style="padding:5px 0; color:var(--text-dim);">📦 Relief Pack 7-day (1 per 500)</td>
