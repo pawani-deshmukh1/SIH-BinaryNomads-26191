@@ -1,4 +1,4 @@
-# 🚨 DISHA — Dynamic Information System for Hazard Assessment
+# 🚨 DISHA — Dynamic Intelligence System for Hazard Action
 
 **Team:** Binary Nomads  
 **Hackathon:** Smart India Hackathon (SIH) 2026  
